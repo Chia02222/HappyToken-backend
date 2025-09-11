@@ -24,7 +24,7 @@ const App: React.FC = () => {
   const [corporates, setCorporates] = useState<Corporate[]>(CORPORATES_DATA);
   const [corporateToAutoSendLink, setCorporateToAutoSendLink] = useState<Corporate | null>(null);
   const [editingCorporate, setEditingCorporate] = useState<Corporate | null>(null);
-  const [formMode, setFormMode] = useState<'new' | 'edit' | 'approve'>('new');
+  const [formMode, setFormMode] = useState<'new' | 'edit' | 'approve' | 'approve-second'>('new');
 
 
   const handleAddNewCorporate = () => {
@@ -49,7 +49,16 @@ const App: React.FC = () => {
     setEditingCorporate(corporate);
     setFormMode('approve');
     setFormData(fullFormData);
-    setFormStep(3); // Go directly to E-Commercial Terms page
+    setFormStep(1);
+    setIsCorporateFormVisible(true);
+  };
+
+  const handleSecondApproval = (corporate: Corporate) => {
+    const fullFormData = CORPORATE_DETAILS_DATA[corporate.id] || MOCK_FORM_DATA;
+    setEditingCorporate(corporate);
+    setFormMode('approve-second');
+    setFormData(fullFormData);
+    setFormStep(1);
     setIsCorporateFormVisible(true);
   };
 
@@ -66,8 +75,12 @@ const App: React.FC = () => {
         updatedCorporate.companyName = formData.companyName;
         updatedCorporate.regNumber = formData.regNumber;
         
-        if (action === 'submit' && ['Send', 'Pending 1st Approval'].includes(editingCorporate.status)) {
-            updatedCorporate.status = 'Pending 2nd Approval';
+        if (action === 'submit') {
+            if (formMode === 'approve') {
+                updatedCorporate.status = 'Pending 2nd Approval';
+            } else if (formMode === 'approve-second') {
+                updatedCorporate.status = 'Cooling Period';
+            }
         }
 
         setCorporates(prev => prev.map(c => 
@@ -97,7 +110,8 @@ const App: React.FC = () => {
   if (isCorporateFormVisible) {
     const getBaseTitle = () => {
         if (formMode === 'new') return 'New Corporate Account';
-        if (formMode === 'approve' && formStep === 3) return 'First Approval: E-Commercial Agreement';
+        if (formMode === 'approve') return 'First Approval';
+        if (formMode === 'approve-second') return 'Second Approval';
         if (editingCorporate) return 'View / Edit Corporate Account';
         return 'New Corporate Account';
     };
@@ -105,7 +119,7 @@ const App: React.FC = () => {
     
     const formTitle = formStep === 1 ? baseTitle :
                       formStep === 2 ? 'Commercial Terms' : 
-                      formStep === 3 && formMode === 'approve' ? baseTitle : 'E-Commercial Terms & Signature';
+                      'E-Commercial Terms & Signature';
 
     return (
       <FormLayout title={formTitle}>
@@ -147,6 +161,7 @@ const App: React.FC = () => {
                 onAddNew={handleAddNewCorporate}
                 onView={handleViewCorporate}
                 onFirstApprove={handleFirstApproval}
+                onSecondApprove={handleSecondApproval}
                 corporates={corporates}
                 setCorporates={setCorporates}
                 corporateToAutoSendLink={corporateToAutoSendLink}

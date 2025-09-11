@@ -12,13 +12,14 @@ interface CorporatePageProps {
     onAddNew: () => void;
     onView: (corporate: Corporate) => void;
     onFirstApprove: (corporate: Corporate) => void;
+    onSecondApprove: (corporate: Corporate) => void;
     corporates: Corporate[];
     setCorporates: React.Dispatch<React.SetStateAction<Corporate[]>>;
     corporateToAutoSendLink: Corporate | null;
     setCorporateToAutoSendLink: React.Dispatch<React.SetStateAction<Corporate | null>>;
 }
 
-const CorporatePage: React.FC<CorporatePageProps> = ({ onAddNew, onView, onFirstApprove, corporates, setCorporates, corporateToAutoSendLink, setCorporateToAutoSendLink }) => {
+const CorporatePage: React.FC<CorporatePageProps> = ({ onAddNew, onView, onFirstApprove, onSecondApprove, corporates, setCorporates, corporateToAutoSendLink, setCorporateToAutoSendLink }) => {
     const [selectedCorporate, setSelectedCorporate] = useState<Corporate | null>(null);
     const [targetStatus, setTargetStatus] = useState<CorporateStatus | null>(null);
     const [isChangeStatusModalVisible, setIsChangeStatusModalVisible] = useState(false);
@@ -33,9 +34,6 @@ const CorporatePage: React.FC<CorporatePageProps> = ({ onAddNew, onView, onFirst
     }, [corporateToAutoSendLink, setCorporateToAutoSendLink]);
 
     const updateStatus = (id: number, newStatus: CorporateStatus, note?: string) => {
-        const corporate = corporates.find(c => c.id === id);
-        const fromCoolingPeriod = corporate?.status === 'Cooling Period';
-
         setCorporates(prev => prev.map(c => {
             if (c.id === id) {
                 const finalStatus = newStatus === 'Reopened' ? 'Send' : newStatus;
@@ -55,12 +53,6 @@ const CorporatePage: React.FC<CorporatePageProps> = ({ onAddNew, onView, onFirst
             }
             return c;
         }));
-
-        if (newStatus === 'Approved' && !fromCoolingPeriod) {
-            setTimeout(() => {
-                setCorporates(prev => prev.map(c => c.id === id && c.status === 'Approved' ? { ...c, status: 'Cooling Period' } : c));
-            }, 60000); 
-        }
     };
     
     const handleOpenChangeStatusModal = (corporate: Corporate, status: CorporateStatus) => {
@@ -119,7 +111,7 @@ const CorporatePage: React.FC<CorporatePageProps> = ({ onAddNew, onView, onFirst
             case 'Pending 1st Approval':
                  return <button onClick={() => onFirstApprove(corporate)} className="text-sm text-ht-blue hover:text-ht-blue-dark font-semibold">Approve (1st)</button>;
             case 'Pending 2nd Approval':
-                return <button onClick={() => updateStatus(corporate.id, 'Approved')} className="text-sm text-ht-blue hover:text-ht-blue-dark font-semibold">Approve (2nd)</button>;
+                return <button onClick={() => onSecondApprove(corporate)} className="text-sm text-ht-blue hover:text-ht-blue-dark font-semibold">Approve (2nd)</button>;
             case 'Cooling Period':
                 return (
                     <div className="relative">
