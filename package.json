@@ -9,10 +9,14 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@nestjs/common": "^11.1.6",
+    "@nestjs/core": "^11.1.6",
     "next": "15.5.2",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "recharts": "^3.1.2"
+    "recharts": "^3.1.2",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
