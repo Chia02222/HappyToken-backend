@@ -11,7 +11,7 @@ export interface CorporateTable {
     reg_number: string;
     status: CorporateStatus;
     office_address1: string;
-    office_address2: string;
+    office_address2: string | null;
     postcode: string;
     city: string;
     state: string;
@@ -27,8 +27,8 @@ export interface CorporateTable {
     billing_country: string;
     company_tin: string;
     sst_number: string;
-    agreement_from: string;
-    agreement_to: string;
+    agreement_from: string | null;
+    agreement_to: string | null;
     credit_limit: string;
     credit_terms: string;
     transaction_fee: string;
@@ -38,6 +38,7 @@ export interface CorporateTable {
     agreed_to_generic_terms: boolean;
     agreed_to_commercial_terms: boolean;
     first_approval_confirmation: boolean;
+    second_approval_confirmation: boolean;
     created_at: string;
     updated_at: string;
 }
@@ -60,7 +61,7 @@ export interface SubsidiaryTable {
     company_name: string;
     reg_number: string;
     office_address1: string;
-    office_address2: string;
+    office_address2: string | null;
     postcode: string;
     city: string;
     state: string;

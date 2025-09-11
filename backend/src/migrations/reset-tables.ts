@@ -59,6 +59,7 @@ async function resetTables() {
         agreed_to_generic_terms BOOLEAN NOT NULL DEFAULT false,
         agreed_to_commercial_terms BOOLEAN NOT NULL DEFAULT false,
         first_approval_confirmation BOOLEAN NOT NULL DEFAULT false,
+        second_approval_confirmation BOOLEAN NOT NULL DEFAULT false,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )

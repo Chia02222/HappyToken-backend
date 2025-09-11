@@ -5,17 +5,23 @@ import DisplayField from './common/DisplayField';
 import InputField from './common/InputField';
 import SelectField from './common/SelectField';
 import ContentSection from './common/ContentSection';
+import ErrorMessageModal from './modals/ErrorMessageModal';
+
+import { CorporateDetails } from '../types';
 
 interface ECommercialTermsFormProps {
     onCloseForm: () => void;
     setFormStep: (step: number) => void;
-    formData: Record<string, any>;
-    setFormData: (dataUpdater: (prevData: Record<string, any>) => Record<string, any>) => void;
-    onSaveCorporate: (formData: Record<string, any>, action: 'submit' | 'send' | 'save') => void;
+    formData: CorporateDetails;
+    setFormData: (dataUpdater: (prevData: CorporateDetails) => CorporateDetails) => void;
+    onSaveCorporate: (formData: CorporateDetails, action: 'submit' | 'send' | 'save') => void;
+    formMode: 'new' | 'edit' | 'approve' | 'approve-second';
 }
 
-const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm, setFormStep, formData, setFormData, onSaveCorporate }) => {
-    
+const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm, setFormStep, formData, setFormData, onSaveCorporate, formMode }) => {
+    const [showValidationError, setShowValidationError] = React.useState(false);
+    const [validationErrorMessage, setValidationErrorMessage] = React.useState('');
+
     const primaryContact = formData.contacts?.[0] || {};
     const otherContacts = formData.contacts?.slice(1) || [];
 
@@ -33,8 +39,8 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
         const checked = 'checked' in e.target ? e.target.checked : false;
         setFormData(prev => ({
             ...prev,
-            secondaryApprover: {
-                ...prev.secondaryApprover,
+            secondary_approver: {
+                ...prev.secondary_approver,
                 [name]: type === 'checkbox' ? checked : value
             }
         }));
@@ -46,29 +52,69 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
         
         setFormData(prev => ({
             ...prev,
-            secondaryApprover: {
-                ...prev.secondaryApprover,
-                selectedContactId: contactId,
-                signatoryName: selectedContact ? `${selectedContact.firstName} ${selectedContact.lastName}`.trim() : '',
-                companyRole: selectedContact ? selectedContact.companyRole : '',
-                systemRole: selectedContact ? selectedContact.systemRole : '',
+            secondary_approver: {
+                ...prev.secondary_approver,
+                selected_contact_id: contactId,
+                signatory_name: selectedContact ? `${selectedContact.first_name} ${selectedContact.last_name}`.trim() : '',
+                company_role: selectedContact ? selectedContact.company_role : '',
+                system_role: selectedContact ? selectedContact.system_role : '',
                 email: selectedContact ? selectedContact.email : '',
-                contactNumber: selectedContact ? selectedContact.contactNumber : '',
+                contact_number: selectedContact ? selectedContact.contact_number : '',
             }
         }));
     };
     
-    const { secondaryApprover } = formData;
-    const isSecondaryFromList = secondaryApprover.useExistingContact;
+    const { secondary_approver: secondaryApproverFromData } = formData;
+    const secondary_approver = secondaryApproverFromData || {
+        use_existing_contact: false,
+        selected_contact_id: '',
+        signatory_name: '',
+        company_role: '',
+        system_role: '',
+        email: '',
+        contact_number: '',
+    };
+    const isSecondaryFromList = secondary_approver.use_existing_contact;
+    const validateSecondaryApprover = (): boolean => {
+        const { secondary_approver } = formData;
+        if (!secondary_approver) {
+            setValidationErrorMessage("Secondary approver details are missing.");
+            return false;
+        }
+
+        if (secondary_approver.use_existing_contact) {
+            if (!secondary_approver.selected_contact_id) {
+                setValidationErrorMessage("Please select an existing contact for secondary approval.");
+                return false;
+            }
+        } else {
+            if (!secondary_approver.signatory_name ||
+                !secondary_approver.company_role ||
+                !secondary_approver.system_role ||
+                !secondary_approver.email ||
+                !secondary_approver.contact_number) {
+                setValidationErrorMessage("Please fill in all required fields for secondary approval.");
+                return false;
+            }
+        }
+        setValidationErrorMessage(''); // Clear error message if validation passes
+        return true;
+    };
+
 
     return (
         <div className="space-y-6">
+            <ErrorMessageModal
+                isOpen={showValidationError}
+                onClose={() => setShowValidationError(false)}
+                message={validationErrorMessage}
+            />
             <div className="bg-white p-8 md:p-12 rounded-lg shadow-sm max-w-5xl mx-auto border border-gray-200">
                 <h1 className="text-center text-xl font-bold text-ht-gray-dark mb-4">e-Commercial Agreement</h1>
 
                 <p className="text-xs text-gray-600 mb-6 p-4 bg-gray-50 border rounded-md">
                     Thank you. Your commercial agreement submission has been received. <br />
-                    This confirms that <strong>{formData.companyName || '[Client Company Name]'} [Company No: {formData.regNumber || 'XXXXXXXX-X'}]</strong>, represented by <strong>{`${primaryContact.firstName || ''} ${primaryContact.lastName || '[Full Name of Signatory]'}`.trim()}</strong>, has successfully entered into a commercial agreement with: <br />
+                    This confirms that <strong>{formData.company_name || '[Client Company Name]'} [Company No: {formData.reg_number || 'XXXXXXXX-X'}]</strong>, represented by <strong>{`${primaryContact.first_name || ''} ${primaryContact.last_name || '[Full Name of Signatory]'}`.trim()}</strong>, has successfully entered into a commercial agreement with: <br />
                     <strong>HT Voucher Trading Sdn Bhd (Company No: 202401035271 (1581118A))</strong> <br />
                     Trading As: HappieToken
                 </p>
@@ -76,41 +122,41 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                 <ContentSection title="Commercial Terms">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                         <div className="space-y-4">
-                            <DisplayField label="Company Name" value={formData.companyName} />
-                            <DisplayField label="Official Registration Number" value={formData.regNumber} />
-                            <DisplayField label="Office Address" value={`${formData.officeAddress1}${formData.officeAddress2 ? `, ${formData.officeAddress2}` : ''}`} />
+                            <DisplayField label="Company Name" value={formData.company_name} />
+                            <DisplayField label="Official Registration Number" value={formData.reg_number} />
+                            <DisplayField label="Office Address" value={`${formData.office_address1}${formData.office_address2 ? `, ${formData.office_address2}` : ''}`} />
                             <DisplayField label="Postcode" value={formData.postcode} />
                             <DisplayField label="City" value={formData.city} />
                             <DisplayField label="State" value={formData.state} />
                             <DisplayField label="Country" value={formData.country} />
                             <DisplayField label="Website" value={formData.website} />
-                            <DisplayField label="Account Note" value={formData.accountNote} />
+                            <DisplayField label="Account Note" value={formData.account_note} />
                         </div>
                         <div className="space-y-4">
-                            <DisplayField label="Agreement Duration" value={formData.agreementFrom && formData.agreementTo ? `${formData.agreementFrom} to ${formData.agreementTo}` : ''} />
-                            <DisplayField label="Credit Limit" value={`MYR ${formData.creditLimit}`} />
-                            <DisplayField label="Credit Terms" value={`${formData.creditTerms} days`} />
-                            <DisplayField label="Transaction Fees Rate" value={`${formData.transactionFee}%`} />
-                            <DisplayField label="Late Payment Interest" value={`${formData.latePaymentInterest}%`} />
-                            <DisplayField label="White Labeling Fee (*only when request)" value={formData.whiteLabelingFee ? `${formData.whiteLabelingFee}%` : 'N/A'} />
-                            <DisplayField label="Custom Feature Request Fee (*only when request)" value={`MYR ${formData.customFeatureFee}`} />
+                            <DisplayField label="Agreement Duration" value={formData.agreement_from && formData.agreement_to ? `${formData.agreement_from} to ${formData.agreement_to}` : ''} />
+                            <DisplayField label="Credit Limit" value={`MYR ${formData.credit_limit}`} />
+                            <DisplayField label="Credit Terms" value={`${formData.credit_terms} days`} />
+                            <DisplayField label="Transaction Fees Rate" value={`${formData.transaction_fee}%`} />
+                            <DisplayField label="Late Payment Interest" value={`${formData.late_payment_interest}%`} />
+                            <DisplayField label="White Labeling Fee (*only when request)" value={formData.white_labeling_fee ? `${formData.white_labeling_fee}%` : 'N/A'} />
+                            <DisplayField label="Custom Feature Request Fee (*only when request)" value={`MYR ${formData.custom_feature_fee}`} />
                         </div>
                     </div>
                 </ContentSection>
                 
                 <ContentSection title="First Approval">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                        <DisplayField label="Company Name" value={formData.companyName} />
-                        <DisplayField label="Registration Number" value={formData.regNumber} />
-                        <DisplayField label="Signatory Name" value={`${primaryContact.firstName || ''} ${primaryContact.lastName || ''}`.trim()} />
-                        <DisplayField label="Company Role" value={primaryContact.companyRole} />
-                        <DisplayField label="System Role" value={primaryContact.systemRole} />
+                        <DisplayField label="Company Name" value={formData.company_name} />
+                        <DisplayField label="Registration Number" value={formData.reg_number} />
+                        <DisplayField label="Signatory Name" value={`${primaryContact.first_name || ''} ${primaryContact.last_name || ''}`.trim()} />
+                        <DisplayField label="Company Role" value={primaryContact.company_role} />
+                        <DisplayField label="System Role" value={primaryContact.system_role} />
                         <DisplayField label="Email Address" value={primaryContact.email} />
-                        <DisplayField label="Contact Number" value={primaryContact.contactNumber ? `+60 ${primaryContact.contactNumber}` : ''} />
+                        <DisplayField label="Contact Number" value={primaryContact.contact_number ? `+60 ${primaryContact.contact_number}` : ''} />
                     </div>
                     <div className="flex items-start mt-6">
-                        <input type="checkbox" id="firstApprovalConfirmation" name="firstApprovalConfirmation" checked={formData.firstApprovalConfirmation} onChange={handleChange} className="h-4 w-4 mt-0.5 border-gray-300 rounded focus:ring-ht-gray" />
-                        <label htmlFor="firstApprovalConfirmation" className="ml-3 block text-xs text-gray-800">
+                        <input type="checkbox" id="first_approval_confirmation" name="first_approval_confirmation" checked={formData.first_approval_confirmation} onChange={handleChange} className="h-4 w-4 mt-0.5 border-gray-300 rounded focus:ring-ht-gray" />
+                        <label htmlFor="first_approval_confirmation" className="ml-3 block text-xs text-gray-800">
                             I hereby confirm that I have read, understood, and agree to the terms and conditions of this Agreement, and I consent to proceed accordingly.
                         </label>
                     </div>
@@ -120,13 +166,13 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                     <div className="flex items-center mb-4">
                         <input
                             type="checkbox"
-                            id="useExistingContact"
-                            name="useExistingContact"
-                            checked={secondaryApprover.useExistingContact}
+                            id="use_existing_contact"
+                            name="use_existing_contact"
+                            checked={!!secondary_approver.use_existing_contact}
                             onChange={handleSecondaryApproverChange}
                             className="h-4 w-4 border-gray-300 rounded focus:ring-ht-gray"
                         />
-                        <label htmlFor="useExistingContact" className="ml-2 block text-sm text-gray-900">
+                        <label htmlFor="use_existing_contact" className="ml-2 block text-sm text-gray-900">
                             Use existing contact person for secondary approval
                         </label>
                     </div>
@@ -137,39 +183,39 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                                 <SelectField
                                     id="secondaryContactSelect"
                                     label="Select Contact Person"
-                                    name="selectedContactId"
-                                    value={secondaryApprover.selectedContactId}
+                                    name="selected_contact_id"
+                                    value={secondary_approver.selected_contact_id ?? null}
                                     onChange={handleSecondaryContactSelect}
                                     required
                                 >
                                     <option value="">Select a contact</option>
                                     {otherContacts.map((contact: any) => (
                                         <option key={contact.id} value={contact.id}>
-                                            {`${contact.firstName} ${contact.lastName}`}
+                                            {`${contact.first_name} ${contact.last_name}`}
                                         </option>
                                     ))}
                                 </SelectField>
-                                <DisplayField label="Signatory Name" value={secondaryApprover.signatoryName} />
-                                <DisplayField label="Company Role" value={secondaryApprover.companyRole} />
-                                <DisplayField label="System Role" value={secondaryApprover.systemRole} />
-                                <DisplayField label="Email Address" value={secondaryApprover.email} />
-                                <DisplayField label="Contact Number" value={secondaryApprover.contactNumber ? `+60 ${secondaryApprover.contactNumber}` : ''} />
+                                <DisplayField label="Signatory Name" value={secondary_approver.signatory_name ?? null} />
+                                <DisplayField label="Company Role" value={secondary_approver.company_role ?? null} />
+                                <DisplayField label="System Role" value={secondary_approver.system_role ?? null} />
+                                <DisplayField label="Email Address" value={secondary_approver.email ?? null} />
+                                <DisplayField label="Contact Number" value={secondary_approver.contact_number ? `+60 ${secondary_approver.contact_number}` : ''} />
                             </>
                         ) : (
                             <>
-                                <InputField id="signatoryName" label="Signatory Name" name="signatoryName" value={secondaryApprover.signatoryName} onChange={handleSecondaryApproverChange} required />
-                                <InputField id="companyRole" label="Company Role" name="companyRole" value={secondaryApprover.companyRole} onChange={handleSecondaryApproverChange} required />
-                                <InputField id="systemRole" label="System Role" name="systemRole" value={secondaryApprover.systemRole} onChange={handleSecondaryApproverChange} required />
-                                <InputField id="email" label="Email Address" name="email" type="email" value={secondaryApprover.email} onChange={handleSecondaryApproverChange} required />
+                                <InputField id="signatory_name" label="Signatory Name" name="signatory_name" value={secondary_approver.signatory_name ?? null} onChange={handleSecondaryApproverChange} required />
+                                <InputField id="company_role" label="Company Role" name="company_role" value={secondary_approver.company_role ?? null} onChange={handleSecondaryApproverChange} required />
+                                <InputField id="system_role" label="System Role" name="system_role" value={secondary_approver.system_role ?? null} onChange={handleSecondaryApproverChange} required />
+                                <InputField id="email" label="Email Address" name="email" type="email" value={secondary_approver.email ?? null} onChange={handleSecondaryApproverChange} required />
                                 <div>
                                     <label className="block text-xs font-medium text-gray-700 mb-1">*Contact Number</label>
                                     <div className="flex">
                                         <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">+60</span>
                                         <input
                                             type="text"
-                                            id="contactNumber"
-                                            name="contactNumber"
-                                            value={secondaryApprover.contactNumber}
+                                            id="contact_number"
+                                            name="contact_number"
+                                            value={secondary_approver.contact_number ?? ''}
                                             onChange={handleSecondaryApproverChange}
                                             className="flex-1 block w-full rounded-none rounded-r-md border border-gray-300 p-2 text-sm focus:ring-ht-blue focus:border-ht-blue bg-white dark:bg-white"
                                         />
@@ -206,7 +252,7 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                  <button 
                     type="button"
                     onClick={() => onSaveCorporate(formData, 'send')}
-                    disabled={!formData.firstApprovalConfirmation}
+                    disabled={(formMode === 'approve' && !formData.first_approval_confirmation) || (formMode === 'approve-second' && !formData.second_approval_confirmation)}
                     className="text-sm bg-ht-blue text-white px-4 py-2 rounded-md hover:bg-ht-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue-dark disabled:bg-ht-gray disabled:cursor-not-allowed"
                 >
                     Send Link
@@ -214,9 +260,16 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                  <button 
                     type="button"
                     onClick={() => {
+                        if (formMode === 'approve-second') {
+                            if (!validateSecondaryApprover()) {
+                                setShowValidationError(true);
+                                return;
+                            }
+                        }
+                        setShowValidationError(false);
                         onSaveCorporate(formData, 'submit');
                     }}
-                    disabled={!formData.firstApprovalConfirmation}
+                    disabled={(formMode === 'approve' && !formData.first_approval_confirmation) || (formMode === 'approve-second' && !formData.second_approval_confirmation)}
                     className="text-sm bg-ht-blue text-white px-4 py-2 rounded-md hover:bg-ht-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue-dark disabled:bg-ht-gray disabled:cursor-not-allowed"
                 >
                     Submit
@@ -225,5 +278,4 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
         </div>
     );
 };
-
 export default ECommercialTermsForm;

@@ -5,7 +5,7 @@ interface InputFieldProps {
     label: string;
     name: string;
     id: string;
-    value: string | number;
+    value: string | number | null;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     required?: boolean;
     type?: string;
@@ -23,7 +23,7 @@ const InputField: React.FC<InputFieldProps> = ({ label, name, id, value, onChang
             type={type}
             id={id || name}
             name={name}
-            value={value}
+            value={value ?? ''}
             onChange={onChange}
             placeholder={placeholder}
             className="w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm focus:ring-ht-blue focus:border-ht-blue bg-white dark:bg-white"

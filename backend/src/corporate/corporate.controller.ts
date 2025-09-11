@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, ParseIntPipe } from '@nestjs/common';
 import { CorporateService } from './corporate.service';
 import { Database, CorporateTable, ContactTable, SubsidiaryTable, InvestigationLogTable } from '../database/types';
+import { UpdateCorporateDto } from './dto/update-corporate.dto';
 
 @Controller('corporates')
 export class CorporateController {
@@ -24,7 +25,7 @@ export class CorporateController {
   @Put(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateData: Partial<Omit<CorporateTable, 'id' | 'created_at'>>
+    @Body() updateData: UpdateCorporateDto
   ) {
     return await this.corporateService.update(id, updateData);
   }

@@ -30,17 +30,17 @@ const HistoryLogModal: React.FC<HistoryLogModalProps> = ({ isOpen, onClose, corp
     if (!corporate) return null;
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={`History & Remarks for ${corporate.companyName}`} size="lg">
+        <Modal isOpen={isOpen} onClose={onClose} title={`History & Remarks for ${corporate.company_name}`} size="lg">
             <div className="space-y-4">
                 {/* History Section */}
                 <div className="max-h-64 overflow-y-auto pr-2 space-y-4 border rounded-md p-3 bg-gray-50">
-                    {corporate.investigationLog.length > 0 ? (
-                        [...corporate.investigationLog].map((log, index) => (
+                    {corporate.investigation_log && corporate.investigation_log.length > 0 ? (
+                        [...corporate.investigation_log].map((log, index) => (
                             <div key={index} className="p-3 border rounded-md bg-white shadow-sm">
                                 <p className="text-xs text-gray-500 mb-1">{log.timestamp}</p>
-                                {log.from && log.to ? (
+                                {log.from_status && log.to_status ? (
                                     <p className="text-sm font-semibold text-ht-gray-dark">
-                                        Status changed from <StatusBadge status={log.from} /> to <StatusBadge status={log.to} />
+                                        Status changed from <StatusBadge status={log.from_status} /> to <StatusBadge status={log.to_status} />
                                     </p>
                                 ) : (
                                     <p className="text-sm font-semibold text-ht-gray-dark">Remark Added</p>

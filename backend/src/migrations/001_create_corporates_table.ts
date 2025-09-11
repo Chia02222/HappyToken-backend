@@ -35,8 +35,9 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('agreed_to_generic_terms', 'boolean', (col) => col.notNull().defaultTo(false))
     .addColumn('agreed_to_commercial_terms', 'boolean', (col) => col.notNull().defaultTo(false))
     .addColumn('first_approval_confirmation', 'boolean', (col) => col.notNull().defaultTo(false))
-    .addColumn('created_at', 'timestamp', (col) => col.notNull().defaultTo(sql`now()`))
-    .addColumn('updated_at', 'timestamp', (col) => col.notNull().defaultTo(sql`now()`))
+    .addColumn('second_approval_confirmation', 'boolean', (col) => col.notNull().defaultTo(false))
+    .addColumn('created_at', 'timestamp', (col) => col.notNull().defaultTo('CURRENT_TIMESTAMP'))
+    .addColumn('updated_at', 'timestamp', (col) => col.notNull().defaultTo('CURRENT_TIMESTAMP'))
     .execute();
 }
 

@@ -1,5 +1,6 @@
 import { DatabaseService } from '../database/database.service';
-import { CorporateTable, ContactTable, SubsidiaryTable, InvestigationLogTable } from '../database/types';
+import { CorporateTable, InvestigationLogTable, CorporateStatus } from '../database/types';
+import { UpdateCorporateDto, UpdateContactDto, UpdateSubsidiaryDto, CreateContactDto, CreateSubsidiaryDto } from './dto/update-corporate.dto';
 export declare class CorporateService {
     private readonly dbService;
     constructor(dbService: DatabaseService);
@@ -8,15 +9,15 @@ export declare class CorporateService {
         id: number;
         company_name: string;
         reg_number: string;
-        status: import("../database/types").CorporateStatus;
         office_address1: string;
-        office_address2: string;
+        office_address2: string | null;
         postcode: string;
         city: string;
         state: string;
         country: string;
         website: string;
         account_note: string;
+        status: CorporateStatus;
         billing_same_as_official: boolean;
         billing_address1: string;
         billing_address2: string;
@@ -26,8 +27,8 @@ export declare class CorporateService {
         billing_country: string;
         company_tin: string;
         sst_number: string;
-        agreement_from: string;
-        agreement_to: string;
+        agreement_from: string | null;
+        agreement_to: string | null;
         credit_limit: string;
         credit_terms: string;
         transaction_fee: string;
@@ -37,15 +38,12 @@ export declare class CorporateService {
         agreed_to_generic_terms: boolean;
         agreed_to_commercial_terms: boolean;
         first_approval_confirmation: boolean;
+        second_approval_confirmation: boolean;
         created_at: string;
         updated_at: string;
     }[]>;
     findById(id: number): Promise<{
         contacts: {
-            id: number;
-            created_at: string;
-            updated_at: string;
-            corporate_id: number;
             salutation: string;
             first_name: string;
             last_name: string;
@@ -53,13 +51,17 @@ export declare class CorporateService {
             email: string;
             company_role: string;
             system_role: string;
+            id: number;
+            created_at: string;
+            updated_at: string;
+            corporate_id: number;
         }[];
         subsidiaries: {
             id: number;
             company_name: string;
             reg_number: string;
             office_address1: string;
-            office_address2: string;
+            office_address2: string | null;
             postcode: string;
             city: string;
             state: string;
@@ -76,21 +78,21 @@ export declare class CorporateService {
             corporate_id: number;
             timestamp: string;
             note: string | null;
-            from_status: import("../database/types").CorporateStatus | null;
-            to_status: import("../database/types").CorporateStatus | null;
+            from_status: CorporateStatus | null;
+            to_status: CorporateStatus | null;
         }[];
         id: number;
         company_name: string;
         reg_number: string;
-        status: import("../database/types").CorporateStatus;
         office_address1: string;
-        office_address2: string;
+        office_address2: string | null;
         postcode: string;
         city: string;
         state: string;
         country: string;
         website: string;
         account_note: string;
+        status: CorporateStatus;
         billing_same_as_official: boolean;
         billing_address1: string;
         billing_address2: string;
@@ -100,8 +102,8 @@ export declare class CorporateService {
         billing_country: string;
         company_tin: string;
         sst_number: string;
-        agreement_from: string;
-        agreement_to: string;
+        agreement_from: string | null;
+        agreement_to: string | null;
         credit_limit: string;
         credit_terms: string;
         transaction_fee: string;
@@ -111,6 +113,7 @@ export declare class CorporateService {
         agreed_to_generic_terms: boolean;
         agreed_to_commercial_terms: boolean;
         first_approval_confirmation: boolean;
+        second_approval_confirmation: boolean;
         created_at: string;
         updated_at: string;
     } | null>;
@@ -118,15 +121,15 @@ export declare class CorporateService {
         id: number;
         company_name: string;
         reg_number: string;
-        status: import("../database/types").CorporateStatus;
         office_address1: string;
-        office_address2: string;
+        office_address2: string | null;
         postcode: string;
         city: string;
         state: string;
         country: string;
         website: string;
         account_note: string;
+        status: CorporateStatus;
         billing_same_as_official: boolean;
         billing_address1: string;
         billing_address2: string;
@@ -136,8 +139,8 @@ export declare class CorporateService {
         billing_country: string;
         company_tin: string;
         sst_number: string;
-        agreement_from: string;
-        agreement_to: string;
+        agreement_from: string | null;
+        agreement_to: string | null;
         credit_limit: string;
         credit_terms: string;
         transaction_fee: string;
@@ -147,22 +150,61 @@ export declare class CorporateService {
         agreed_to_generic_terms: boolean;
         agreed_to_commercial_terms: boolean;
         first_approval_confirmation: boolean;
+        second_approval_confirmation: boolean;
         created_at: string;
         updated_at: string;
     }>;
-    update(id: number, updateData: Partial<Omit<CorporateTable, 'id' | 'created_at'>>): Promise<{
+    update(id: number, updateData: UpdateCorporateDto): Promise<{
+        contacts: {
+            salutation: string;
+            first_name: string;
+            last_name: string;
+            contact_number: string;
+            email: string;
+            company_role: string;
+            system_role: string;
+            id: number;
+            created_at: string;
+            updated_at: string;
+            corporate_id: number;
+        }[];
+        subsidiaries: {
+            id: number;
+            company_name: string;
+            reg_number: string;
+            office_address1: string;
+            office_address2: string | null;
+            postcode: string;
+            city: string;
+            state: string;
+            country: string;
+            website: string;
+            account_note: string;
+            created_at: string;
+            updated_at: string;
+            corporate_id: number;
+        }[];
+        investigationLog: {
+            id: number;
+            created_at: string;
+            corporate_id: number;
+            timestamp: string;
+            note: string | null;
+            from_status: CorporateStatus | null;
+            to_status: CorporateStatus | null;
+        }[];
         id: number;
         company_name: string;
         reg_number: string;
-        status: import("../database/types").CorporateStatus;
         office_address1: string;
-        office_address2: string;
+        office_address2: string | null;
         postcode: string;
         city: string;
         state: string;
         country: string;
         website: string;
         account_note: string;
+        status: CorporateStatus;
         billing_same_as_official: boolean;
         billing_address1: string;
         billing_address2: string;
@@ -172,8 +214,8 @@ export declare class CorporateService {
         billing_country: string;
         company_tin: string;
         sst_number: string;
-        agreement_from: string;
-        agreement_to: string;
+        agreement_from: string | null;
+        agreement_to: string | null;
         credit_limit: string;
         credit_terms: string;
         transaction_fee: string;
@@ -183,17 +225,14 @@ export declare class CorporateService {
         agreed_to_generic_terms: boolean;
         agreed_to_commercial_terms: boolean;
         first_approval_confirmation: boolean;
+        second_approval_confirmation: boolean;
         created_at: string;
         updated_at: string;
-    }>;
+    } | null>;
     delete(id: number): Promise<{
         success: boolean;
     }>;
-    addContact(corporateId: number, contactData: Omit<ContactTable, 'id' | 'corporate_id' | 'created_at' | 'updated_at'>): Promise<{
-        id: number;
-        created_at: string;
-        updated_at: string;
-        corporate_id: number;
+    addContact(corporateId: number, contactData: CreateContactDto): Promise<{
         salutation: string;
         first_name: string;
         last_name: string;
@@ -201,13 +240,17 @@ export declare class CorporateService {
         email: string;
         company_role: string;
         system_role: string;
+        id: number;
+        created_at: string;
+        updated_at: string;
+        corporate_id: number;
     }>;
-    addSubsidiary(corporateId: number, subsidiaryData: Omit<SubsidiaryTable, 'id' | 'corporate_id' | 'created_at' | 'updated_at'>): Promise<{
+    addSubsidiary(corporateId: number, subsidiaryData: CreateSubsidiaryDto): Promise<{
         id: number;
         company_name: string;
         reg_number: string;
         office_address1: string;
-        office_address2: string;
+        office_address2: string | null;
         postcode: string;
         city: string;
         state: string;
@@ -224,22 +267,95 @@ export declare class CorporateService {
         corporate_id: number;
         timestamp: string;
         note: string | null;
-        from_status: import("../database/types").CorporateStatus | null;
-        to_status: import("../database/types").CorporateStatus | null;
+        from_status: CorporateStatus | null;
+        to_status: CorporateStatus | null;
     }>;
-    updateStatus(id: number, status: string, note?: string): Promise<{
+    updateContact(id: number, contactData: UpdateContactDto): Promise<{
+        salutation: string;
+        first_name: string;
+        last_name: string;
+        contact_number: string;
+        email: string;
+        company_role: string;
+        system_role: string;
+        id: number;
+        created_at: string;
+        updated_at: string;
+        corporate_id: number;
+    }>;
+    deleteContact(id: number): Promise<{
+        success: boolean;
+    }>;
+    updateSubsidiary(id: number, subsidiaryData: UpdateSubsidiaryDto): Promise<{
         id: number;
         company_name: string;
         reg_number: string;
-        status: import("../database/types").CorporateStatus;
         office_address1: string;
-        office_address2: string;
+        office_address2: string | null;
         postcode: string;
         city: string;
         state: string;
         country: string;
         website: string;
         account_note: string;
+        created_at: string;
+        updated_at: string;
+        corporate_id: number;
+    }>;
+    deleteSubsidiary(id: number): Promise<{
+        success: boolean;
+    }>;
+    updateStatus(id: number, status: string, note?: string): Promise<{
+        contacts: {
+            salutation: string;
+            first_name: string;
+            last_name: string;
+            contact_number: string;
+            email: string;
+            company_role: string;
+            system_role: string;
+            id: number;
+            created_at: string;
+            updated_at: string;
+            corporate_id: number;
+        }[];
+        subsidiaries: {
+            id: number;
+            company_name: string;
+            reg_number: string;
+            office_address1: string;
+            office_address2: string | null;
+            postcode: string;
+            city: string;
+            state: string;
+            country: string;
+            website: string;
+            account_note: string;
+            created_at: string;
+            updated_at: string;
+            corporate_id: number;
+        }[];
+        investigationLog: {
+            id: number;
+            created_at: string;
+            corporate_id: number;
+            timestamp: string;
+            note: string | null;
+            from_status: CorporateStatus | null;
+            to_status: CorporateStatus | null;
+        }[];
+        id: number;
+        company_name: string;
+        reg_number: string;
+        office_address1: string;
+        office_address2: string | null;
+        postcode: string;
+        city: string;
+        state: string;
+        country: string;
+        website: string;
+        account_note: string;
+        status: CorporateStatus;
         billing_same_as_official: boolean;
         billing_address1: string;
         billing_address2: string;
@@ -249,8 +365,8 @@ export declare class CorporateService {
         billing_country: string;
         company_tin: string;
         sst_number: string;
-        agreement_from: string;
-        agreement_to: string;
+        agreement_from: string | null;
+        agreement_to: string | null;
         credit_limit: string;
         credit_terms: string;
         transaction_fee: string;
@@ -260,7 +376,8 @@ export declare class CorporateService {
         agreed_to_generic_terms: boolean;
         agreed_to_commercial_terms: boolean;
         first_approval_confirmation: boolean;
+        second_approval_confirmation: boolean;
         created_at: string;
         updated_at: string;
-    }>;
+    } | null>;
 }

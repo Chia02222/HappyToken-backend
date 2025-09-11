@@ -3,12 +3,14 @@ import React from 'react';
 import InputField from './common/InputField';
 import FormSection from './common/FormSection';
 
+import { CorporateDetails } from '../types';
+
 interface CommercialTermsFormProps {
     onCloseForm: () => void;
     setFormStep: (step: number) => void;
-    formData: Record<string, any>;
-    setFormData: (dataUpdater: (prevData: Record<string, any>) => Record<string, any>) => void;
-    onSaveCorporate: (formData: Record<string, any>, action: 'submit' | 'send' | 'save') => void;
+    formData: CorporateDetails;
+    setFormData: (dataUpdater: (prevData: CorporateDetails) => CorporateDetails) => void;
+    onSaveCorporate: (formData: CorporateDetails, action: 'submit' | 'send' | 'save') => void;
 }
 
 const CommercialTermsForm: React.FC<CommercialTermsFormProps> = ({ onCloseForm, setFormStep, formData, setFormData, onSaveCorporate }) => {
@@ -30,9 +32,9 @@ const CommercialTermsForm: React.FC<CommercialTermsFormProps> = ({ onCloseForm, 
                     <div className="md:col-span-2">
                         <label className="block text-xs font-medium text-gray-700 mb-1">Agreement Duration</label>
                         <div className="flex items-center space-x-2">
-                           <InputField id="agreementFrom" label="" name="agreementFrom" value={formData.agreementFrom} onChange={handleChange} type="date" required />
+                           <InputField id="agreementFrom" label="" name="agreementFrom" value={formData.agreement_from ?? null} onChange={handleChange} type="date" required />
                            <span className="text-gray-500">to</span>
-                           <InputField id="agreementTo" label="" name="agreementTo" value={formData.agreementTo} onChange={handleChange} type="date" required />
+                           <InputField id="agreementTo" label="" name="agreementTo" value={formData.agreement_to ?? null} onChange={handleChange} type="date" required />
                         </div>
                     </div>
                     
@@ -40,27 +42,27 @@ const CommercialTermsForm: React.FC<CommercialTermsFormProps> = ({ onCloseForm, 
                         <label className="block text-xs font-medium text-gray-700 mb-1">Credit Limit</label>
                         <div className="flex items-center">
                              <span className="inline-flex items-center px-3 h-[38px] rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">MYR</span>
-                            <InputField id="creditLimit" label="" name="creditLimit" value={formData.creditLimit} onChange={handleChange} />
+                            <InputField id="creditLimit" label="" name="creditLimit" value={formData.credit_limit ?? null} onChange={handleChange} />
                         </div>
                     </div>
 
                     <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">Credit Terms</label>
                         <div className="flex items-center">
-                           <InputField id="creditTerms" label="" name="creditTerms" value={formData.creditTerms} onChange={handleChange} />
+                           <InputField id="creditTerms" label="" name="creditTerms" value={formData.credit_terms ?? null} onChange={handleChange} />
                            <span className="ml-2 text-gray-500">days from invoice date</span>
                         </div>
                     </div>
                     
-                    <InputField id="transactionFee" label="Transaction Fees Rate (% based on total purchased amount)" name="transactionFee" value={formData.transactionFee} onChange={handleChange} />
-                    <InputField id="latePaymentInterest" label="Late Payment Interest (% per 14 days)" name="latePaymentInterest" value={formData.latePaymentInterest} onChange={handleChange} />
+                    <InputField id="transactionFee" label="Transaction Fees Rate (% based on total purchased amount)" name="transactionFee" value={formData.transaction_fee ?? null} onChange={handleChange} />
+                    <InputField id="latePaymentInterest" label="Late Payment Interest (% per 14 days)" name="latePaymentInterest" value={formData.late_payment_interest ?? null} onChange={handleChange} />
                     
-                    <InputField id="whiteLabelingFee" label="White Labeling Fee (*only when request) (% based on total purchased amount)" name="whiteLabelingFee" value={formData.whiteLabelingFee} onChange={handleChange} />
+                    <InputField id="whiteLabelingFee" label="White Labeling Fee (*only when request) (% based on total purchased amount)" name="whiteLabelingFee" value={formData.white_labeling_fee ?? null} onChange={handleChange} />
                      <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">Custom Feature Request Fee (*only when request)</label>
                         <div className="flex items-center">
                              <span className="inline-flex items-center px-3 h-[38px] rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">MYR</span>
-                            <InputField id="customFeatureFee" label="" name="customFeatureFee" value={formData.customFeatureFee} onChange={handleChange} />
+                            <InputField id="custom_feature_fee" label="" name="custom_feature_fee" value={formData.custom_feature_fee ?? null} onChange={handleChange} />
                         </div>
                     </div>
 
@@ -78,13 +80,13 @@ const CommercialTermsForm: React.FC<CommercialTermsFormProps> = ({ onCloseForm, 
                         <div className="flex items-center mt-4">
                             <input 
                                 type="checkbox" 
-                                id="agreedToCommercialTerms" 
-                                name="agreedToCommercialTerms" 
-                                checked={formData.agreedToCommercialTerms} 
+                                id="agreed_to_commercial_terms" 
+                                name="agreed_to_commercial_terms" 
+                                checked={formData.agreed_to_commercial_terms as boolean}  
                                 onChange={handleChange} 
                                 className="h-4 w-4 border-gray-300 rounded focus:ring-ht-gray" 
                             />
-                            <label htmlFor="agreedToCommercialTerms" className="ml-2 block text-sm text-gray-900">
+                            <label htmlFor="agreed_to_commercial_terms" className="ml-2 block text-sm text-gray-900">
                                 I confirm that I have read, understood, and agree to the commercial terms outlined above.
                             </label>
                         </div>
@@ -119,7 +121,7 @@ const CommercialTermsForm: React.FC<CommercialTermsFormProps> = ({ onCloseForm, 
                     onClick={() => {
                         setFormStep(3);
                     }}
-                    disabled={!formData.agreedToCommercialTerms}
+                    disabled={!formData.agreed_to_commercial_terms}
                     className="text-sm bg-ht-blue text-white px-4 py-2 rounded-md hover:bg-ht-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue-dark disabled:bg-ht-gray disabled:cursor-not-allowed"
                 >
                     Save and Proceed

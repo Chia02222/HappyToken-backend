@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.up = up;
 exports.down = down;
-const kysely_1 = require("kysely");
 async function up(db) {
     await db.schema
         .createTable('investigation_logs')
@@ -12,7 +11,7 @@ async function up(db) {
         .addColumn('note', 'text')
         .addColumn('from_status', 'varchar(50)')
         .addColumn('to_status', 'varchar(50)')
-        .addColumn('created_at', 'timestamp', (col) => col.notNull().defaultTo((0, kysely_1.sql) `now()`))
+        .addColumn('created_at', 'timestamp', (col) => col.notNull().defaultTo('CURRENT_TIMESTAMP'))
         .execute();
 }
 async function down(db) {

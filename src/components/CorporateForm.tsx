@@ -3,85 +3,14 @@ import React from 'react';
 import InputField from './common/InputField';
 import SelectField from './common/SelectField';
 import FormSection from './common/FormSection';
-
-interface Subsidiary {
-    id: number;
-    companyName: string;
-    regNumber: string;
-    officeAddress1: string;
-    officeAddress2: string;
-    postcode: string;
-    city: string;
-    state: string;
-    country: string;
-    website: string;
-    accountNote: string;
-}
-
-interface Contact {
-    id: number;
-    salutation: string;
-    firstName: string;
-    lastName: string;
-    contactNumber: string;
-    email: string;
-    companyRole: string;
-    systemRole: string;
-}
-
-interface SecondaryApprover {
-    useExistingContact: boolean;
-    selectedContactId: string;
-    signatoryName: string;
-    companyRole: string;
-    systemRole: string;
-    email: string;
-    contactNumber: string;
-}
-
-interface CorporateFormData {
-    companyName: string;
-    regNumber: string;
-    officeAddress1: string;
-    officeAddress2: string;
-    postcode: string;
-    city: string;
-    state: string;
-    country: string;
-    website: string;
-    accountNote: string;
-    subsidiaries: Subsidiary[];
-    contacts: Contact[];
-    billingSameAsOfficial: boolean;
-    billingAddress1: string;
-    billingAddress2: string;
-    billingPostcode: string;
-    billingCity: string;
-    billingState: string;
-    billingCountry: string;
-    companyTIN: string;
-    sstNumber: string;
-    agreementFrom: string;
-    agreementTo: string;
-    creditLimit: string;
-    creditTerms: string;
-    transactionFee: string;
-    latePaymentInterest: string;
-    whiteLabelingFee: string;
-    customFeatureFee: string;
-    agreedToGenericTerms: boolean;
-    agreedToCommercialTerms: boolean;
-    firstApprovalConfirmation: boolean;
-    secondaryApprover: SecondaryApprover;
-    [key: string]: any;
-}
+import { CorporateDetails, Contact, Subsidiary } from '../types';
 
 interface CorporateFormProps {
     onCloseForm: () => void;
     setFormStep: (step: number) => void;
-    formData: CorporateFormData;
-    setFormData: (dataUpdater: (prevData: CorporateFormData) => CorporateFormData) => void;
-    onSaveCorporate: (formData: CorporateFormData, action: 'submit' | 'send' | 'save') => void;
+    formData: CorporateDetails;
+    setFormData: (dataUpdater: (prevData: CorporateDetails) => CorporateDetails) => void;
+    onSaveCorporate: (formData: CorporateDetails, action: 'submit' | 'send' | 'save') => void;
 }
 
 const malaysianStates = [
@@ -117,16 +46,16 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                 ...prev.subsidiaries,
                 {
                     id: Date.now(),
-                    companyName: '',
-                    regNumber: '',
-                    officeAddress1: '',
-                    officeAddress2: '',
+                    company_name: '',
+                    reg_number: '',
+                    office_address1: '',
+                    office_address2: '',
                     postcode: '',
                     city: '',
                     state: '',
                     country: 'Malaysia',
                     website: '',
-                    accountNote: '',
+                    account_note: '',
                 },
             ],
         }));
@@ -134,8 +63,10 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
 
     const removeSubsidiary = (index: number) => {
         setFormData(prev => {
+            const subsidiaryToRemove = prev.subsidiaries[index];
             const newSubsidiaries = prev.subsidiaries.filter((_: Subsidiary, i: number) => i !== index);
-            return { ...prev, subsidiaries: newSubsidiaries };
+            const newSubsidiaryIdsToDelete = subsidiaryToRemove.id ? [...(prev.subsidiaryIdsToDelete || []), subsidiaryToRemove.id] : prev.subsidiaryIdsToDelete;
+            return { ...prev, subsidiaries: newSubsidiaries, subsidiaryIdsToDelete: newSubsidiaryIdsToDelete };
         });
     };
 
@@ -157,12 +88,12 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                 {
                     id: Date.now(),
                     salutation: 'Mr',
-                    firstName: '',
-                    lastName: '',
-                    contactNumber: '',
+                    first_name: '',
+                    last_name: '',
+                    contact_number: '',
                     email: '',
-                    companyRole: '',
-                    systemRole: '',
+                    company_role: '',
+                    system_role: '',
                 },
             ],
         }));
@@ -171,8 +102,10 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
     const removeContact = (index: number) => {
         if (formData.contacts.length > 1) {
              setFormData(prev => {
+                const contactToRemove = prev.contacts[index];
                 const newContacts = prev.contacts.filter((_: Contact, i: number) => i !== index);
-                return { ...prev, contacts: newContacts };
+                const newContactIdsToDelete = contactToRemove.id ? [...(prev.contactIdsToDelete || []), contactToRemove.id] : prev.contactIdsToDelete;
+                return { ...prev, contacts: newContacts, contactIdsToDelete: newContactIdsToDelete };
             });
         }
     };
@@ -181,10 +114,10 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
         <div className="space-y-6">
             <FormSection title="Company Information & Official Address">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                    <InputField id="companyName" label="Company Name" name="companyName" value={formData.companyName} onChange={handleChange} required />
-                    <InputField id="regNumber" label="Official Registration Number" name="regNumber" value={formData.regNumber} onChange={handleChange} required />
-                    <InputField id="officeAddress1" label="Office Address 1" name="officeAddress1" value={formData.officeAddress1} onChange={handleChange} required />
-                    <InputField id="officeAddress2" label="Office Address 2" name="officeAddress2" value={formData.officeAddress2} onChange={handleChange} />
+                    <InputField id="company_name" label="Company Name" name="company_name" value={formData.company_name} onChange={handleChange} required />
+                    <InputField id="reg_number" label="Official Registration Number" name="reg_number" value={formData.reg_number} onChange={handleChange} required />
+                    <InputField id="office_address1" label="Office Address 1" name="office_address1" value={formData.office_address1} onChange={handleChange} required />
+                    <InputField id="office_address2" label="Office Address 2" name="office_address2" value={formData.office_address2} onChange={handleChange} />
                     <InputField id="postcode" label="Postcode" name="postcode" value={formData.postcode} onChange={handleChange} required />
                     <InputField id="city" label="City" name="city" value={formData.city} onChange={handleChange} required />
                     <SelectField id="state" label="State" name="state" value={formData.state} onChange={handleChange} required>
@@ -199,8 +132,8 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                         <InputField id="website" label="Website" name="website" value={formData.website as string} onChange={handleChange} />
                     </div>
                     <div className="md:col-span-2">
-                         <label htmlFor="accountNote" className="block text-xs font-medium text-gray-700 mb-1">Account Note</label>
-                        <textarea id="accountNote" name="accountNote" value={formData.accountNote as string} onChange={handleChange} rows={3} className="w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm focus:ring-ht-blue focus:border-ht-blue bg-white dark:bg-white"></textarea>
+                         <label htmlFor="account_note" className="block text-xs font-medium text-gray-700 mb-1">Account Note</label>
+                        <textarea id="account_note" name="account_note" value={formData.account_note as string} onChange={handleChange} rows={3} className="w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm focus:ring-ht-blue focus:border-ht-blue bg-white dark:bg-white"></textarea>
                     </div>
                 </div>
                 <div className="md:col-span-2 mt-6 pt-6 border-t">
@@ -212,10 +145,10 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                                 <button type="button" onClick={() => removeSubsidiary(index)} className="text-sm text-red-600 hover:text-red-800 font-semibold">Remove</button>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                                <InputField id={`sub-companyName-${sub.id}`} label="Company Name" name="companyName" value={sub.companyName} onChange={(e) => handleSubsidiaryChange(index, e)} required />
-                                <InputField id={`sub-regNumber-${sub.id}`} label="Official Registration Number" name="regNumber" value={sub.regNumber} onChange={(e) => handleSubsidiaryChange(index, e)} required />
-                                <InputField id={`sub-officeAddress1-${sub.id}`} label="Office Address 1" name="officeAddress1" value={sub.officeAddress1} onChange={(e) => handleSubsidiaryChange(index, e)} required />
-                                <InputField id={`sub-officeAddress2-${sub.id}`} label="Office Address 2" name="officeAddress2" value={sub.officeAddress2} onChange={(e) => handleSubsidiaryChange(index, e)} />
+                                <InputField id={`sub-company_name-${sub.id}`} label="Company Name" name="company_name" value={sub.company_name} onChange={(e) => handleSubsidiaryChange(index, e)} required />
+                                <InputField id={`sub-reg_number-${sub.id}`} label="Official Registration Number" name="reg_number" value={sub.reg_number} onChange={(e) => handleSubsidiaryChange(index, e)} required />
+                                <InputField id={`sub-office_address1-${sub.id}`} label="Office Address 1" name="office_address1" value={sub.office_address1} onChange={(e) => handleSubsidiaryChange(index, e)} required />
+                                <InputField id={`sub-office_address2-${sub.id}`} label="Office Address 2" name="office_address2" value={sub.office_address2} onChange={(e) => handleSubsidiaryChange(index, e)} />
                                 <InputField id={`sub-postcode-${sub.id}`} label="Postcode" name="postcode" value={sub.postcode} onChange={(e) => handleSubsidiaryChange(index, e)} required />
                                 <InputField id={`sub-city-${sub.id}`} label="City" name="city" value={sub.city} onChange={(e) => handleSubsidiaryChange(index, e)} required />
                                 <SelectField id={`sub-state-${sub.id}`} label="State" name="state" value={sub.state} onChange={(e) => handleSubsidiaryChange(index, e)} required>
@@ -230,8 +163,8 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                                     <InputField id={`sub-website-${sub.id}`} label="Website" name="website" value={sub.website} onChange={(e) => handleSubsidiaryChange(index, e)} />
                                 </div>
                                 <div className="md:col-span-2">
-                                    <label htmlFor={`sub-accountNote-${sub.id}`} className="block text-xs font-medium text-gray-700 mb-1">Account Note</label>
-                                    <textarea id={`sub-accountNote-${sub.id}`} name="accountNote" value={sub.accountNote} onChange={(e) => handleSubsidiaryChange(index, e)} rows={3} className="w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm focus:ring-ht-blue focus:border-ht-blue bg-white dark:bg-white"></textarea>
+                                    <label htmlFor={`sub-account_note-${sub.id}`} className="block text-xs font-medium text-gray-700 mb-1">Account Note</label>
+                                    <textarea id={`sub-account_note-${sub.id}`} name="account_note" value={sub.account_note} onChange={(e) => handleSubsidiaryChange(index, e)} rows={3} className="w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm focus:ring-ht-blue focus:border-ht-blue bg-white dark:bg-white"></textarea>
                                 </div>
                             </div>
                         </div>
@@ -260,20 +193,20 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                                 <option>Ms</option>
                             </SelectField>
                             <div></div>
-                            <InputField id={`contact-firstName-${contact.id}`} label="First Name" name="firstName" value={contact.firstName} onChange={e => handleContactChange(index, e)} required />
-                            <InputField id={`contact-lastName-${contact.id}`} label="Last Name" name="lastName" value={contact.lastName} onChange={e => handleContactChange(index, e)} required />
+                            <InputField id={`contact-first_name-${contact.id}`} label="First Name" name="first_name" value={contact.first_name} onChange={e => handleContactChange(index, e)} required />
+                            <InputField id={`contact-last_name-${contact.id}`} label="Last Name" name="last_name" value={contact.last_name} onChange={e => handleContactChange(index, e)} required />
                              <div>
                                 <label className="block text-xs font-medium text-gray-700 mb-1">*Contact Number</label>
                                 <div className="flex">
                                     <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">+60</span>
-                                    <input type="text" id={`contact-number-${contact.id}`} name="contactNumber" value={contact.contactNumber} onChange={e => handleContactChange(index, e)} className="flex-1 block w-full rounded-none rounded-r-md border border-gray-300 p-2 text-sm focus:ring-ht-blue focus:border-ht-blue bg-white dark:bg-white" />
+                                    <input type="text" id={`contact-number-${contact.id}`} name="contact_number" value={contact.contact_number} onChange={e => handleContactChange(index, e)} className="flex-1 block w-full rounded-none rounded-r-md border border-gray-300 p-2 text-sm focus:ring-ht-blue focus:border-ht-blue bg-white dark:bg-white" />
                                 </div>
                             </div>
                             <InputField id={`contact-email-${contact.id}`} label="Email Address" name="email" value={contact.email} onChange={e => handleContactChange(index, e)} required type="email" />
-                            <SelectField id={`contact-companyRole-${contact.id}`} label="Company Role" name="companyRole" value={contact.companyRole} onChange={e => handleContactChange(index, e)} required>
+                            <SelectField id={`contact-company_role-${contact.id}`} label="Company Role" name="company_role" value={contact.company_role} onChange={e => handleContactChange(index, e)} required>
                                 <option>Select Role</option>
                             </SelectField>
-                             <SelectField id={`contact-systemRole-${contact.id}`} label="System Role" name="systemRole" value={contact.systemRole} onChange={e => handleContactChange(index, e)} required>
+                             <SelectField id={`contact-system_role-${contact.id}`} label="System Role" name="system_role" value={contact.system_role} onChange={e => handleContactChange(index, e)} required>
                                 <option>Select Role</option>
                             </SelectField>
                         </div>
@@ -288,25 +221,25 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
             
             <FormSection title="Billing Address">
                 <div className="flex items-center mb-6">
-                    <input type="checkbox" id="billingSameAsOfficial" name="billingSameAsOfficial" checked={formData.billingSameAsOfficial as boolean} onChange={handleChange} className="h-4 w-4 border-gray-300 rounded focus:ring-ht-gray" />
-                    <label htmlFor="billingSameAsOfficial" className="ml-2 block text-sm text-gray-900">Same as Official Address</label>
+                    <input type="checkbox" id="billing_same_as_official" name="billing_same_as_official" checked={formData.billing_same_as_official as boolean} onChange={handleChange} className="h-4 w-4 border-gray-300 rounded focus:ring-ht-gray" />
+                    <label htmlFor="billing_same_as_official" className="ml-2 block text-sm text-gray-900">Same as Official Address</label>
                 </div>
-                {!(formData.billingSameAsOfficial as boolean) && (
+                {!(formData.billing_same_as_official as boolean) && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                        <InputField id="billingAddress1" label="Office Address 1" name="billingAddress1" value={formData.billingAddress1 as string} onChange={handleChange} required />
-                        <InputField id="billingAddress2" label="Office Address 2" name="billingAddress2" value={formData.billingAddress2 as string} onChange={handleChange} />
-                        <InputField id="billingPostcode" label="Postcode" name="billingPostcode" value={formData.billingPostcode as string} onChange={handleChange} required />
-                        <InputField id="billingCity" label="City" name="billingCity" value={formData.billingCity as string} onChange={handleChange} required />
-                        <InputField id="billingState" label="State" name="billingState" value={formData.billingState as string} onChange={handleChange} required />
-                        <InputField id="billingCountry" label="Country" name="billingCountry" value={formData.billingCountry as string} onChange={handleChange} required />
+                        <InputField id="billing_address1" label="Office Address 1" name="billing_address1" value={formData.billing_address1 as string} onChange={handleChange} required />
+                        <InputField id="billing_address2" label="Office Address 2" name="billing_address2" value={formData.billing_address2 as string} onChange={handleChange} />
+                        <InputField id="billing_postcode" label="Postcode" name="billing_postcode" value={formData.billing_postcode as string} onChange={handleChange} required />
+                        <InputField id="billing_city" label="City" name="billing_city" value={formData.billing_city as string} onChange={handleChange} required />
+                        <InputField id="billing_state" label="State" name="billing_state" value={formData.billing_state as string} onChange={handleChange} required />
+                        <InputField id="billing_country" label="Country" name="billing_country" value={formData.billing_country as string} onChange={handleChange} required />
                     </div>
                 )}
             </FormSection>
             
             <FormSection title="Tax Information">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                    <InputField id="companyTIN" label="Company TIN" name="companyTIN" value={formData.companyTIN as string} onChange={handleChange} required />
-                    <InputField id="sstNumber" label="SST Number" name="sstNumber" value={formData.sstNumber as string} onChange={handleChange} />
+                    <InputField id="company_tin" label="Company TIN" name="company_tin" value={formData.company_tin as string} onChange={handleChange} required />
+                    <InputField id="sst_number" label="SST Number" name="sst_number" value={formData.sst_number as string} onChange={handleChange} />
                 </div>
             </FormSection>
 
@@ -325,8 +258,8 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                     <p>The Company shall provide the Services described in the a relevant Commercial Terms Schedule or online order form. The Company reserves the right to improve, modify, or discontinue any part of the Services with reasonable notice.</p>
                 </div>
                  <div className="flex items-center mt-4">
-                    <input type="checkbox" id="agreedToGenericTerms" name="agreedToGenericTerms" checked={formData.agreedToGenericTerms as boolean} onChange={handleChange} className="h-4 w-4 border-gray-300 rounded focus:ring-ht-gray" />
-                    <label htmlFor="agreedToGenericTerms" className="ml-2 block text-sm text-gray-900">I have read and agree to the Generic Terms and Conditions.</label>
+                    <input type="checkbox" id="agreed_to_generic_terms" name="agreed_to_generic_terms" checked={formData.agreed_to_generic_terms as boolean} onChange={handleChange} className="h-4 w-4 border-gray-300 rounded focus:ring-ht-gray" />
+                    <label htmlFor="agreed_to_generic_terms" className="ml-2 block text-sm text-gray-900">I have read and agree to the Generic Terms and Conditions.</label>
                 </div>
             </FormSection>
 
@@ -351,7 +284,7 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                         // In a real app, form data would be validated here.
                         setFormStep(2);
                     }}
-                    disabled={!formData.agreedToGenericTerms}
+                    disabled={!formData.agreed_to_generic_terms}
                     className="text-sm bg-ht-blue text-white px-4 py-2 rounded-md hover:bg-ht-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue-dark disabled:bg-ht-gray disabled:cursor-not-allowed"
                 >
                     Save and Proceed

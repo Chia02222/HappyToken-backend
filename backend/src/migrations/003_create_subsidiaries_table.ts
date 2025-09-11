@@ -15,8 +15,8 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('country', 'varchar(100)', (col) => col.notNull().defaultTo('Malaysia'))
     .addColumn('website', 'varchar(255)')
     .addColumn('account_note', 'text')
-    .addColumn('created_at', 'timestamp', (col) => col.notNull().defaultTo(sql`now()`))
-    .addColumn('updated_at', 'timestamp', (col) => col.notNull().defaultTo(sql`now()`))
+    .addColumn('created_at', 'timestamp', (col) => col.notNull().defaultTo('CURRENT_TIMESTAMP'))
+    .addColumn('updated_at', 'timestamp', (col) => col.notNull().defaultTo('CURRENT_TIMESTAMP'))
     .execute();
 }
 

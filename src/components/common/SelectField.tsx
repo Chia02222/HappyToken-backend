@@ -5,7 +5,7 @@ interface SelectFieldProps {
     label: string;
     name: string;
     id: string;
-    value: string | number;
+    value: string | number | null;
     onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
     required?: boolean;
     children: React.ReactNode;

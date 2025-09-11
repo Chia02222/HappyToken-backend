@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { CorporateTable, ContactTable, SubsidiaryTable, InvestigationLogTable } from '../database/types';
+import { CorporateTable, ContactTable, SubsidiaryTable, InvestigationLogTable, CorporateStatus } from '../database/types';
 import { sql } from 'kysely';
+import { UpdateCorporateDto, UpdateContactDto, UpdateSubsidiaryDto, CreateContactDto, CreateSubsidiaryDto } from './dto/update-corporate.dto';
 
 @Injectable()
 export class CorporateService {
@@ -87,6 +88,7 @@ export class CorporateService {
         agreed_to_generic_terms: corporateData.agreed_to_generic_terms,
         agreed_to_commercial_terms: corporateData.agreed_to_commercial_terms,
         first_approval_confirmation: corporateData.first_approval_confirmation,
+        second_approval_confirmation: corporateData.second_approval_confirmation,
         created_at: sql`now()`,
         updated_at: sql`now()`,
       })
@@ -97,18 +99,66 @@ export class CorporateService {
   }
 
   // Update corporate
-  async update(id: number, updateData: Partial<Omit<CorporateTable, 'id' | 'created_at'>>) {
-    const updated = await this.db
+  async update(id: number, updateData: UpdateCorporateDto) {
+    const { contacts, subsidiaries, contactIdsToDelete, subsidiaryIdsToDelete, ...corporateUpdateData } = updateData;
+
+    // Update main corporate table
+    const updatedCorporate = await this.db
       .updateTable('corporates')
       .set({
-        ...updateData,
+        ...corporateUpdateData,
         updated_at: sql`now()`,
       } as any)
       .where('id', '=', id)
       .returningAll()
       .executeTakeFirst();
 
-    return updated!;
+    if (!updatedCorporate) {
+      return null;
+    }
+
+    // Handle contacts
+    if (contacts) {
+      for (const contact of contacts) {
+        if (contact.id) {
+          // Update existing contact
+          await this.updateContact(contact.id, contact);
+        } else {
+          // Add new contact
+          await this.addContact(id, contact as CreateContactDto);
+        }
+      }
+    }
+
+    // Handle contact deletions
+    if (contactIdsToDelete) {
+      for (const contactId of contactIdsToDelete) {
+        await this.deleteContact(contactId);
+      }
+    }
+
+    // Handle subsidiaries
+    if (subsidiaries) {
+      for (const subsidiary of subsidiaries) {
+        if (subsidiary.id) {
+          // Update existing subsidiary
+          await this.updateSubsidiary(subsidiary.id, subsidiary);
+        } else {
+          // Add new subsidiary
+          await this.addSubsidiary(id, subsidiary as CreateSubsidiaryDto);
+        }
+      }
+    }
+
+    // Handle subsidiary deletions
+    if (subsidiaryIdsToDelete) {
+      for (const subsidiaryId of subsidiaryIdsToDelete) {
+        await this.deleteSubsidiary(subsidiaryId);
+      }
+    }
+
+    // Return the updated corporate with its related data
+    return this.findById(id);
   }
 
   // Delete corporate
@@ -118,7 +168,7 @@ export class CorporateService {
   }
 
   // Add contact to corporate
-  async addContact(corporateId: number, contactData: Omit<ContactTable, 'id' | 'corporate_id' | 'created_at' | 'updated_at'>) {
+  async addContact(corporateId: number, contactData: CreateContactDto) {
     const inserted = await this.db
       .insertInto('contacts')
       .values({
@@ -139,21 +189,21 @@ export class CorporateService {
   }
 
   // Add subsidiary to corporate
-  async addSubsidiary(corporateId: number, subsidiaryData: Omit<SubsidiaryTable, 'id' | 'corporate_id' | 'created_at' | 'updated_at'>) {
+  async addSubsidiary(corporateId: number, subsidiaryData: CreateSubsidiaryDto) {
     const inserted = await this.db
       .insertInto('subsidiaries')
       .values({
         corporate_id: corporateId,
         company_name: subsidiaryData.company_name,
         reg_number: subsidiaryData.reg_number,
-        office_address1: subsidiaryData.office_address1,
-        office_address2: subsidiaryData.office_address2,
+        office_address1: subsidiaryData.office_address1 ?? '',
+        office_address2: subsidiaryData.office_address2 ?? null,
         postcode: subsidiaryData.postcode,
         city: subsidiaryData.city,
         state: subsidiaryData.state,
         country: subsidiaryData.country,
-        website: subsidiaryData.website,
-        account_note: subsidiaryData.account_note,
+        website: subsidiaryData.website ?? '',
+        account_note: subsidiaryData.account_note ?? '',
         created_at: sql`now()`,
         updated_at: sql`now()`,
       })
@@ -179,6 +229,46 @@ export class CorporateService {
     return inserted!;
   }
 
+  // Update contact
+  async updateContact(id: number, contactData: UpdateContactDto) {
+    const updated = await this.db
+      .updateTable('contacts')
+      .set({
+        ...contactData,
+        updated_at: sql`now()`,
+      } as any)
+      .where('id', '=', id)
+      .returningAll()
+      .executeTakeFirst();
+    return updated!;
+  }
+
+  // Delete contact
+  async deleteContact(id: number) {
+    await this.db.deleteFrom('contacts').where('id', '=', id).execute();
+    return { success: true };
+  }
+
+  // Update subsidiary
+  async updateSubsidiary(id: number, subsidiaryData: UpdateSubsidiaryDto) {
+    const updated = await this.db
+      .updateTable('subsidiaries')
+      .set({
+        ...subsidiaryData,
+        updated_at: sql`now()`,
+      } as any)
+      .where('id', '=', id)
+      .returningAll()
+      .executeTakeFirst();
+    return updated!;
+  }
+
+  // Delete subsidiary
+  async deleteSubsidiary(id: number) {
+    await this.db.deleteFrom('subsidiaries').where('id', '=', id).execute();
+    return { success: true };
+  }
+
   // Update corporate status
   async updateStatus(id: number, status: string, note?: string) {
     const corporate = await this.findById(id);
@@ -197,6 +287,6 @@ export class CorporateService {
     }
 
     // Update status
-    return await this.update(id, { status: status as any });
+    return await this.update(id, { status: status as CorporateStatus });
   }
 }

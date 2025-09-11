@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CorporateController = void 0;
 const common_1 = require("@nestjs/common");
 const corporate_service_1 = require("./corporate.service");
+const update_corporate_dto_1 = require("./dto/update-corporate.dto");
 let CorporateController = class CorporateController {
     corporateService;
     constructor(corporateService) {
@@ -74,7 +75,7 @@ __decorate([
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:paramtypes", [Number, update_corporate_dto_1.UpdateCorporateDto]),
     __metadata("design:returntype", Promise)
 ], CorporateController.prototype, "update", null);
 __decorate([

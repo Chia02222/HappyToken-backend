@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { CorporateService } from '../corporate/corporate.service';
 import { CorporateStatus } from '../database/types';
+import { DatabaseService } from '../database/database.service';
 
 @Injectable()
 export class SeedService {
-  constructor(private readonly corporateService: CorporateService) {}
+  constructor(
+    private readonly corporateService: CorporateService,
+    private readonly dbService: DatabaseService,
+  ) {}
 
   async seedDatabase() {
     console.log('🌱 Starting database seeding...');
@@ -16,7 +20,7 @@ export class SeedService {
         reg_number: '202201012345',
         status: 'Approved' as CorporateStatus,
         office_address1: 'Suite 30.01, Level 30, The Gardens North Tower',
-        office_address2: '',
+        office_address2: null,
         postcode: '59200',
         city: 'Kuala Lumpur',
         state: 'W.P. Kuala Lumpur',
@@ -32,8 +36,8 @@ export class SeedService {
         billing_country: 'Malaysia',
         company_tin: '',
         sst_number: '',
-        agreement_from: '',
-        agreement_to: '',
+        agreement_from: null,
+        agreement_to: null,
         credit_limit: '100000.00',
         credit_terms: '45',
         transaction_fee: '1.8',
@@ -43,6 +47,7 @@ export class SeedService {
         agreed_to_generic_terms: false,
         agreed_to_commercial_terms: false,
         first_approval_confirmation: false,
+        second_approval_confirmation: false,
       },
       {
         company_name: 'Synergy Innovations',
@@ -76,13 +81,14 @@ export class SeedService {
         agreed_to_generic_terms: false,
         agreed_to_commercial_terms: false,
         first_approval_confirmation: false,
+        second_approval_confirmation: false,
       },
       {
         company_name: 'Quantum Solutions',
         reg_number: '202105098765',
         status: 'Pending 1st Approval' as CorporateStatus,
         office_address1: 'Block 3730, Persiaran APEC',
-        office_address2: '',
+        office_address2: null,
         postcode: '63000',
         city: 'Cyberjaya',
         state: 'Selangor',
@@ -98,8 +104,8 @@ export class SeedService {
         billing_country: 'Malaysia',
         company_tin: '',
         sst_number: '',
-        agreement_from: '',
-        agreement_to: '',
+        agreement_from: null,
+        agreement_to: null,
         credit_limit: '75000.00',
         credit_terms: '30',
         transaction_fee: '3.0',
@@ -109,12 +115,11 @@ export class SeedService {
         agreed_to_generic_terms: false,
         agreed_to_commercial_terms: false,
         first_approval_confirmation: false,
+        second_approval_confirmation: false,
       },
     ];
 
     try {
-      // Clear existing data (optional - remove if you want to keep existing data)
-      console.log('🧹 Clearing existing data...');
       
       // Seed corporates
       console.log('📊 Seeding corporates...');
@@ -133,6 +138,41 @@ export class SeedService {
             company_role: 'CEO',
             system_role: 'Administrator',
           });
+
+          // Add a second contact for Global Tech Inc.
+          if (corporate.company_name === 'Global Tech Inc.') {
+            await this.corporateService.addContact(corporate.id, {
+              salutation: 'Mr',
+              first_name: 'John',
+              last_name: 'Smith',
+              contact_number: '999888777',
+              email: 'john.s@example.com',
+              company_role: 'CFO',
+              system_role: 'Finance',
+            });
+
+            // Add a sample subsidiary for Global Tech Inc.
+            await this.corporateService.addSubsidiary(corporate.id, {
+              company_name: 'Global Tech Solutions',
+              reg_number: '202301010001',
+              office_address1: '123 Tech Park',
+              office_address2: null,
+              postcode: '12345',
+              city: 'Cyberjaya',
+              state: 'Selangor',
+              country: 'Malaysia',
+              website: 'https://globaltechsolutions.com',
+              account_note: 'Subsidiary for software development',
+            });
+
+            // Add a sample investigation log for Global Tech Inc.
+            await this.corporateService.addInvestigationLog(corporate.id, {
+              timestamp: new Date().toISOString(),
+              note: 'Initial review completed. No issues found.',
+              from_status: 'New',
+              to_status: 'Approved',
+            });
+          }
         }
       }
 

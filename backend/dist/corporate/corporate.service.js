@@ -89,6 +89,7 @@ let CorporateService = class CorporateService {
             agreed_to_generic_terms: corporateData.agreed_to_generic_terms,
             agreed_to_commercial_terms: corporateData.agreed_to_commercial_terms,
             first_approval_confirmation: corporateData.first_approval_confirmation,
+            second_approval_confirmation: corporateData.second_approval_confirmation,
             created_at: (0, kysely_1.sql) `now()`,
             updated_at: (0, kysely_1.sql) `now()`,
         })
@@ -97,16 +98,50 @@ let CorporateService = class CorporateService {
         return inserted;
     }
     async update(id, updateData) {
-        const updated = await this.db
+        const { contacts, subsidiaries, contactIdsToDelete, subsidiaryIdsToDelete, ...corporateUpdateData } = updateData;
+        const updatedCorporate = await this.db
             .updateTable('corporates')
             .set({
-            ...updateData,
+            ...corporateUpdateData,
             updated_at: (0, kysely_1.sql) `now()`,
         })
             .where('id', '=', id)
             .returningAll()
             .executeTakeFirst();
-        return updated;
+        if (!updatedCorporate) {
+            return null;
+        }
+        if (contacts) {
+            for (const contact of contacts) {
+                if (contact.id) {
+                    await this.updateContact(contact.id, contact);
+                }
+                else {
+                    await this.addContact(id, contact);
+                }
+            }
+        }
+        if (contactIdsToDelete) {
+            for (const contactId of contactIdsToDelete) {
+                await this.deleteContact(contactId);
+            }
+        }
+        if (subsidiaries) {
+            for (const subsidiary of subsidiaries) {
+                if (subsidiary.id) {
+                    await this.updateSubsidiary(subsidiary.id, subsidiary);
+                }
+                else {
+                    await this.addSubsidiary(id, subsidiary);
+                }
+            }
+        }
+        if (subsidiaryIdsToDelete) {
+            for (const subsidiaryId of subsidiaryIdsToDelete) {
+                await this.deleteSubsidiary(subsidiaryId);
+            }
+        }
+        return this.findById(id);
     }
     async delete(id) {
         await this.db.deleteFrom('corporates').where('id', '=', id).execute();
@@ -138,14 +173,14 @@ let CorporateService = class CorporateService {
             corporate_id: corporateId,
             company_name: subsidiaryData.company_name,
             reg_number: subsidiaryData.reg_number,
-            office_address1: subsidiaryData.office_address1,
-            office_address2: subsidiaryData.office_address2,
+            office_address1: subsidiaryData.office_address1 ?? '',
+            office_address2: subsidiaryData.office_address2 ?? null,
             postcode: subsidiaryData.postcode,
             city: subsidiaryData.city,
             state: subsidiaryData.state,
             country: subsidiaryData.country,
-            website: subsidiaryData.website,
-            account_note: subsidiaryData.account_note,
+            website: subsidiaryData.website ?? '',
+            account_note: subsidiaryData.account_note ?? '',
             created_at: (0, kysely_1.sql) `now()`,
             updated_at: (0, kysely_1.sql) `now()`,
         })
@@ -167,6 +202,38 @@ let CorporateService = class CorporateService {
             .returningAll()
             .executeTakeFirst();
         return inserted;
+    }
+    async updateContact(id, contactData) {
+        const updated = await this.db
+            .updateTable('contacts')
+            .set({
+            ...contactData,
+            updated_at: (0, kysely_1.sql) `now()`,
+        })
+            .where('id', '=', id)
+            .returningAll()
+            .executeTakeFirst();
+        return updated;
+    }
+    async deleteContact(id) {
+        await this.db.deleteFrom('contacts').where('id', '=', id).execute();
+        return { success: true };
+    }
+    async updateSubsidiary(id, subsidiaryData) {
+        const updated = await this.db
+            .updateTable('subsidiaries')
+            .set({
+            ...subsidiaryData,
+            updated_at: (0, kysely_1.sql) `now()`,
+        })
+            .where('id', '=', id)
+            .returningAll()
+            .executeTakeFirst();
+        return updated;
+    }
+    async deleteSubsidiary(id) {
+        await this.db.deleteFrom('subsidiaries').where('id', '=', id).execute();
+        return { success: true };
     }
     async updateStatus(id, status, note) {
         const corporate = await this.findById(id);
