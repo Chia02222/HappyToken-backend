@@ -1,0 +1,5 @@
+{
+  "name": "Corporate account system",
+  "description": "A comprehensive admin dashboard with data visualization and a detailed corporate information form, built with React and Tailwind CSS.",
+  "requestFramePermissions": []
+}
