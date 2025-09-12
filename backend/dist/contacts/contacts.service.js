@@ -21,54 +21,37 @@ let ContactsService = class ContactsService {
     get db() {
         return this.dbService.getDb();
     }
-    async findAll(params = {}) {
-        const { corporate_id, limit = 50, offset = 0 } = params;
-        let q = this.db.selectFrom('contacts').selectAll().orderBy('created_at', 'desc');
-        if (corporate_id) {
-            q = q.where('corporate_id', '=', corporate_id);
-        }
-        return await q.limit(limit).offset(offset).execute();
-    }
-    async findById(id) {
-        const row = await this.db.selectFrom('contacts').selectAll().where('id', '=', id).executeTakeFirst();
-        if (!row)
-            throw new common_1.NotFoundException('Contact not found');
-        return row;
-    }
-    async create(data) {
+    async addContact(contactData) {
+        console.log('addContact called with:', contactData);
+        const { id: _ignoreId, ...insertData } = contactData;
         const inserted = await this.db
             .insertInto('contacts')
             .values({
-            corporate_id: data.corporate_id,
-            salutation: data.salutation,
-            first_name: data.first_name,
-            last_name: data.last_name,
-            contact_number: data.contact_number,
-            email: data.email,
-            company_role: data.company_role,
-            system_role: data.system_role,
-            created_at: (0, kysely_1.sql) `now()`,
-            updated_at: (0, kysely_1.sql) `now()`,
+            ...insertData,
+            created_at: (0, kysely_1.sql) `date_trunc('second', now())::timestamp(0)`,
+            updated_at: (0, kysely_1.sql) `date_trunc('second', now())::timestamp(0)`,
         })
             .returningAll()
             .executeTakeFirst();
         return inserted;
     }
-    async update(id, data) {
+    async updateContact(id, contactData) {
+        console.log('updateContact called with:', { id, contactData });
+        const { id: _ignoreId, ...updateData } = contactData;
         const updated = await this.db
             .updateTable('contacts')
-            .set({ ...data, updated_at: (0, kysely_1.sql) `now()` })
+            .set({
+            ...updateData,
+            updated_at: (0, kysely_1.sql) `date_trunc('second', now())::timestamp(0)`,
+        })
             .where('id', '=', id)
             .returningAll()
             .executeTakeFirst();
-        if (!updated)
-            throw new common_1.NotFoundException('Contact not found');
         return updated;
     }
-    async delete(id) {
-        const res = await this.db.deleteFrom('contacts').where('id', '=', id).returning('id').executeTakeFirst();
-        if (!res)
-            throw new common_1.NotFoundException('Contact not found');
+    async deleteContact(id) {
+        console.log('deleteContact called with id:', id);
+        await this.db.deleteFrom('contacts').where('id', '=', id).execute();
         return { success: true };
     }
 };

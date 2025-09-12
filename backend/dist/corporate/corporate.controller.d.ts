@@ -1,6 +1,6 @@
 import { CorporateService } from './corporate.service';
-import { CorporateTable, ContactTable, SubsidiaryTable, InvestigationLogTable } from '../database/types';
-import { UpdateCorporateDto } from './dto/update-corporate.dto';
+import { CorporateTable, InvestigationLogTable } from '../database/types';
+import { UpdateCorporateDto } from './dto/corporate.dto';
 export declare class CorporateController {
     private readonly corporateService;
     constructor(corporateService: CorporateService);
@@ -8,15 +8,15 @@ export declare class CorporateController {
         id: string;
         company_name: string;
         reg_number: string;
+        status: import("../database/types").CorporateStatus;
         office_address1: string;
         office_address2: string | null;
         postcode: string;
         city: string;
         state: string;
         country: string;
-        website: string;
-        account_note: string;
-        status: import("../database/types").CorporateStatus;
+        website: string | null;
+        account_note: string | null;
         billing_same_as_official: boolean;
         billing_address1: string;
         billing_address2: string;
@@ -43,6 +43,10 @@ export declare class CorporateController {
     }[]>;
     findById(id: string): Promise<{
         contacts: {
+            id: string;
+            created_at: string;
+            updated_at: string;
+            corporate_id: string;
             salutation: string;
             first_name: string;
             last_name: string;
@@ -50,10 +54,6 @@ export declare class CorporateController {
             email: string;
             company_role: string;
             system_role: string;
-            id: string;
-            created_at: string;
-            updated_at: string;
-            corporate_id: string;
         }[];
         subsidiaries: {
             id: string;
@@ -65,8 +65,8 @@ export declare class CorporateController {
             city: string;
             state: string;
             country: string;
-            website: string;
-            account_note: string;
+            website: string | null;
+            account_note: string | null;
             created_at: string;
             updated_at: string;
             corporate_id: string;
@@ -83,15 +83,15 @@ export declare class CorporateController {
         id: string;
         company_name: string;
         reg_number: string;
+        status: import("../database/types").CorporateStatus;
         office_address1: string;
         office_address2: string | null;
         postcode: string;
         city: string;
         state: string;
         country: string;
-        website: string;
-        account_note: string;
-        status: import("../database/types").CorporateStatus;
+        website: string | null;
+        account_note: string | null;
         billing_same_as_official: boolean;
         billing_address1: string;
         billing_address2: string;
@@ -116,19 +116,19 @@ export declare class CorporateController {
         created_at: string;
         updated_at: string;
     } | null>;
-    create(corporateData: Omit<CorporateTable, 'id' | 'created_at' | 'updated_at'>): Promise<{
+    create(corporateData: Omit<CorporateTable, 'id'>): Promise<{
         id: string;
         company_name: string;
         reg_number: string;
+        status: import("../database/types").CorporateStatus;
         office_address1: string;
         office_address2: string | null;
         postcode: string;
         city: string;
         state: string;
         country: string;
-        website: string;
-        account_note: string;
-        status: import("../database/types").CorporateStatus;
+        website: string | null;
+        account_note: string | null;
         billing_same_as_official: boolean;
         billing_address1: string;
         billing_address2: string;
@@ -155,6 +155,10 @@ export declare class CorporateController {
     }>;
     update(id: string, updateData: UpdateCorporateDto): Promise<{
         contacts: {
+            id: string;
+            created_at: string;
+            updated_at: string;
+            corporate_id: string;
             salutation: string;
             first_name: string;
             last_name: string;
@@ -162,10 +166,6 @@ export declare class CorporateController {
             email: string;
             company_role: string;
             system_role: string;
-            id: string;
-            created_at: string;
-            updated_at: string;
-            corporate_id: string;
         }[];
         subsidiaries: {
             id: string;
@@ -177,8 +177,8 @@ export declare class CorporateController {
             city: string;
             state: string;
             country: string;
-            website: string;
-            account_note: string;
+            website: string | null;
+            account_note: string | null;
             created_at: string;
             updated_at: string;
             corporate_id: string;
@@ -195,15 +195,15 @@ export declare class CorporateController {
         id: string;
         company_name: string;
         reg_number: string;
+        status: import("../database/types").CorporateStatus;
         office_address1: string;
         office_address2: string | null;
         postcode: string;
         city: string;
         state: string;
         country: string;
-        website: string;
-        account_note: string;
-        status: import("../database/types").CorporateStatus;
+        website: string | null;
+        account_note: string | null;
         billing_same_as_official: boolean;
         billing_address1: string;
         billing_address2: string;
@@ -231,35 +231,6 @@ export declare class CorporateController {
     delete(id: string): Promise<{
         success: boolean;
     }>;
-    addContact(corporateId: string, contactData: Omit<ContactTable, 'id' | 'corporate_id' | 'created_at' | 'updated_at'>): Promise<{
-        salutation: string;
-        first_name: string;
-        last_name: string;
-        contact_number: string;
-        email: string;
-        company_role: string;
-        system_role: string;
-        id: string;
-        created_at: string;
-        updated_at: string;
-        corporate_id: string;
-    }>;
-    addSubsidiary(corporateId: string, subsidiaryData: Omit<SubsidiaryTable, 'id' | 'corporate_id' | 'created_at' | 'updated_at'>): Promise<{
-        id: string;
-        company_name: string;
-        reg_number: string;
-        office_address1: string;
-        office_address2: string | null;
-        postcode: string;
-        city: string;
-        state: string;
-        country: string;
-        website: string;
-        account_note: string;
-        created_at: string;
-        updated_at: string;
-        corporate_id: string;
-    }>;
     addInvestigationLog(corporateId: string, logData: Omit<InvestigationLogTable, 'id' | 'corporate_id' | 'created_at'>): Promise<{
         id: string;
         created_at: string;
@@ -274,6 +245,10 @@ export declare class CorporateController {
         note?: string;
     }): Promise<{
         contacts: {
+            id: string;
+            created_at: string;
+            updated_at: string;
+            corporate_id: string;
             salutation: string;
             first_name: string;
             last_name: string;
@@ -281,10 +256,6 @@ export declare class CorporateController {
             email: string;
             company_role: string;
             system_role: string;
-            id: string;
-            created_at: string;
-            updated_at: string;
-            corporate_id: string;
         }[];
         subsidiaries: {
             id: string;
@@ -296,8 +267,8 @@ export declare class CorporateController {
             city: string;
             state: string;
             country: string;
-            website: string;
-            account_note: string;
+            website: string | null;
+            account_note: string | null;
             created_at: string;
             updated_at: string;
             corporate_id: string;
@@ -314,15 +285,15 @@ export declare class CorporateController {
         id: string;
         company_name: string;
         reg_number: string;
+        status: import("../database/types").CorporateStatus;
         office_address1: string;
         office_address2: string | null;
         postcode: string;
         city: string;
         state: string;
         country: string;
-        website: string;
-        account_note: string;
-        status: import("../database/types").CorporateStatus;
+        website: string | null;
+        account_note: string | null;
         billing_same_as_official: boolean;
         billing_address1: string;
         billing_address2: string;

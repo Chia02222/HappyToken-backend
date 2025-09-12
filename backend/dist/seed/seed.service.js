@@ -13,12 +13,18 @@ exports.SeedService = void 0;
 const common_1 = require("@nestjs/common");
 const corporate_service_1 = require("../corporate/corporate.service");
 const database_service_1 = require("../database/database.service");
+const contacts_service_1 = require("../contacts/contacts.service");
+const subsidiaries_service_1 = require("../subsidiaries/subsidiaries.service");
 let SeedService = class SeedService {
     corporateService;
     dbService;
-    constructor(corporateService, dbService) {
+    contactsService;
+    subsidiariesService;
+    constructor(corporateService, dbService, contactsService, subsidiariesService) {
         this.corporateService = corporateService;
         this.dbService = dbService;
+        this.contactsService = contactsService;
+        this.subsidiariesService = subsidiariesService;
     }
     async seedDatabase() {
         console.log('🌱 Starting database seeding...');
@@ -132,17 +138,9 @@ let SeedService = class SeedService {
                 const corporate = await this.corporateService.create(corporateData);
                 console.log(`✅ Created corporate: ${corporate.company_name}`);
                 if (corporate.id) {
-                    await this.corporateService.addContact(corporate.id, {
-                        salutation: 'Ms',
-                        first_name: 'Jane',
-                        last_name: 'Doe',
-                        contact_number: '111222333',
-                        email: 'jane.d@example.com',
-                        company_role: 'CEO',
-                        system_role: 'Administrator',
-                    });
                     if (corporate.company_name === 'Global Tech Inc.') {
-                        await this.corporateService.addContact(corporate.id, {
+                        await this.contactsService.addContact({
+                            corporate_id: corporate.id,
                             salutation: 'Mr',
                             first_name: 'John',
                             last_name: 'Smith',
@@ -151,7 +149,8 @@ let SeedService = class SeedService {
                             company_role: 'CFO',
                             system_role: 'Finance',
                         });
-                        await this.corporateService.addSubsidiary(corporate.id, {
+                        await this.subsidiariesService.addSubsidiary({
+                            corporate_id: corporate.id,
                             company_name: 'Global Tech Solutions',
                             reg_number: '202301010001',
                             office_address1: '123 Tech Park',
@@ -184,6 +183,8 @@ exports.SeedService = SeedService;
 exports.SeedService = SeedService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [corporate_service_1.CorporateService,
-        database_service_1.DatabaseService])
+        database_service_1.DatabaseService,
+        contacts_service_1.ContactsService,
+        subsidiaries_service_1.SubsidiariesService])
 ], SeedService);
 //# sourceMappingURL=seed.service.js.map

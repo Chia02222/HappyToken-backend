@@ -3,13 +3,13 @@ import { Kysely, sql } from 'kysely';
 export async function up(db: Kysely<any>): Promise<void> {
   await db.schema
     .createTable('investigation_logs')
-    .addColumn('id', 'bigserial', (col) => col.primaryKey())
-    .addColumn('corporate_id', 'bigint', (col) => col.notNull().references('corporates.id').onDelete('cascade'))
+    .addColumn('id', 'uuid', (col) => col.primaryKey().defaultTo(sql`gen_random_uuid()`))
+    .addColumn('corporate_id', 'uuid', (col) => col.notNull().references('corporates.id').onDelete('cascade'))
     .addColumn('timestamp', 'timestamp', (col) => col.notNull())
     .addColumn('note', 'text')
     .addColumn('from_status', 'varchar(50)')
     .addColumn('to_status', 'varchar(50)')
-    .addColumn('created_at', 'timestamp', (col) => col.notNull().defaultTo('CURRENT_TIMESTAMP'))
+    .addColumn('created_at', 'timestamp(0)', (col) => col.notNull())
     .execute();
 }
 

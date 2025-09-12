@@ -153,6 +153,11 @@ const CorporatePage: React.FC<CorporatePageProps> = ({
         }
     };
 
+    const formatTimestamp = (timestamp: string) => {
+        const date = new Date(timestamp);
+        return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+    };
+
     return (
         <>
             <div className="bg-white p-6 rounded-lg shadow-sm">
@@ -203,7 +208,7 @@ const CorporatePage: React.FC<CorporatePageProps> = ({
                                         {corporate.reg_number}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {corporate.created_at}
+                                        {formatTimestamp(corporate.created_at)}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         <StatusBadge status={corporate.status} />

@@ -1,23 +1,27 @@
 import { DatabaseService } from '../database/database.service';
-import { CorporateTable, InvestigationLogTable, CorporateStatus } from '../database/types';
-import { UpdateCorporateDto, UpdateContactDto, UpdateSubsidiaryDto, CreateContactDto, CreateSubsidiaryDto } from './dto/update-corporate.dto';
+import { InvestigationLogTable, CorporateStatus } from '../database/types';
+import { CreateCorporateWithRelationsDto, UpdateCorporateDto } from './dto/corporate.dto';
+import { ContactsService } from '../contacts/contacts.service';
+import { SubsidiariesService } from '../subsidiaries/subsidiaries.service';
 export declare class CorporateService {
     private readonly dbService;
-    constructor(dbService: DatabaseService);
+    private readonly contactsService;
+    private readonly subsidiariesService;
+    constructor(dbService: DatabaseService, contactsService: ContactsService, subsidiariesService: SubsidiariesService);
     private get db();
     findAll(): Promise<{
         id: string;
         company_name: string;
         reg_number: string;
+        status: CorporateStatus;
         office_address1: string;
         office_address2: string | null;
         postcode: string;
         city: string;
         state: string;
         country: string;
-        website: string;
-        account_note: string;
-        status: CorporateStatus;
+        website: string | null;
+        account_note: string | null;
         billing_same_as_official: boolean;
         billing_address1: string;
         billing_address2: string;
@@ -44,6 +48,10 @@ export declare class CorporateService {
     }[]>;
     findById(id: string): Promise<{
         contacts: {
+            id: string;
+            created_at: string;
+            updated_at: string;
+            corporate_id: string;
             salutation: string;
             first_name: string;
             last_name: string;
@@ -51,10 +59,6 @@ export declare class CorporateService {
             email: string;
             company_role: string;
             system_role: string;
-            id: string;
-            created_at: string;
-            updated_at: string;
-            corporate_id: string;
         }[];
         subsidiaries: {
             id: string;
@@ -66,8 +70,8 @@ export declare class CorporateService {
             city: string;
             state: string;
             country: string;
-            website: string;
-            account_note: string;
+            website: string | null;
+            account_note: string | null;
             created_at: string;
             updated_at: string;
             corporate_id: string;
@@ -84,15 +88,15 @@ export declare class CorporateService {
         id: string;
         company_name: string;
         reg_number: string;
+        status: CorporateStatus;
         office_address1: string;
         office_address2: string | null;
         postcode: string;
         city: string;
         state: string;
         country: string;
-        website: string;
-        account_note: string;
-        status: CorporateStatus;
+        website: string | null;
+        account_note: string | null;
         billing_same_as_official: boolean;
         billing_address1: string;
         billing_address2: string;
@@ -117,19 +121,19 @@ export declare class CorporateService {
         created_at: string;
         updated_at: string;
     } | null>;
-    create(corporateData: Omit<CorporateTable, 'id' | 'created_at' | 'updated_at'>): Promise<{
+    create(corporateData: CreateCorporateWithRelationsDto): Promise<{
         id: string;
         company_name: string;
         reg_number: string;
+        status: CorporateStatus;
         office_address1: string;
         office_address2: string | null;
         postcode: string;
         city: string;
         state: string;
         country: string;
-        website: string;
-        account_note: string;
-        status: CorporateStatus;
+        website: string | null;
+        account_note: string | null;
         billing_same_as_official: boolean;
         billing_address1: string;
         billing_address2: string;
@@ -156,6 +160,10 @@ export declare class CorporateService {
     }>;
     update(id: string, updateData: UpdateCorporateDto): Promise<{
         contacts: {
+            id: string;
+            created_at: string;
+            updated_at: string;
+            corporate_id: string;
             salutation: string;
             first_name: string;
             last_name: string;
@@ -163,10 +171,6 @@ export declare class CorporateService {
             email: string;
             company_role: string;
             system_role: string;
-            id: string;
-            created_at: string;
-            updated_at: string;
-            corporate_id: string;
         }[];
         subsidiaries: {
             id: string;
@@ -178,8 +182,8 @@ export declare class CorporateService {
             city: string;
             state: string;
             country: string;
-            website: string;
-            account_note: string;
+            website: string | null;
+            account_note: string | null;
             created_at: string;
             updated_at: string;
             corporate_id: string;
@@ -196,15 +200,15 @@ export declare class CorporateService {
         id: string;
         company_name: string;
         reg_number: string;
+        status: CorporateStatus;
         office_address1: string;
         office_address2: string | null;
         postcode: string;
         city: string;
         state: string;
         country: string;
-        website: string;
-        account_note: string;
-        status: CorporateStatus;
+        website: string | null;
+        account_note: string | null;
         billing_same_as_official: boolean;
         billing_address1: string;
         billing_address2: string;
@@ -232,35 +236,6 @@ export declare class CorporateService {
     delete(id: string): Promise<{
         success: boolean;
     }>;
-    addContact(corporateId: string, contactData: CreateContactDto): Promise<{
-        salutation: string;
-        first_name: string;
-        last_name: string;
-        contact_number: string;
-        email: string;
-        company_role: string;
-        system_role: string;
-        id: string;
-        created_at: string;
-        updated_at: string;
-        corporate_id: string;
-    }>;
-    addSubsidiary(corporateId: string, subsidiaryData: CreateSubsidiaryDto): Promise<{
-        id: string;
-        company_name: string;
-        reg_number: string;
-        office_address1: string;
-        office_address2: string | null;
-        postcode: string;
-        city: string;
-        state: string;
-        country: string;
-        website: string;
-        account_note: string;
-        created_at: string;
-        updated_at: string;
-        corporate_id: string;
-    }>;
     addInvestigationLog(corporateId: string, logData: Omit<InvestigationLogTable, 'id' | 'corporate_id' | 'created_at'>): Promise<{
         id: string;
         created_at: string;
@@ -270,43 +245,12 @@ export declare class CorporateService {
         from_status: CorporateStatus | null;
         to_status: CorporateStatus | null;
     }>;
-    updateContact(id: string, contactData: UpdateContactDto): Promise<{
-        salutation: string;
-        first_name: string;
-        last_name: string;
-        contact_number: string;
-        email: string;
-        company_role: string;
-        system_role: string;
-        id: string;
-        created_at: string;
-        updated_at: string;
-        corporate_id: string;
-    }>;
-    deleteContact(id: string): Promise<{
-        success: boolean;
-    }>;
-    updateSubsidiary(id: string, subsidiaryData: UpdateSubsidiaryDto): Promise<{
-        id: string;
-        company_name: string;
-        reg_number: string;
-        office_address1: string;
-        office_address2: string | null;
-        postcode: string;
-        city: string;
-        state: string;
-        country: string;
-        website: string;
-        account_note: string;
-        created_at: string;
-        updated_at: string;
-        corporate_id: string;
-    }>;
-    deleteSubsidiary(id: string): Promise<{
-        success: boolean;
-    }>;
     updateStatus(id: string, status: string, note?: string): Promise<{
         contacts: {
+            id: string;
+            created_at: string;
+            updated_at: string;
+            corporate_id: string;
             salutation: string;
             first_name: string;
             last_name: string;
@@ -314,10 +258,6 @@ export declare class CorporateService {
             email: string;
             company_role: string;
             system_role: string;
-            id: string;
-            created_at: string;
-            updated_at: string;
-            corporate_id: string;
         }[];
         subsidiaries: {
             id: string;
@@ -329,8 +269,8 @@ export declare class CorporateService {
             city: string;
             state: string;
             country: string;
-            website: string;
-            account_note: string;
+            website: string | null;
+            account_note: string | null;
             created_at: string;
             updated_at: string;
             corporate_id: string;
@@ -347,15 +287,15 @@ export declare class CorporateService {
         id: string;
         company_name: string;
         reg_number: string;
+        status: CorporateStatus;
         office_address1: string;
         office_address2: string | null;
         postcode: string;
         city: string;
         state: string;
         country: string;
-        website: string;
-        account_note: string;
-        status: CorporateStatus;
+        website: string | null;
+        account_note: string | null;
         billing_same_as_official: boolean;
         billing_address1: string;
         billing_address2: string;

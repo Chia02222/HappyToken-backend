@@ -15,70 +15,46 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ContactsController = void 0;
 const common_1 = require("@nestjs/common");
 const contacts_service_1 = require("./contacts.service");
+const contact_dto_1 = require("./dto/contact.dto");
 let ContactsController = class ContactsController {
     contactsService;
     constructor(contactsService) {
         this.contactsService = contactsService;
     }
-    async findAll(corporateId, limit, offset) {
-        return await this.contactsService.findAll({
-            corporate_id: corporateId ? String(corporateId) : undefined,
-            limit: limit ? Number(limit) : undefined,
-            offset: offset ? Number(offset) : undefined,
-        });
+    async addContact(corporateId, contactData) {
+        return await this.contactsService.addContact({ ...contactData, corporate_id: corporateId });
     }
-    async findById(id) {
-        return await this.contactsService.findById(id);
+    async updateContact(id, contactData) {
+        return await this.contactsService.updateContact(id, contactData);
     }
-    async create(body) {
-        return await this.contactsService.create(body);
-    }
-    async update(id, body) {
-        return await this.contactsService.update(id, body);
-    }
-    async delete(id) {
-        return await this.contactsService.delete(id);
+    async deleteContact(id) {
+        return await this.contactsService.deleteContact(id);
     }
 };
 exports.ContactsController = ContactsController;
 __decorate([
-    (0, common_1.Get)(),
-    __param(0, (0, common_1.Query)('corporate_id')),
-    __param(1, (0, common_1.Query)('limit')),
-    __param(2, (0, common_1.Query)('offset')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String]),
-    __metadata("design:returntype", Promise)
-], ContactsController.prototype, "findAll", null);
-__decorate([
-    (0, common_1.Get)(':id'),
-    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], ContactsController.prototype, "findById", null);
-__decorate([
-    (0, common_1.Post)(),
-    __param(0, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", Promise)
-], ContactsController.prototype, "create", null);
-__decorate([
-    (0, common_1.Put)(':id'),
-    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    (0, common_1.Post)(':corporateId'),
+    __param(0, (0, common_1.Param)('corporateId')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
-], ContactsController.prototype, "update", null);
+], ContactsController.prototype, "addContact", null);
+__decorate([
+    (0, common_1.Put)(':id'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, contact_dto_1.UpdateContactDto]),
+    __metadata("design:returntype", Promise)
+], ContactsController.prototype, "updateContact", null);
 __decorate([
     (0, common_1.Delete)(':id'),
-    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
-], ContactsController.prototype, "delete", null);
+], ContactsController.prototype, "deleteContact", null);
 exports.ContactsController = ContactsController = __decorate([
     (0, common_1.Controller)('contacts'),
     __metadata("design:paramtypes", [contacts_service_1.ContactsService])

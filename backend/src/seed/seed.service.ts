@@ -2,12 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { CorporateService } from '../corporate/corporate.service';
 import { CorporateStatus } from '../database/types';
 import { DatabaseService } from '../database/database.service';
+import { ContactsService } from '../contacts/contacts.service';
+import { SubsidiariesService } from '../subsidiaries/subsidiaries.service';
 
 @Injectable()
 export class SeedService {
   constructor(
     private readonly corporateService: CorporateService,
     private readonly dbService: DatabaseService,
+    private readonly contactsService: ContactsService,
+    private readonly subsidiariesService: SubsidiariesService,
   ) {}
 
   async seedDatabase() {
@@ -129,19 +133,12 @@ export class SeedService {
 
         // Add sample contacts
         if (corporate.id) {
-          await this.corporateService.addContact(corporate.id, {
-            salutation: 'Ms',
-            first_name: 'Jane',
-            last_name: 'Doe',
-            contact_number: '111222333',
-            email: 'jane.d@example.com',
-            company_role: 'CEO',
-            system_role: 'Administrator',
-          });
+                
 
           // Add a second contact for Global Tech Inc.
           if (corporate.company_name === 'Global Tech Inc.') {
-            await this.corporateService.addContact(corporate.id, {
+            await this.contactsService.addContact({
+              corporate_id: corporate.id,
               salutation: 'Mr',
               first_name: 'John',
               last_name: 'Smith',
@@ -152,7 +149,8 @@ export class SeedService {
             });
 
             // Add a sample subsidiary for Global Tech Inc.
-            await this.corporateService.addSubsidiary(corporate.id, {
+            await this.subsidiariesService.addSubsidiary({
+              corporate_id: corporate.id,
               company_name: 'Global Tech Solutions',
               reg_number: '202301010001',
               office_address1: '123 Tech Park',

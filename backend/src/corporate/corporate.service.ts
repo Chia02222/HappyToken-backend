@@ -1,18 +1,30 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { CorporateTable, ContactTable, SubsidiaryTable, InvestigationLogTable, CorporateStatus } from '../database/types';
+import {
+  CorporateTable,
+  InvestigationLogTable,
+  CorporateStatus,
+  NewCorporate,
+} from '../database/types';
 import { sql } from 'kysely';
-import { UpdateCorporateDto, UpdateContactDto, UpdateSubsidiaryDto, CreateContactDto, CreateSubsidiaryDto } from './dto/update-corporate.dto';
+import { CreateCorporateWithRelationsDto,UpdateCorporateDto } from './dto/corporate.dto';
+import { CreateContactDto } from '../contacts/dto/contact.dto';
+import { CreateSubsidiaryDto } from '../subsidiaries/dto/subsidiary.dto';
+import { ContactsService } from '../contacts/contacts.service';
+import { SubsidiariesService } from '../subsidiaries/subsidiaries.service';
 
 @Injectable()
 export class CorporateService {
-  constructor(private readonly dbService: DatabaseService) {}
+  constructor(
+    private readonly dbService: DatabaseService,
+    private readonly contactsService: ContactsService,
+    private readonly subsidiariesService: SubsidiariesService,
+  ) {}
 
   private get db() {
     return this.dbService.getDb();
   }
 
-  // Get all corporates
   async findAll() {
     return await this.db
       .selectFrom('corporates')
@@ -21,7 +33,6 @@ export class CorporateService {
       .execute();
   }
 
-  // Get corporate by ID with related data
   async findById(id: string) {
     const corporate = await this.db
       .selectFrom('corporates')
@@ -52,64 +63,70 @@ export class CorporateService {
     };
   }
 
-  // Create new corporate
-  async create(corporateData: Omit<CorporateTable, 'id' | 'created_at' | 'updated_at'>) {
+  async create(corporateData: CreateCorporateWithRelationsDto) {
+    const { contacts, subsidiaries, /* not a column */ investigation_log, ...corporateBaseData } = corporateData as any;
+
+    const corporateInsertData: NewCorporate = {
+      ...corporateBaseData,
+      created_at: sql`date_trunc('second', now())::timestamp(0)` as unknown as string,
+      updated_at: sql`date_trunc('second', now())::timestamp(0)` as unknown as string,
+    };
+
     const inserted = await this.db
       .insertInto('corporates')
-      .values({
-        company_name: corporateData.company_name,
-        reg_number: corporateData.reg_number,
-        status: corporateData.status,
-        office_address1: corporateData.office_address1,
-        office_address2: corporateData.office_address2,
-        postcode: corporateData.postcode,
-        city: corporateData.city,
-        state: corporateData.state,
-        country: corporateData.country,
-        website: corporateData.website,
-        account_note: corporateData.account_note,
-        billing_same_as_official: corporateData.billing_same_as_official,
-        billing_address1: corporateData.billing_address1,
-        billing_address2: corporateData.billing_address2,
-        billing_postcode: corporateData.billing_postcode,
-        billing_city: corporateData.billing_city,
-        billing_state: corporateData.billing_state,
-        billing_country: corporateData.billing_country,
-        company_tin: corporateData.company_tin,
-        sst_number: corporateData.sst_number,
-        agreement_from: corporateData.agreement_from === '' ? null : corporateData.agreement_from,
-        agreement_to: corporateData.agreement_to === '' ? null : corporateData.agreement_to,
-        credit_limit: corporateData.credit_limit,
-        credit_terms: corporateData.credit_terms,
-        transaction_fee: corporateData.transaction_fee,
-        late_payment_interest: corporateData.late_payment_interest,
-        white_labeling_fee: corporateData.white_labeling_fee,
-        custom_feature_fee: corporateData.custom_feature_fee,
-        agreed_to_generic_terms: corporateData.agreed_to_generic_terms,
-        agreed_to_commercial_terms: corporateData.agreed_to_commercial_terms,
-        first_approval_confirmation: corporateData.first_approval_confirmation,
-        second_approval_confirmation: corporateData.second_approval_confirmation,
-        created_at: sql`now()`,
-        updated_at: sql`now()`,
-      })
+      .values(corporateInsertData)
       .returningAll()
       .executeTakeFirst();
+
+    if (!inserted) {
+      throw new Error('Failed to create corporate record.');
+    }
+
+    if (contacts) {
+      for (const contact of contacts) {
+        await this.contactsService.addContact({ ...contact, corporate_id: inserted.id });
+      }
+    }
+
+    if (subsidiaries) {
+      for (const subsidiary of subsidiaries) {
+        await this.subsidiariesService.addSubsidiary({ ...subsidiary, corporate_id: inserted.id });
+      }
+    }
 
     return inserted!;
   }
 
-  // Update corporate
   async update(id: string, updateData: UpdateCorporateDto) {
-    const { contacts, subsidiaries, contactIdsToDelete, subsidiaryIdsToDelete, investigation_log, ...corporateUpdateData } = updateData;
+    console.log('CorporateService.update called with id:', id);
+    try {
+      console.log('Raw updateData:', JSON.stringify(updateData));
+    } catch {}
+    const {
+      contacts,
+      subsidiaries,
+      contactIdsToDelete,
+      subsidiaryIdsToDelete,
+      // investigation logs are stored in a separate table; ensure it's not applied to corporates update
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      investigation_log,
+      // never allow updating primary key
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      id: _ignoreId,
+      ...corporateUpdateData
+    } = updateData;
 
-    // Update main corporate table
+    console.log('Derived corporateUpdateData keys:', Object.keys(corporateUpdateData));
+    console.log('contactIdsToDelete:', contactIdsToDelete);
+    console.log('subsidiaryIdsToDelete:', subsidiaryIdsToDelete);
+
     const updatedCorporate = await this.db
       .updateTable('corporates')
       .set({
-        ...corporateUpdateData,
+        ...(corporateUpdateData as Partial<CorporateTable>),
         agreement_from: corporateUpdateData.agreement_from === '' ? null : corporateUpdateData.agreement_from,
         agreement_to: corporateUpdateData.agreement_to === '' ? null : corporateUpdateData.agreement_to,
-        updated_at: sql`now()`,
+        updated_at: sql`date_trunc('second', now())::timestamp(0)` as unknown as string,
       } as any)
       .where('id', '=', id)
       .returningAll()
@@ -119,102 +136,52 @@ export class CorporateService {
       return null;
     }
 
-    // Handle contacts
+    const isUuid = (value: unknown) => typeof value === 'string' && /^[0-9a-fA-F-]{36}$/.test(value);
+
     if (contacts) {
       for (const contact of contacts) {
-        if (contact.id) {
-          // Update existing contact
-          await this.updateContact(contact.id, contact);
+        if (isUuid(contact.id as any)) {
+          await this.contactsService.updateContact(contact.id as string, contact);
         } else {
-          // Add new contact
-          await this.addContact(id, contact as CreateContactDto);
+          await this.contactsService.addContact({ ...(contact as CreateContactDto), corporate_id: id });
         }
       }
     }
 
-    // Handle contact deletions
     if (contactIdsToDelete) {
-      for (const contactId of contactIdsToDelete) {
-        await this.deleteContact(contactId);
-      }
+        for (const contactId of contactIdsToDelete) {
+            console.log('Attempting to delete contactId:', contactId);
+            if (!contactId) { console.warn('Skipping empty contactId'); continue; }
+            await this.contactsService.deleteContact(contactId);
+        }
     }
 
-    // Handle subsidiaries
     if (subsidiaries) {
       for (const subsidiary of subsidiaries) {
-        if (subsidiary.id) {
-          // Update existing subsidiary
-          await this.updateSubsidiary(subsidiary.id, subsidiary);
+        if (isUuid(subsidiary.id as any)) {
+          await this.subsidiariesService.updateSubsidiary(subsidiary.id as string, subsidiary);
         } else {
-          // Add new subsidiary
-          await this.addSubsidiary(id, subsidiary as CreateSubsidiaryDto);
+          await this.subsidiariesService.addSubsidiary({ ...(subsidiary as CreateSubsidiaryDto), corporate_id: id });
         }
       }
     }
 
-    // Handle subsidiary deletions
     if (subsidiaryIdsToDelete) {
-      for (const subsidiaryId of subsidiaryIdsToDelete) {
-        await this.deleteSubsidiary(subsidiaryId);
-      }
+        for (const subsidiaryId of subsidiaryIdsToDelete) {
+            console.log('Attempting to delete subsidiaryId:', subsidiaryId);
+            if (!subsidiaryId) { console.warn('Skipping empty subsidiaryId'); continue; }
+            await this.subsidiariesService.deleteSubsidiary(subsidiaryId);
+        }
     }
 
-    // Return the updated corporate with its related data
     return this.findById(id);
   }
 
-  // Delete corporate
   async delete(id: string) {
     await this.db.deleteFrom('corporates').where('id', '=', id).execute();
     return { success: true };
   }
 
-  // Add contact to corporate
-  async addContact(corporateId: string, contactData: CreateContactDto) {
-    const inserted = await this.db
-      .insertInto('contacts')
-      .values({
-        corporate_id: corporateId,
-        salutation: contactData.salutation,
-        first_name: contactData.first_name,
-        last_name: contactData.last_name,
-        contact_number: contactData.contact_number,
-        email: contactData.email,
-        company_role: contactData.company_role,
-        system_role: contactData.system_role,
-        created_at: sql`now()`,
-        updated_at: sql`now()`,
-      })
-      .returningAll()
-      .executeTakeFirst();
-    return inserted!;
-  }
-
-  // Add subsidiary to corporate
-  async addSubsidiary(corporateId: string, subsidiaryData: CreateSubsidiaryDto) {
-    const inserted = await this.db
-      .insertInto('subsidiaries')
-      .values({
-        corporate_id: corporateId,
-        company_name: subsidiaryData.company_name,
-        reg_number: subsidiaryData.reg_number,
-        office_address1: subsidiaryData.office_address1 ?? '',
-        office_address2: subsidiaryData.office_address2 ?? null,
-        postcode: subsidiaryData.postcode,
-        city: subsidiaryData.city,
-        state: subsidiaryData.state,
-        country: subsidiaryData.country,
-        website: subsidiaryData.website ?? '',
-        account_note: subsidiaryData.account_note ?? '',
-        created_at: sql`now()`,
-        updated_at: sql`now()`,
-      })
-      .returningAll()
-      .executeTakeFirst();
-    return inserted!;
-  }
-
-  // Add investigation log entry
   async addInvestigationLog(corporateId: string, logData: Omit<InvestigationLogTable, 'id' | 'corporate_id' | 'created_at'>) {
     console.log('addInvestigationLog called with:', { corporateId, logData });
     try {
@@ -226,7 +193,7 @@ export class CorporateService {
           note: logData.note ?? null,
           from_status: logData.from_status ?? null,
           to_status: logData.to_status ?? null,
-          created_at: sql`now()`,
+          created_at: sql`date_trunc('second', now())::timestamp(0)` as unknown as string,
         })
         .returningAll()
         .executeTakeFirst();
@@ -234,58 +201,16 @@ export class CorporateService {
       return inserted!;
     } catch (error) {
       console.error('Error inserting investigation log:', error);
-      throw error; // Re-throw the error after logging
+      throw error;
     }
   }
 
-  // Update contact
-  async updateContact(id: string, contactData: UpdateContactDto) {
-    const updated = await this.db
-      .updateTable('contacts')
-      .set({
-        ...contactData,
-        updated_at: sql`now()`,
-      } as any)
-      .where('id', '=', id)
-      .returningAll()
-      .executeTakeFirst();
-    return updated!;
-  }
-
-  // Delete contact
-  async deleteContact(id: string) {
-    await this.db.deleteFrom('contacts').where('id', '=', id).execute();
-    return { success: true };
-  }
-
-  // Update subsidiary
-  async updateSubsidiary(id: string, subsidiaryData: UpdateSubsidiaryDto) {
-    const updated = await this.db
-      .updateTable('subsidiaries')
-      .set({
-        ...subsidiaryData,
-        updated_at: sql`now()`,
-      } as any)
-      .where('id', '=', id)
-      .returningAll()
-      .executeTakeFirst();
-    return updated!;
-  }
-
-  // Delete subsidiary
-  async deleteSubsidiary(id: string) {
-    await this.db.deleteFrom('subsidiaries').where('id', '=', id).execute();
-    return { success: true };
-  }
-
-  // Update corporate status
   async updateStatus(id: string, status: string, note?: string) {
     const corporate = await this.findById(id);
     if (!corporate) {
       throw new Error('Corporate not found');
     }
 
-    // Add investigation log entry
     if (note) {
       await this.addInvestigationLog(id, {
         timestamp: new Date().toISOString(),
@@ -295,7 +220,6 @@ export class CorporateService {
       });
     }
 
-    // Update status
     return await this.update(id, { status: status as CorporateStatus });
   }
 }

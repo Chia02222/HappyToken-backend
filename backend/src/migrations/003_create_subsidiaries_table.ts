@@ -3,8 +3,8 @@ import { Kysely, sql } from 'kysely';
 export async function up(db: Kysely<any>): Promise<void> {
   await db.schema
     .createTable('subsidiaries')
-    .addColumn('id', 'bigserial', (col) => col.primaryKey())
-    .addColumn('corporate_id', 'bigint', (col) => col.notNull().references('corporates.id').onDelete('cascade'))
+    .addColumn('id', 'uuid', (col) => col.primaryKey().defaultTo(sql`gen_random_uuid()`))
+    .addColumn('corporate_id', 'uuid', (col) => col.notNull().references('corporates.id').onDelete('cascade'))
     .addColumn('company_name', 'varchar(255)', (col) => col.notNull())
     .addColumn('reg_number', 'varchar(50)', (col) => col.notNull())
     .addColumn('office_address1', 'varchar(255)', (col) => col.notNull())
@@ -15,8 +15,8 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('country', 'varchar(100)', (col) => col.notNull().defaultTo('Malaysia'))
     .addColumn('website', 'varchar(255)')
     .addColumn('account_note', 'text')
-    .addColumn('created_at', 'timestamp', (col) => col.notNull().defaultTo('CURRENT_TIMESTAMP'))
-    .addColumn('updated_at', 'timestamp', (col) => col.notNull().defaultTo('CURRENT_TIMESTAMP'))
+    .addColumn('created_at', 'timestamp(0)', (col) => col.notNull())
+    .addColumn('updated_at', 'timestamp(0)', (col) => col.notNull())
     .execute();
 }
 

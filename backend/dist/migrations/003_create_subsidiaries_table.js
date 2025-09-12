@@ -2,11 +2,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.up = up;
 exports.down = down;
+const kysely_1 = require("kysely");
 async function up(db) {
     await db.schema
         .createTable('subsidiaries')
-        .addColumn('id', 'bigserial', (col) => col.primaryKey())
-        .addColumn('corporate_id', 'bigint', (col) => col.notNull().references('corporates.id').onDelete('cascade'))
+        .addColumn('id', 'uuid', (col) => col.primaryKey().defaultTo((0, kysely_1.sql) `gen_random_uuid()`))
+        .addColumn('corporate_id', 'uuid', (col) => col.notNull().references('corporates.id').onDelete('cascade'))
         .addColumn('company_name', 'varchar(255)', (col) => col.notNull())
         .addColumn('reg_number', 'varchar(50)', (col) => col.notNull())
         .addColumn('office_address1', 'varchar(255)', (col) => col.notNull())
@@ -17,8 +18,8 @@ async function up(db) {
         .addColumn('country', 'varchar(100)', (col) => col.notNull().defaultTo('Malaysia'))
         .addColumn('website', 'varchar(255)')
         .addColumn('account_note', 'text')
-        .addColumn('created_at', 'timestamp', (col) => col.notNull().defaultTo('CURRENT_TIMESTAMP'))
-        .addColumn('updated_at', 'timestamp', (col) => col.notNull().defaultTo('CURRENT_TIMESTAMP'))
+        .addColumn('created_at', 'timestamp(0)', (col) => col.notNull())
+        .addColumn('updated_at', 'timestamp(0)', (col) => col.notNull())
         .execute();
 }
 async function down(db) {

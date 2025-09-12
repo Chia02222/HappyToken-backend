@@ -23,11 +23,14 @@ async function resetTables() {
     await sql`DROP TABLE IF EXISTS corporates CASCADE`;
     console.log('✅ Tables dropped successfully');
 
+    // Enable pgcrypto for UUID generation
+    await sql`CREATE EXTENSION IF NOT EXISTS "pgcrypto"`;
+
     // Recreate tables
     console.log('🔄 Creating corporates table...');
     await sql`
       CREATE TABLE corporates (
-        id SERIAL PRIMARY KEY,
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         company_name VARCHAR(255) NOT NULL,
         reg_number VARCHAR(50) NOT NULL UNIQUE,
         status VARCHAR(50) NOT NULL,
@@ -69,8 +72,8 @@ async function resetTables() {
     console.log('🔄 Creating contacts table...');
     await sql`
       CREATE TABLE contacts (
-        id SERIAL PRIMARY KEY,
-        corporate_id INTEGER NOT NULL REFERENCES corporates(id) ON DELETE CASCADE,
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        corporate_id UUID NOT NULL REFERENCES corporates(id) ON DELETE CASCADE,
         salutation VARCHAR(10) NOT NULL,
         first_name VARCHAR(100) NOT NULL,
         last_name VARCHAR(100) NOT NULL,
@@ -87,8 +90,8 @@ async function resetTables() {
     console.log('🔄 Creating subsidiaries table...');
     await sql`
       CREATE TABLE subsidiaries (
-        id SERIAL PRIMARY KEY,
-        corporate_id INTEGER NOT NULL REFERENCES corporates(id) ON DELETE CASCADE,
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        corporate_id UUID NOT NULL REFERENCES corporates(id) ON DELETE CASCADE,
         company_name VARCHAR(255) NOT NULL,
         reg_number VARCHAR(50) NOT NULL,
         office_address1 VARCHAR(255) NOT NULL,
@@ -108,8 +111,8 @@ async function resetTables() {
     console.log('🔄 Creating investigation_logs table...');
     await sql`
       CREATE TABLE investigation_logs (
-        id SERIAL PRIMARY KEY,
-        corporate_id INTEGER NOT NULL REFERENCES corporates(id) ON DELETE CASCADE,
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        corporate_id UUID NOT NULL REFERENCES corporates(id) ON DELETE CASCADE,
         timestamp VARCHAR(255) NOT NULL,
         note TEXT,
         from_status VARCHAR(50),

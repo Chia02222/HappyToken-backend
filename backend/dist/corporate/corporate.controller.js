@@ -15,7 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CorporateController = void 0;
 const common_1 = require("@nestjs/common");
 const corporate_service_1 = require("./corporate.service");
-const update_corporate_dto_1 = require("./dto/update-corporate.dto");
+const corporate_dto_1 = require("./dto/corporate.dto");
 let CorporateController = class CorporateController {
     corporateService;
     constructor(corporateService) {
@@ -35,12 +35,6 @@ let CorporateController = class CorporateController {
     }
     async delete(id) {
         return await this.corporateService.delete(id);
-    }
-    async addContact(corporateId, contactData) {
-        return await this.corporateService.addContact(corporateId, contactData);
-    }
-    async addSubsidiary(corporateId, subsidiaryData) {
-        return await this.corporateService.addSubsidiary(corporateId, subsidiaryData);
     }
     async addInvestigationLog(corporateId, logData) {
         return await this.corporateService.addInvestigationLog(corporateId, logData);
@@ -75,7 +69,7 @@ __decorate([
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, update_corporate_dto_1.UpdateCorporateDto]),
+    __metadata("design:paramtypes", [String, corporate_dto_1.UpdateCorporateDto]),
     __metadata("design:returntype", Promise)
 ], CorporateController.prototype, "update", null);
 __decorate([
@@ -85,22 +79,6 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], CorporateController.prototype, "delete", null);
-__decorate([
-    (0, common_1.Post)(':id/contacts'),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
-    __metadata("design:returntype", Promise)
-], CorporateController.prototype, "addContact", null);
-__decorate([
-    (0, common_1.Post)(':id/subsidiaries'),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
-    __metadata("design:returntype", Promise)
-], CorporateController.prototype, "addSubsidiary", null);
 __decorate([
     (0, common_1.Post)(':id/investigation-logs'),
     __param(0, (0, common_1.Param)('id')),

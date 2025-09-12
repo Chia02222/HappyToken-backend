@@ -21,56 +21,37 @@ let SubsidiariesService = class SubsidiariesService {
     get db() {
         return this.dbService.getDb();
     }
-    async findAll(params = {}) {
-        const { corporate_id, limit = 50, offset = 0 } = params;
-        let q = this.db.selectFrom('subsidiaries').selectAll().orderBy('created_at', 'desc');
-        if (corporate_id)
-            q = q.where('corporate_id', '=', corporate_id);
-        return await q.limit(limit).offset(offset).execute();
-    }
-    async findById(id) {
-        const row = await this.db.selectFrom('subsidiaries').selectAll().where('id', '=', id).executeTakeFirst();
-        if (!row)
-            throw new common_1.NotFoundException('Subsidiary not found');
-        return row;
-    }
-    async create(data) {
+    async addSubsidiary(subsidiaryData) {
+        console.log('addSubsidiary called with:', subsidiaryData);
+        const { id: _ignoreId, ...insertData } = subsidiaryData;
         const inserted = await this.db
             .insertInto('subsidiaries')
             .values({
-            corporate_id: data.corporate_id,
-            company_name: data.company_name,
-            reg_number: data.reg_number,
-            office_address1: data.office_address1,
-            office_address2: data.office_address2,
-            postcode: data.postcode,
-            city: data.city,
-            state: data.state,
-            country: data.country,
-            website: data.website,
-            account_note: data.account_note,
-            created_at: (0, kysely_1.sql) `now()`,
-            updated_at: (0, kysely_1.sql) `now()`,
+            ...insertData,
+            created_at: (0, kysely_1.sql) `date_trunc('second', now())::timestamp(0)`,
+            updated_at: (0, kysely_1.sql) `date_trunc('second', now())::timestamp(0)`,
         })
             .returningAll()
             .executeTakeFirst();
         return inserted;
     }
-    async update(id, data) {
+    async updateSubsidiary(id, subsidiaryData) {
+        console.log('updateSubsidiary called with:', { id, subsidiaryData });
+        const { id: _ignoreId, ...updateData } = subsidiaryData;
         const updated = await this.db
             .updateTable('subsidiaries')
-            .set({ ...data, updated_at: (0, kysely_1.sql) `now()` })
+            .set({
+            ...updateData,
+            updated_at: (0, kysely_1.sql) `date_trunc('second', now())::timestamp(0)`,
+        })
             .where('id', '=', id)
             .returningAll()
             .executeTakeFirst();
-        if (!updated)
-            throw new common_1.NotFoundException('Subsidiary not found');
         return updated;
     }
-    async delete(id) {
-        const res = await this.db.deleteFrom('subsidiaries').where('id', '=', id).returning('id').executeTakeFirst();
-        if (!res)
-            throw new common_1.NotFoundException('Subsidiary not found');
+    async deleteSubsidiary(id) {
+        console.log('deleteSubsidiary called with id:', id);
+        await this.db.deleteFrom('subsidiaries').where('id', '=', id).execute();
         return { success: true };
     }
 };

@@ -1,9 +1,9 @@
 import { SubsidiariesService } from './subsidiaries.service';
-import { SubsidiaryTable } from '../database/types';
+import { CreateSubsidiaryDto, UpdateSubsidiaryDto } from './dto/subsidiary.dto';
 export declare class SubsidiariesController {
     private readonly subsidiariesService;
     constructor(subsidiariesService: SubsidiariesService);
-    findAll(corporateId?: string, limit?: string, offset?: string): Promise<{
+    addSubsidiary(corporateId: string, subsidiaryData: Omit<CreateSubsidiaryDto, 'corporate_id'>): Promise<{
         id: string;
         company_name: string;
         reg_number: string;
@@ -13,29 +13,13 @@ export declare class SubsidiariesController {
         city: string;
         state: string;
         country: string;
-        website: string;
-        account_note: string;
-        created_at: string;
-        updated_at: string;
-        corporate_id: string;
-    }[]>;
-    findById(id: string): Promise<{
-        id: string;
-        company_name: string;
-        reg_number: string;
-        office_address1: string;
-        office_address2: string | null;
-        postcode: string;
-        city: string;
-        state: string;
-        country: string;
-        website: string;
-        account_note: string;
+        website: string | null;
+        account_note: string | null;
         created_at: string;
         updated_at: string;
         corporate_id: string;
     }>;
-    create(body: Omit<SubsidiaryTable, 'id' | 'created_at' | 'updated_at'>): Promise<{
+    updateSubsidiary(id: string, subsidiaryData: UpdateSubsidiaryDto): Promise<{
         id: string;
         company_name: string;
         reg_number: string;
@@ -45,29 +29,13 @@ export declare class SubsidiariesController {
         city: string;
         state: string;
         country: string;
-        website: string;
-        account_note: string;
+        website: string | null;
+        account_note: string | null;
         created_at: string;
         updated_at: string;
         corporate_id: string;
     }>;
-    update(id: string, body: Partial<Omit<SubsidiaryTable, 'id' | 'created_at'>>): Promise<{
-        id: string;
-        company_name: string;
-        reg_number: string;
-        office_address1: string;
-        office_address2: string | null;
-        postcode: string;
-        city: string;
-        state: string;
-        country: string;
-        website: string;
-        account_note: string;
-        created_at: string;
-        updated_at: string;
-        corporate_id: string;
-    }>;
-    delete(id: string): Promise<{
+    deleteSubsidiary(id: string): Promise<{
         success: boolean;
     }>;
 }

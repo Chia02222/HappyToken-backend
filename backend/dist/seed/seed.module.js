@@ -11,12 +11,14 @@ const common_1 = require("@nestjs/common");
 const seed_controller_1 = require("./seed.controller");
 const seed_service_1 = require("./seed.service");
 const corporate_module_1 = require("../corporate/corporate.module");
+const contacts_module_1 = require("../contacts/contacts.module");
+const subsidiaries_module_1 = require("../subsidiaries/subsidiaries.module");
 let SeedModule = class SeedModule {
 };
 exports.SeedModule = SeedModule;
 exports.SeedModule = SeedModule = __decorate([
     (0, common_1.Module)({
-        imports: [corporate_module_1.CorporateModule],
+        imports: [corporate_module_1.CorporateModule, contacts_module_1.ContactsModule, subsidiaries_module_1.SubsidiariesModule],
         controllers: [seed_controller_1.SeedController],
         providers: [seed_service_1.SeedService],
     })

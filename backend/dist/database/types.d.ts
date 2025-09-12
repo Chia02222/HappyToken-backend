@@ -1,10 +1,12 @@
-import { GeneratedAlways } from 'kysely';
+import { GeneratedAlways, Selectable, Insertable, Updateable } from 'kysely';
 export interface Database {
     corporates: CorporateTable;
     contacts: ContactTable;
     subsidiaries: SubsidiaryTable;
     investigation_logs: InvestigationLogTable;
 }
+export type CorporateStatus = 'New' | 'Send' | 'Pending 1st Approval' | 'Pending 2nd Approval' | 'Approved' | 'Rejected' | 'Cooling Period' | 'Resolved' | 'Closed' | 'Reopened';
+export type CorporateSystemRole = 'admin' | 'user';
 export interface CorporateTable {
     id: GeneratedAlways<string>;
     company_name: string;
@@ -16,8 +18,8 @@ export interface CorporateTable {
     city: string;
     state: string;
     country: string;
-    website: string;
-    account_note: string;
+    website: string | null;
+    account_note: string | null;
     billing_same_as_official: boolean;
     billing_address1: string;
     billing_address2: string;
@@ -66,8 +68,8 @@ export interface SubsidiaryTable {
     city: string;
     state: string;
     country: string;
-    website: string;
-    account_note: string;
+    website: string | null;
+    account_note: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -80,4 +82,14 @@ export interface InvestigationLogTable {
     to_status: CorporateStatus | null;
     created_at: string;
 }
-export type CorporateStatus = 'New' | 'Send' | 'Pending 1st Approval' | 'Pending 2nd Approval' | 'Approved' | 'Rejected' | 'Cooling Period' | 'Resolved' | 'Closed' | 'Reopened';
+export type Corporate = Selectable<CorporateTable>;
+export type NewCorporate = Insertable<CorporateTable>;
+export type CorporateUpdate = Updateable<CorporateTable>;
+export type Contact = Selectable<ContactTable>;
+export type NewContact = Insertable<ContactTable>;
+export type ContactUpdate = Updateable<ContactTable>;
+export type Subsidiary = Selectable<SubsidiaryTable>;
+export type NewSubsidiary = Insertable<SubsidiaryTable>;
+export type SubsidiaryUpdate = Updateable<SubsidiaryTable>;
+export type InvestigationLog = Selectable<InvestigationLogTable>;
+export type NewInvestigationLog = Insertable<InvestigationLogTable>;

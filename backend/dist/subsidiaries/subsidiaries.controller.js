@@ -15,70 +15,46 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SubsidiariesController = void 0;
 const common_1 = require("@nestjs/common");
 const subsidiaries_service_1 = require("./subsidiaries.service");
+const subsidiary_dto_1 = require("./dto/subsidiary.dto");
 let SubsidiariesController = class SubsidiariesController {
     subsidiariesService;
     constructor(subsidiariesService) {
         this.subsidiariesService = subsidiariesService;
     }
-    async findAll(corporateId, limit, offset) {
-        return await this.subsidiariesService.findAll({
-            corporate_id: corporateId ? String(corporateId) : undefined,
-            limit: limit ? Number(limit) : undefined,
-            offset: offset ? Number(offset) : undefined,
-        });
+    async addSubsidiary(corporateId, subsidiaryData) {
+        return await this.subsidiariesService.addSubsidiary({ ...subsidiaryData, corporate_id: corporateId });
     }
-    async findById(id) {
-        return await this.subsidiariesService.findById(id);
+    async updateSubsidiary(id, subsidiaryData) {
+        return await this.subsidiariesService.updateSubsidiary(id, subsidiaryData);
     }
-    async create(body) {
-        return await this.subsidiariesService.create(body);
-    }
-    async update(id, body) {
-        return await this.subsidiariesService.update(id, body);
-    }
-    async delete(id) {
-        return await this.subsidiariesService.delete(id);
+    async deleteSubsidiary(id) {
+        return await this.subsidiariesService.deleteSubsidiary(id);
     }
 };
 exports.SubsidiariesController = SubsidiariesController;
 __decorate([
-    (0, common_1.Get)(),
-    __param(0, (0, common_1.Query)('corporate_id')),
-    __param(1, (0, common_1.Query)('limit')),
-    __param(2, (0, common_1.Query)('offset')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String]),
-    __metadata("design:returntype", Promise)
-], SubsidiariesController.prototype, "findAll", null);
-__decorate([
-    (0, common_1.Get)(':id'),
-    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], SubsidiariesController.prototype, "findById", null);
-__decorate([
-    (0, common_1.Post)(),
-    __param(0, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", Promise)
-], SubsidiariesController.prototype, "create", null);
-__decorate([
-    (0, common_1.Put)(':id'),
-    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    (0, common_1.Post)(':corporateId'),
+    __param(0, (0, common_1.Param)('corporateId')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
-], SubsidiariesController.prototype, "update", null);
+], SubsidiariesController.prototype, "addSubsidiary", null);
+__decorate([
+    (0, common_1.Put)(':id'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, subsidiary_dto_1.UpdateSubsidiaryDto]),
+    __metadata("design:returntype", Promise)
+], SubsidiariesController.prototype, "updateSubsidiary", null);
 __decorate([
     (0, common_1.Delete)(':id'),
-    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
-], SubsidiariesController.prototype, "delete", null);
+], SubsidiariesController.prototype, "deleteSubsidiary", null);
 exports.SubsidiariesController = SubsidiariesController = __decorate([
     (0, common_1.Controller)('subsidiaries'),
     __metadata("design:paramtypes", [subsidiaries_service_1.SubsidiariesService])

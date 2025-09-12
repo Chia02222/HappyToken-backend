@@ -2,10 +2,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.up = up;
 exports.down = down;
+const kysely_1 = require("kysely");
 async function up(db) {
+    await (0, kysely_1.sql) `create extension if not exists "pgcrypto"`.execute(db);
     await db.schema
         .createTable('corporates')
-        .addColumn('id', 'bigserial', (col) => col.primaryKey())
+        .addColumn('id', 'uuid', (col) => col.primaryKey().defaultTo((0, kysely_1.sql) `gen_random_uuid()`))
         .addColumn('company_name', 'varchar(255)', (col) => col.notNull())
         .addColumn('reg_number', 'varchar(50)', (col) => col.notNull().unique())
         .addColumn('status', 'varchar(50)', (col) => col.notNull())
@@ -38,8 +40,8 @@ async function up(db) {
         .addColumn('agreed_to_commercial_terms', 'boolean', (col) => col.notNull().defaultTo(false))
         .addColumn('first_approval_confirmation', 'boolean', (col) => col.notNull().defaultTo(false))
         .addColumn('second_approval_confirmation', 'boolean', (col) => col.notNull().defaultTo(false))
-        .addColumn('created_at', 'timestamp', (col) => col.notNull().defaultTo('CURRENT_TIMESTAMP'))
-        .addColumn('updated_at', 'timestamp', (col) => col.notNull().defaultTo('CURRENT_TIMESTAMP'))
+        .addColumn('created_at', 'timestamp(0)', (col) => col.notNull())
+        .addColumn('updated_at', 'timestamp(0)', (col) => col.notNull())
         .execute();
 }
 async function down(db) {

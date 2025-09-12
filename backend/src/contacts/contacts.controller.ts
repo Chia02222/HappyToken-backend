@@ -1,48 +1,29 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Query, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
 import { ContactsService } from './contacts.service';
-import { ContactTable } from '../database/types';
+import { CreateContactDto, UpdateContactDto } from  './dto/contact.dto'
 
 @Controller('contacts')
 export class ContactsController {
   constructor(private readonly contactsService: ContactsService) {}
 
-  @Get()
-  async findAll(
-    @Query('corporate_id') corporateId?: string,
-    @Query('limit') limit?: string,
-    @Query('offset') offset?: string,
+  @Post(':corporateId')
+  async addContact(
+    @Param('corporateId') corporateId: string,
+    @Body() contactData: Omit<CreateContactDto, 'corporate_id'>
   ) {
-    return await this.contactsService.findAll({
-      corporate_id: corporateId ? String(corporateId) : undefined,
-      limit: limit ? Number(limit) : undefined,
-      offset: offset ? Number(offset) : undefined,
-    });
-  }
-
-  @Get(':id')
-  async findById(@Param('id', ParseIntPipe) id: string) {
-    return await this.contactsService.findById(id);
-  }
-
-  @Post()
-  async create(
-    @Body() body: Omit<ContactTable, 'id' | 'created_at' | 'updated_at'>
-  ) {
-    return await this.contactsService.create(body);
+    return await this.contactsService.addContact({ ...contactData, corporate_id: corporateId });
   }
 
   @Put(':id')
-  async update(
-    @Param('id', ParseIntPipe) id: string,
-    @Body() body: Partial<Omit<ContactTable, 'id' | 'created_at'>>,
+  async updateContact(
+    @Param('id') id: string,
+    @Body() contactData: UpdateContactDto
   ) {
-    return await this.contactsService.update(id, body);
+    return await this.contactsService.updateContact(id, contactData);
   }
 
   @Delete(':id')
-  async delete(@Param('id', ParseIntPipe) id: string) {
-    return await this.contactsService.delete(id);
+  async deleteContact(@Param('id') id: string) {
+    return await this.contactsService.deleteContact(id);
   }
 }
-
-

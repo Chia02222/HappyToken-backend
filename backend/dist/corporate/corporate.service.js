@@ -13,10 +13,16 @@ exports.CorporateService = void 0;
 const common_1 = require("@nestjs/common");
 const database_service_1 = require("../database/database.service");
 const kysely_1 = require("kysely");
+const contacts_service_1 = require("../contacts/contacts.service");
+const subsidiaries_service_1 = require("../subsidiaries/subsidiaries.service");
 let CorporateService = class CorporateService {
     dbService;
-    constructor(dbService) {
+    contactsService;
+    subsidiariesService;
+    constructor(dbService, contactsService, subsidiariesService) {
         this.dbService = dbService;
+        this.contactsService = contactsService;
+        this.subsidiariesService = subsidiariesService;
     }
     get db() {
         return this.dbService.getDb();
@@ -55,57 +61,49 @@ let CorporateService = class CorporateService {
         };
     }
     async create(corporateData) {
+        const { contacts, subsidiaries, investigation_log, ...corporateBaseData } = corporateData;
+        const corporateInsertData = {
+            ...corporateBaseData,
+            created_at: (0, kysely_1.sql) `date_trunc('second', now())::timestamp(0)`,
+            updated_at: (0, kysely_1.sql) `date_trunc('second', now())::timestamp(0)`,
+        };
         const inserted = await this.db
             .insertInto('corporates')
-            .values({
-            company_name: corporateData.company_name,
-            reg_number: corporateData.reg_number,
-            status: corporateData.status,
-            office_address1: corporateData.office_address1,
-            office_address2: corporateData.office_address2,
-            postcode: corporateData.postcode,
-            city: corporateData.city,
-            state: corporateData.state,
-            country: corporateData.country,
-            website: corporateData.website,
-            account_note: corporateData.account_note,
-            billing_same_as_official: corporateData.billing_same_as_official,
-            billing_address1: corporateData.billing_address1,
-            billing_address2: corporateData.billing_address2,
-            billing_postcode: corporateData.billing_postcode,
-            billing_city: corporateData.billing_city,
-            billing_state: corporateData.billing_state,
-            billing_country: corporateData.billing_country,
-            company_tin: corporateData.company_tin,
-            sst_number: corporateData.sst_number,
-            agreement_from: corporateData.agreement_from === '' ? null : corporateData.agreement_from,
-            agreement_to: corporateData.agreement_to === '' ? null : corporateData.agreement_to,
-            credit_limit: corporateData.credit_limit,
-            credit_terms: corporateData.credit_terms,
-            transaction_fee: corporateData.transaction_fee,
-            late_payment_interest: corporateData.late_payment_interest,
-            white_labeling_fee: corporateData.white_labeling_fee,
-            custom_feature_fee: corporateData.custom_feature_fee,
-            agreed_to_generic_terms: corporateData.agreed_to_generic_terms,
-            agreed_to_commercial_terms: corporateData.agreed_to_commercial_terms,
-            first_approval_confirmation: corporateData.first_approval_confirmation,
-            second_approval_confirmation: corporateData.second_approval_confirmation,
-            created_at: (0, kysely_1.sql) `now()`,
-            updated_at: (0, kysely_1.sql) `now()`,
-        })
+            .values(corporateInsertData)
             .returningAll()
             .executeTakeFirst();
+        if (!inserted) {
+            throw new Error('Failed to create corporate record.');
+        }
+        if (contacts) {
+            for (const contact of contacts) {
+                await this.contactsService.addContact({ ...contact, corporate_id: inserted.id });
+            }
+        }
+        if (subsidiaries) {
+            for (const subsidiary of subsidiaries) {
+                await this.subsidiariesService.addSubsidiary({ ...subsidiary, corporate_id: inserted.id });
+            }
+        }
         return inserted;
     }
     async update(id, updateData) {
-        const { contacts, subsidiaries, contactIdsToDelete, subsidiaryIdsToDelete, investigation_log, ...corporateUpdateData } = updateData;
+        console.log('CorporateService.update called with id:', id);
+        try {
+            console.log('Raw updateData:', JSON.stringify(updateData));
+        }
+        catch { }
+        const { contacts, subsidiaries, contactIdsToDelete, subsidiaryIdsToDelete, investigation_log, id: _ignoreId, ...corporateUpdateData } = updateData;
+        console.log('Derived corporateUpdateData keys:', Object.keys(corporateUpdateData));
+        console.log('contactIdsToDelete:', contactIdsToDelete);
+        console.log('subsidiaryIdsToDelete:', subsidiaryIdsToDelete);
         const updatedCorporate = await this.db
             .updateTable('corporates')
             .set({
             ...corporateUpdateData,
             agreement_from: corporateUpdateData.agreement_from === '' ? null : corporateUpdateData.agreement_from,
             agreement_to: corporateUpdateData.agreement_to === '' ? null : corporateUpdateData.agreement_to,
-            updated_at: (0, kysely_1.sql) `now()`,
+            updated_at: (0, kysely_1.sql) `date_trunc('second', now())::timestamp(0)`,
         })
             .where('id', '=', id)
             .returningAll()
@@ -113,34 +111,45 @@ let CorporateService = class CorporateService {
         if (!updatedCorporate) {
             return null;
         }
+        const isUuid = (value) => typeof value === 'string' && /^[0-9a-fA-F-]{36}$/.test(value);
         if (contacts) {
             for (const contact of contacts) {
-                if (contact.id) {
-                    await this.updateContact(contact.id, contact);
+                if (isUuid(contact.id)) {
+                    await this.contactsService.updateContact(contact.id, contact);
                 }
                 else {
-                    await this.addContact(id, contact);
+                    await this.contactsService.addContact({ ...contact, corporate_id: id });
                 }
             }
         }
         if (contactIdsToDelete) {
             for (const contactId of contactIdsToDelete) {
-                await this.deleteContact(contactId);
+                console.log('Attempting to delete contactId:', contactId);
+                if (!contactId) {
+                    console.warn('Skipping empty contactId');
+                    continue;
+                }
+                await this.contactsService.deleteContact(contactId);
             }
         }
         if (subsidiaries) {
             for (const subsidiary of subsidiaries) {
-                if (subsidiary.id) {
-                    await this.updateSubsidiary(subsidiary.id, subsidiary);
+                if (isUuid(subsidiary.id)) {
+                    await this.subsidiariesService.updateSubsidiary(subsidiary.id, subsidiary);
                 }
                 else {
-                    await this.addSubsidiary(id, subsidiary);
+                    await this.subsidiariesService.addSubsidiary({ ...subsidiary, corporate_id: id });
                 }
             }
         }
         if (subsidiaryIdsToDelete) {
             for (const subsidiaryId of subsidiaryIdsToDelete) {
-                await this.deleteSubsidiary(subsidiaryId);
+                console.log('Attempting to delete subsidiaryId:', subsidiaryId);
+                if (!subsidiaryId) {
+                    console.warn('Skipping empty subsidiaryId');
+                    continue;
+                }
+                await this.subsidiariesService.deleteSubsidiary(subsidiaryId);
             }
         }
         return this.findById(id);
@@ -148,47 +157,6 @@ let CorporateService = class CorporateService {
     async delete(id) {
         await this.db.deleteFrom('corporates').where('id', '=', id).execute();
         return { success: true };
-    }
-    async addContact(corporateId, contactData) {
-        const inserted = await this.db
-            .insertInto('contacts')
-            .values({
-            corporate_id: corporateId,
-            salutation: contactData.salutation,
-            first_name: contactData.first_name,
-            last_name: contactData.last_name,
-            contact_number: contactData.contact_number,
-            email: contactData.email,
-            company_role: contactData.company_role,
-            system_role: contactData.system_role,
-            created_at: (0, kysely_1.sql) `now()`,
-            updated_at: (0, kysely_1.sql) `now()`,
-        })
-            .returningAll()
-            .executeTakeFirst();
-        return inserted;
-    }
-    async addSubsidiary(corporateId, subsidiaryData) {
-        const inserted = await this.db
-            .insertInto('subsidiaries')
-            .values({
-            corporate_id: corporateId,
-            company_name: subsidiaryData.company_name,
-            reg_number: subsidiaryData.reg_number,
-            office_address1: subsidiaryData.office_address1 ?? '',
-            office_address2: subsidiaryData.office_address2 ?? null,
-            postcode: subsidiaryData.postcode,
-            city: subsidiaryData.city,
-            state: subsidiaryData.state,
-            country: subsidiaryData.country,
-            website: subsidiaryData.website ?? '',
-            account_note: subsidiaryData.account_note ?? '',
-            created_at: (0, kysely_1.sql) `now()`,
-            updated_at: (0, kysely_1.sql) `now()`,
-        })
-            .returningAll()
-            .executeTakeFirst();
-        return inserted;
     }
     async addInvestigationLog(corporateId, logData) {
         console.log('addInvestigationLog called with:', { corporateId, logData });
@@ -201,7 +169,7 @@ let CorporateService = class CorporateService {
                 note: logData.note ?? null,
                 from_status: logData.from_status ?? null,
                 to_status: logData.to_status ?? null,
-                created_at: (0, kysely_1.sql) `now()`,
+                created_at: (0, kysely_1.sql) `date_trunc('second', now())::timestamp(0)`,
             })
                 .returningAll()
                 .executeTakeFirst();
@@ -212,38 +180,6 @@ let CorporateService = class CorporateService {
             console.error('Error inserting investigation log:', error);
             throw error;
         }
-    }
-    async updateContact(id, contactData) {
-        const updated = await this.db
-            .updateTable('contacts')
-            .set({
-            ...contactData,
-            updated_at: (0, kysely_1.sql) `now()`,
-        })
-            .where('id', '=', id)
-            .returningAll()
-            .executeTakeFirst();
-        return updated;
-    }
-    async deleteContact(id) {
-        await this.db.deleteFrom('contacts').where('id', '=', id).execute();
-        return { success: true };
-    }
-    async updateSubsidiary(id, subsidiaryData) {
-        const updated = await this.db
-            .updateTable('subsidiaries')
-            .set({
-            ...subsidiaryData,
-            updated_at: (0, kysely_1.sql) `now()`,
-        })
-            .where('id', '=', id)
-            .returningAll()
-            .executeTakeFirst();
-        return updated;
-    }
-    async deleteSubsidiary(id) {
-        await this.db.deleteFrom('subsidiaries').where('id', '=', id).execute();
-        return { success: true };
     }
     async updateStatus(id, status, note) {
         const corporate = await this.findById(id);
@@ -264,6 +200,8 @@ let CorporateService = class CorporateService {
 exports.CorporateService = CorporateService;
 exports.CorporateService = CorporateService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [database_service_1.DatabaseService])
+    __metadata("design:paramtypes", [database_service_1.DatabaseService,
+        contacts_service_1.ContactsService,
+        subsidiaries_service_1.SubsidiariesService])
 ], CorporateService);
 //# sourceMappingURL=corporate.service.js.map

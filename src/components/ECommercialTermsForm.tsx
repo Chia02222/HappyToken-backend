@@ -224,6 +224,12 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                             </>
                         )}
                     </div>
+                    <div className="flex items-start mt-6">
+                        <input type="checkbox" id="second_approval_confirmation" name="second_approval_confirmation" checked={formData.second_approval_confirmation} onChange={handleChange} className="h-4 w-4 mt-0.5 border-gray-300 rounded focus:ring-ht-gray" />
+                        <label htmlFor="second_approval_confirmation" className="ml-3 block text-xs text-gray-800">
+                            I hereby confirm that I have read, understood, and agree to the terms and conditions of this Agreement, and I consent to proceed accordingly.
+                        </label>
+                    </div>
                 </ContentSection>
             </div>
 

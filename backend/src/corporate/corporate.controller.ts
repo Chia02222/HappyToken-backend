@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, ParseIntPipe } from '@nestjs/common';
 import { CorporateService } from './corporate.service';
-import { Database, CorporateTable, ContactTable, SubsidiaryTable, InvestigationLogTable } from '../database/types';
-import { UpdateCorporateDto } from './dto/update-corporate.dto';
+import { CorporateTable, InvestigationLogTable } from '../database/types';
+import { UpdateCorporateDto } from './dto/corporate.dto';
 
 @Controller('corporates')
 export class CorporateController {
@@ -18,7 +18,7 @@ export class CorporateController {
   }
 
   @Post()
-  async create(@Body() corporateData: Omit<CorporateTable, 'id' | 'created_at' | 'updated_at'>) {
+  async create(@Body() corporateData: Omit<CorporateTable, 'id'>) {
     return await this.corporateService.create(corporateData);
   }
 
@@ -33,22 +33,6 @@ export class CorporateController {
   @Delete(':id')
   async delete(@Param('id') id: string) {
     return await this.corporateService.delete(id);
-  }
-
-  @Post(':id/contacts')
-  async addContact(
-    @Param('id') corporateId: string,
-    @Body() contactData: Omit<ContactTable, 'id' | 'corporate_id' | 'created_at' | 'updated_at'>
-  ) {
-    return await this.corporateService.addContact(corporateId, contactData);
-  }
-
-  @Post(':id/subsidiaries')
-  async addSubsidiary(
-    @Param('id') corporateId: string,
-    @Body() subsidiaryData: Omit<SubsidiaryTable, 'id' | 'corporate_id' | 'created_at' | 'updated_at'>
-  ) {
-    return await this.corporateService.addSubsidiary(corporateId, subsidiaryData);
   }
 
   @Post(':id/investigation-logs')
