@@ -5,7 +5,7 @@ exports.down = down;
 async function up(db) {
     await db.schema
         .createTable('corporates')
-        .addColumn('id', 'serial', (col) => col.primaryKey())
+        .addColumn('id', 'bigserial', (col) => col.primaryKey())
         .addColumn('company_name', 'varchar(255)', (col) => col.notNull())
         .addColumn('reg_number', 'varchar(50)', (col) => col.notNull().unique())
         .addColumn('status', 'varchar(50)', (col) => col.notNull())

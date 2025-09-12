@@ -13,14 +13,14 @@ export class ContactsController {
     @Query('offset') offset?: string,
   ) {
     return await this.contactsService.findAll({
-      corporate_id: corporateId ? Number(corporateId) : undefined,
+      corporate_id: corporateId ? String(corporateId) : undefined,
       limit: limit ? Number(limit) : undefined,
       offset: offset ? Number(offset) : undefined,
     });
   }
 
   @Get(':id')
-  async findById(@Param('id', ParseIntPipe) id: number) {
+  async findById(@Param('id', ParseIntPipe) id: string) {
     return await this.contactsService.findById(id);
   }
 
@@ -33,14 +33,14 @@ export class ContactsController {
 
   @Put(':id')
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe) id: string,
     @Body() body: Partial<Omit<ContactTable, 'id' | 'created_at'>>,
   ) {
     return await this.contactsService.update(id, body);
   }
 
   @Delete(':id')
-  async delete(@Param('id', ParseIntPipe) id: number) {
+  async delete(@Param('id', ParseIntPipe) id: string) {
     return await this.contactsService.delete(id);
   }
 }

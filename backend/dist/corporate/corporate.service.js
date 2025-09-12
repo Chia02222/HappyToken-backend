@@ -78,8 +78,8 @@ let CorporateService = class CorporateService {
             billing_country: corporateData.billing_country,
             company_tin: corporateData.company_tin,
             sst_number: corporateData.sst_number,
-            agreement_from: corporateData.agreement_from,
-            agreement_to: corporateData.agreement_to,
+            agreement_from: corporateData.agreement_from === '' ? null : corporateData.agreement_from,
+            agreement_to: corporateData.agreement_to === '' ? null : corporateData.agreement_to,
             credit_limit: corporateData.credit_limit,
             credit_terms: corporateData.credit_terms,
             transaction_fee: corporateData.transaction_fee,
@@ -103,6 +103,8 @@ let CorporateService = class CorporateService {
             .updateTable('corporates')
             .set({
             ...corporateUpdateData,
+            agreement_from: corporateUpdateData.agreement_from === '' ? null : corporateUpdateData.agreement_from,
+            agreement_to: corporateUpdateData.agreement_to === '' ? null : corporateUpdateData.agreement_to,
             updated_at: (0, kysely_1.sql) `now()`,
         })
             .where('id', '=', id)

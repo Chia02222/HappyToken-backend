@@ -6,7 +6,7 @@ export interface Database {
     investigation_logs: InvestigationLogTable;
 }
 export interface CorporateTable {
-    id: GeneratedAlways<number>;
+    id: GeneratedAlways<string>;
     company_name: string;
     reg_number: string;
     status: CorporateStatus;
@@ -43,8 +43,8 @@ export interface CorporateTable {
     updated_at: string;
 }
 export interface ContactTable {
-    id: GeneratedAlways<number>;
-    corporate_id: number;
+    id: GeneratedAlways<string>;
+    corporate_id: string;
     salutation: string;
     first_name: string;
     last_name: string;
@@ -56,8 +56,8 @@ export interface ContactTable {
     updated_at: string;
 }
 export interface SubsidiaryTable {
-    id: GeneratedAlways<number>;
-    corporate_id: number;
+    id: GeneratedAlways<string>;
+    corporate_id: string;
     company_name: string;
     reg_number: string;
     office_address1: string;
@@ -72,8 +72,8 @@ export interface SubsidiaryTable {
     updated_at: string;
 }
 export interface InvestigationLogTable {
-    id: GeneratedAlways<number>;
-    corporate_id: number;
+    id: GeneratedAlways<string>;
+    corporate_id: string;
     timestamp: string;
     note: string | null;
     from_status: CorporateStatus | null;

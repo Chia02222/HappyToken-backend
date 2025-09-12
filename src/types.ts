@@ -43,7 +43,7 @@ export interface Subsidiary {
 }
 
 export interface Corporate {
-  id: number;
+  id: string;
   company_name: string;
   reg_number: string;
   status: CorporateStatus;

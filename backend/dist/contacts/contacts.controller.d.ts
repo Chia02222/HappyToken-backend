@@ -11,12 +11,12 @@ export declare class ContactsController {
         email: string;
         company_role: string;
         system_role: string;
-        id: number;
+        id: string;
         created_at: string;
         updated_at: string;
-        corporate_id: number;
+        corporate_id: string;
     }[]>;
-    findById(id: number): Promise<{
+    findById(id: string): Promise<{
         salutation: string;
         first_name: string;
         last_name: string;
@@ -24,10 +24,10 @@ export declare class ContactsController {
         email: string;
         company_role: string;
         system_role: string;
-        id: number;
+        id: string;
         created_at: string;
         updated_at: string;
-        corporate_id: number;
+        corporate_id: string;
     }>;
     create(body: Omit<ContactTable, 'id' | 'created_at' | 'updated_at'>): Promise<{
         salutation: string;
@@ -37,12 +37,12 @@ export declare class ContactsController {
         email: string;
         company_role: string;
         system_role: string;
-        id: number;
+        id: string;
         created_at: string;
         updated_at: string;
-        corporate_id: number;
+        corporate_id: string;
     }>;
-    update(id: number, body: Partial<Omit<ContactTable, 'id' | 'created_at'>>): Promise<{
+    update(id: string, body: Partial<Omit<ContactTable, 'id' | 'created_at'>>): Promise<{
         salutation: string;
         first_name: string;
         last_name: string;
@@ -50,12 +50,12 @@ export declare class ContactsController {
         email: string;
         company_role: string;
         system_role: string;
-        id: number;
+        id: string;
         created_at: string;
         updated_at: string;
-        corporate_id: number;
+        corporate_id: string;
     }>;
-    delete(id: number): Promise<{
+    delete(id: string): Promise<{
         success: boolean;
     }>;
 }

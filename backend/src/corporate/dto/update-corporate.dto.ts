@@ -69,17 +69,17 @@ export class CreateSubsidiaryDto extends BaseSubsidiaryDto {}
 
 // DTOs for updates
 export class UpdateContactDto extends PartialType(BaseContactDto) {
-    id?: number; // Optional ID for existing contacts
+    id?: string; // Optional ID for existing contacts
 }
 
 export class UpdateSubsidiaryDto extends PartialType(BaseSubsidiaryDto) {
-    id?: number; // Optional ID for existing subsidiaries
+    id?: string; // Optional ID for existing subsidiaries
 }
 
 export class UpdateCorporateDto extends PartialType(CreateCorporateDto) {
     contacts?: UpdateContactDto[];
     subsidiaries?: UpdateSubsidiaryDto[];
-    contactIdsToDelete?: number[];
-    subsidiaryIdsToDelete?: number[];
+    contactIdsToDelete?: string[];
+    subsidiaryIdsToDelete?: string[];
     investigation_log?: any;
 }

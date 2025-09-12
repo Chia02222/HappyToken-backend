@@ -10,7 +10,7 @@ interface SendLinkModalProps {
     isOpen: boolean;
     onClose: () => void;
     corporate: Corporate | null;
-    onSend: (corporateId: number) => void;
+    onSend: (corporateId: string) => void;
 }
 
 const SendLinkModal: React.FC<SendLinkModalProps> = ({ isOpen, onClose, corporate, onSend }) => {

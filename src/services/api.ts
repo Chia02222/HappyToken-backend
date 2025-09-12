@@ -16,7 +16,7 @@ export const getCorporates = async () => {
     return handleResponse(response);
 };
 
-export const getCorporateById = async (id: number) => {
+export const getCorporateById = async (id: string) => {
     const response = await fetch(`${API_BASE_URL}/corporates/${id}`);
     return handleResponse(response);
 };
@@ -32,7 +32,7 @@ export const createCorporate = async (data: Omit<CorporateDetails, 'id' | 'creat
     return handleResponse(response);
 };
 
-export const updateCorporate = async (id: number, data: CorporateDetails) => {
+export const updateCorporate = async (id: string, data: CorporateDetails) => {
     const response = await fetch(`${API_BASE_URL}/corporates/${id}`, {
         method: 'PUT',
         headers: {
@@ -43,7 +43,7 @@ export const updateCorporate = async (id: number, data: CorporateDetails) => {
     return handleResponse(response);
 };
 
-export const updateCorporateStatus = async (id: number, status: string, note?: string) => {
+export const updateCorporateStatus = async (id: string, status: string, note?: string) => {
     const response = await fetch(`${API_BASE_URL}/corporates/${id}/status`, {
         method: 'PUT',
         headers: {
@@ -54,7 +54,7 @@ export const updateCorporateStatus = async (id: number, status: string, note?: s
     return handleResponse(response);
 };
 
-export const addRemark = async (corporateId: number, note: string, fromStatus?: string, toStatus?: string) => {
+export const addRemark = async (corporateId: string, note: string, fromStatus?: string, toStatus?: string) => {
     const response = await fetch(`${API_BASE_URL}/corporates/${corporateId}/investigation-logs`, {
         method: 'POST',
         headers: {

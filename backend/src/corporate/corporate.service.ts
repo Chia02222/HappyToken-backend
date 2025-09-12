@@ -22,7 +22,7 @@ export class CorporateService {
   }
 
   // Get corporate by ID with related data
-  async findById(id: number) {
+  async findById(id: string) {
     const corporate = await this.db
       .selectFrom('corporates')
       .selectAll()
@@ -77,8 +77,8 @@ export class CorporateService {
         billing_country: corporateData.billing_country,
         company_tin: corporateData.company_tin,
         sst_number: corporateData.sst_number,
-        agreement_from: corporateData.agreement_from,
-        agreement_to: corporateData.agreement_to,
+        agreement_from: corporateData.agreement_from === '' ? null : corporateData.agreement_from,
+        agreement_to: corporateData.agreement_to === '' ? null : corporateData.agreement_to,
         credit_limit: corporateData.credit_limit,
         credit_terms: corporateData.credit_terms,
         transaction_fee: corporateData.transaction_fee,
@@ -99,7 +99,7 @@ export class CorporateService {
   }
 
   // Update corporate
-  async update(id: number, updateData: UpdateCorporateDto) {
+  async update(id: string, updateData: UpdateCorporateDto) {
     const { contacts, subsidiaries, contactIdsToDelete, subsidiaryIdsToDelete, investigation_log, ...corporateUpdateData } = updateData;
 
     // Update main corporate table
@@ -107,6 +107,8 @@ export class CorporateService {
       .updateTable('corporates')
       .set({
         ...corporateUpdateData,
+        agreement_from: corporateUpdateData.agreement_from === '' ? null : corporateUpdateData.agreement_from,
+        agreement_to: corporateUpdateData.agreement_to === '' ? null : corporateUpdateData.agreement_to,
         updated_at: sql`now()`,
       } as any)
       .where('id', '=', id)
@@ -162,13 +164,13 @@ export class CorporateService {
   }
 
   // Delete corporate
-  async delete(id: number) {
+  async delete(id: string) {
     await this.db.deleteFrom('corporates').where('id', '=', id).execute();
     return { success: true };
   }
 
   // Add contact to corporate
-  async addContact(corporateId: number, contactData: CreateContactDto) {
+  async addContact(corporateId: string, contactData: CreateContactDto) {
     const inserted = await this.db
       .insertInto('contacts')
       .values({
@@ -189,7 +191,7 @@ export class CorporateService {
   }
 
   // Add subsidiary to corporate
-  async addSubsidiary(corporateId: number, subsidiaryData: CreateSubsidiaryDto) {
+  async addSubsidiary(corporateId: string, subsidiaryData: CreateSubsidiaryDto) {
     const inserted = await this.db
       .insertInto('subsidiaries')
       .values({
@@ -213,7 +215,7 @@ export class CorporateService {
   }
 
   // Add investigation log entry
-  async addInvestigationLog(corporateId: number, logData: Omit<InvestigationLogTable, 'id' | 'corporate_id' | 'created_at'>) {
+  async addInvestigationLog(corporateId: string, logData: Omit<InvestigationLogTable, 'id' | 'corporate_id' | 'created_at'>) {
     console.log('addInvestigationLog called with:', { corporateId, logData });
     try {
       const inserted = await this.db
@@ -237,7 +239,7 @@ export class CorporateService {
   }
 
   // Update contact
-  async updateContact(id: number, contactData: UpdateContactDto) {
+  async updateContact(id: string, contactData: UpdateContactDto) {
     const updated = await this.db
       .updateTable('contacts')
       .set({
@@ -251,13 +253,13 @@ export class CorporateService {
   }
 
   // Delete contact
-  async deleteContact(id: number) {
+  async deleteContact(id: string) {
     await this.db.deleteFrom('contacts').where('id', '=', id).execute();
     return { success: true };
   }
 
   // Update subsidiary
-  async updateSubsidiary(id: number, subsidiaryData: UpdateSubsidiaryDto) {
+  async updateSubsidiary(id: string, subsidiaryData: UpdateSubsidiaryDto) {
     const updated = await this.db
       .updateTable('subsidiaries')
       .set({
@@ -271,13 +273,13 @@ export class CorporateService {
   }
 
   // Delete subsidiary
-  async deleteSubsidiary(id: number) {
+  async deleteSubsidiary(id: string) {
     await this.db.deleteFrom('subsidiaries').where('id', '=', id).execute();
     return { success: true };
   }
 
   // Update corporate status
-  async updateStatus(id: number, status: string, note?: string) {
+  async updateStatus(id: string, status: string, note?: string) {
     const corporate = await this.findById(id);
     if (!corporate) {
       throw new Error('Corporate not found');

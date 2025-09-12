@@ -10,7 +10,7 @@ interface ChangeStatusModalProps {
     onClose: () => void;
     corporate: Corporate | null;
     targetStatus: CorporateStatus | null;
-    onSave: (corporateId: number, status: CorporateStatus, note: string) => void;
+    onSave: (corporateId: string, status: CorporateStatus, note: string) => void;
 }
 
 const ChangeStatusModal: React.FC<ChangeStatusModalProps> = ({ isOpen, onClose, corporate, targetStatus, onSave }) => {

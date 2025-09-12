@@ -4,7 +4,7 @@ export declare class SubsidiariesController {
     private readonly subsidiariesService;
     constructor(subsidiariesService: SubsidiariesService);
     findAll(corporateId?: string, limit?: string, offset?: string): Promise<{
-        id: number;
+        id: string;
         company_name: string;
         reg_number: string;
         office_address1: string;
@@ -17,10 +17,10 @@ export declare class SubsidiariesController {
         account_note: string;
         created_at: string;
         updated_at: string;
-        corporate_id: number;
+        corporate_id: string;
     }[]>;
-    findById(id: number): Promise<{
-        id: number;
+    findById(id: string): Promise<{
+        id: string;
         company_name: string;
         reg_number: string;
         office_address1: string;
@@ -33,10 +33,10 @@ export declare class SubsidiariesController {
         account_note: string;
         created_at: string;
         updated_at: string;
-        corporate_id: number;
+        corporate_id: string;
     }>;
     create(body: Omit<SubsidiaryTable, 'id' | 'created_at' | 'updated_at'>): Promise<{
-        id: number;
+        id: string;
         company_name: string;
         reg_number: string;
         office_address1: string;
@@ -49,10 +49,10 @@ export declare class SubsidiariesController {
         account_note: string;
         created_at: string;
         updated_at: string;
-        corporate_id: number;
+        corporate_id: string;
     }>;
-    update(id: number, body: Partial<Omit<SubsidiaryTable, 'id' | 'created_at'>>): Promise<{
-        id: number;
+    update(id: string, body: Partial<Omit<SubsidiaryTable, 'id' | 'created_at'>>): Promise<{
+        id: string;
         company_name: string;
         reg_number: string;
         office_address1: string;
@@ -65,9 +65,9 @@ export declare class SubsidiariesController {
         account_note: string;
         created_at: string;
         updated_at: string;
-        corporate_id: number;
+        corporate_id: string;
     }>;
-    delete(id: number): Promise<{
+    delete(id: string): Promise<{
         success: boolean;
     }>;
 }

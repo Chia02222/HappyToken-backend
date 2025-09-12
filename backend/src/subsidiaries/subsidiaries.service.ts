@@ -11,14 +11,14 @@ export class SubsidiariesService {
     return this.dbService.getDb();
   }
 
-  async findAll(params: { corporate_id?: number; limit?: number; offset?: number } = {}) {
+  async findAll(params: { corporate_id?: string; limit?: number; offset?: number } = {}) {
     const { corporate_id, limit = 50, offset = 0 } = params;
     let q = this.db.selectFrom('subsidiaries').selectAll().orderBy('created_at', 'desc');
     if (corporate_id) q = q.where('corporate_id', '=', corporate_id);
     return await q.limit(limit).offset(offset).execute();
   }
 
-  async findById(id: number) {
+  async findById(id: string) {
     const row = await this.db.selectFrom('subsidiaries').selectAll().where('id', '=', id).executeTakeFirst();
     if (!row) throw new NotFoundException('Subsidiary not found');
     return row;
@@ -47,7 +47,7 @@ export class SubsidiariesService {
     return inserted!;
   }
 
-  async update(id: number, data: Partial<Omit<SubsidiaryTable, 'id' | 'created_at'>>) {
+  async update(id: string, data: Partial<Omit<SubsidiaryTable, 'id' | 'created_at'>>) {
     const updated = await this.db
       .updateTable('subsidiaries')
       .set({ ...(data as any), updated_at: sql`now()` })
@@ -58,7 +58,7 @@ export class SubsidiariesService {
     return updated;
   }
 
-  async delete(id: number) {
+  async delete(id: string) {
     const res = await this.db.deleteFrom('subsidiaries').where('id', '=', id).returning('id').executeTakeFirst();
     if (!res) throw new NotFoundException('Subsidiary not found');
     return { success: true };

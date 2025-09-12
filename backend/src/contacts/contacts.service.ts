@@ -11,7 +11,7 @@ export class ContactsService {
     return this.dbService.getDb();
   }
 
-  async findAll(params: { corporate_id?: number; limit?: number; offset?: number } = {}) {
+  async findAll(params: { corporate_id?: string; limit?: number; offset?: number } = {}) {
     const { corporate_id, limit = 50, offset = 0 } = params;
     let q = this.db.selectFrom('contacts').selectAll().orderBy('created_at', 'desc');
     if (corporate_id) {
@@ -20,7 +20,7 @@ export class ContactsService {
     return await q.limit(limit).offset(offset).execute();
   }
 
-  async findById(id: number) {
+  async findById(id: string) {
     const row = await this.db.selectFrom('contacts').selectAll().where('id', '=', id).executeTakeFirst();
     if (!row) throw new NotFoundException('Contact not found');
     return row;
@@ -46,7 +46,7 @@ export class ContactsService {
     return inserted!;
   }
 
-  async update(id: number, data: Partial<Omit<ContactTable, 'id' | 'created_at'>>) {
+  async update(id: string, data: Partial<Omit<ContactTable, 'id' | 'created_at'>>) {
     const updated = await this.db
       .updateTable('contacts')
       .set({ ...(data as any), updated_at: sql`now()` })
@@ -57,7 +57,7 @@ export class ContactsService {
     return updated;
   }
 
-  async delete(id: number) {
+  async delete(id: string) {
     const res = await this.db.deleteFrom('contacts').where('id', '=', id).returning('id').executeTakeFirst();
     if (!res) throw new NotFoundException('Contact not found');
     return { success: true };

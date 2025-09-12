@@ -5,7 +5,7 @@ export declare class ContactsService {
     constructor(dbService: DatabaseService);
     private get db();
     findAll(params?: {
-        corporate_id?: number;
+        corporate_id?: string;
         limit?: number;
         offset?: number;
     }): Promise<{
@@ -16,12 +16,12 @@ export declare class ContactsService {
         email: string;
         company_role: string;
         system_role: string;
-        id: number;
+        id: string;
         created_at: string;
         updated_at: string;
-        corporate_id: number;
+        corporate_id: string;
     }[]>;
-    findById(id: number): Promise<{
+    findById(id: string): Promise<{
         salutation: string;
         first_name: string;
         last_name: string;
@@ -29,10 +29,10 @@ export declare class ContactsService {
         email: string;
         company_role: string;
         system_role: string;
-        id: number;
+        id: string;
         created_at: string;
         updated_at: string;
-        corporate_id: number;
+        corporate_id: string;
     }>;
     create(data: Omit<ContactTable, 'id' | 'created_at' | 'updated_at'>): Promise<{
         salutation: string;
@@ -42,12 +42,12 @@ export declare class ContactsService {
         email: string;
         company_role: string;
         system_role: string;
-        id: number;
+        id: string;
         created_at: string;
         updated_at: string;
-        corporate_id: number;
+        corporate_id: string;
     }>;
-    update(id: number, data: Partial<Omit<ContactTable, 'id' | 'created_at'>>): Promise<{
+    update(id: string, data: Partial<Omit<ContactTable, 'id' | 'created_at'>>): Promise<{
         salutation: string;
         first_name: string;
         last_name: string;
@@ -55,12 +55,12 @@ export declare class ContactsService {
         email: string;
         company_role: string;
         system_role: string;
-        id: number;
+        id: string;
         created_at: string;
         updated_at: string;
-        corporate_id: number;
+        corporate_id: string;
     }>;
-    delete(id: number): Promise<{
+    delete(id: string): Promise<{
         success: boolean;
     }>;
 }

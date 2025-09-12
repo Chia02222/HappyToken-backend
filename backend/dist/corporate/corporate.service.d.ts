@@ -6,7 +6,7 @@ export declare class CorporateService {
     constructor(dbService: DatabaseService);
     private get db();
     findAll(): Promise<{
-        id: number;
+        id: string;
         company_name: string;
         reg_number: string;
         office_address1: string;
@@ -42,7 +42,7 @@ export declare class CorporateService {
         created_at: string;
         updated_at: string;
     }[]>;
-    findById(id: number): Promise<{
+    findById(id: string): Promise<{
         contacts: {
             salutation: string;
             first_name: string;
@@ -51,13 +51,13 @@ export declare class CorporateService {
             email: string;
             company_role: string;
             system_role: string;
-            id: number;
+            id: string;
             created_at: string;
             updated_at: string;
-            corporate_id: number;
+            corporate_id: string;
         }[];
         subsidiaries: {
-            id: number;
+            id: string;
             company_name: string;
             reg_number: string;
             office_address1: string;
@@ -70,18 +70,18 @@ export declare class CorporateService {
             account_note: string;
             created_at: string;
             updated_at: string;
-            corporate_id: number;
+            corporate_id: string;
         }[];
         investigation_log: {
-            id: number;
+            id: string;
             created_at: string;
-            corporate_id: number;
+            corporate_id: string;
             timestamp: string;
             note: string | null;
             from_status: CorporateStatus | null;
             to_status: CorporateStatus | null;
         }[];
-        id: number;
+        id: string;
         company_name: string;
         reg_number: string;
         office_address1: string;
@@ -118,7 +118,7 @@ export declare class CorporateService {
         updated_at: string;
     } | null>;
     create(corporateData: Omit<CorporateTable, 'id' | 'created_at' | 'updated_at'>): Promise<{
-        id: number;
+        id: string;
         company_name: string;
         reg_number: string;
         office_address1: string;
@@ -154,7 +154,7 @@ export declare class CorporateService {
         created_at: string;
         updated_at: string;
     }>;
-    update(id: number, updateData: UpdateCorporateDto): Promise<{
+    update(id: string, updateData: UpdateCorporateDto): Promise<{
         contacts: {
             salutation: string;
             first_name: string;
@@ -163,13 +163,13 @@ export declare class CorporateService {
             email: string;
             company_role: string;
             system_role: string;
-            id: number;
+            id: string;
             created_at: string;
             updated_at: string;
-            corporate_id: number;
+            corporate_id: string;
         }[];
         subsidiaries: {
-            id: number;
+            id: string;
             company_name: string;
             reg_number: string;
             office_address1: string;
@@ -182,18 +182,18 @@ export declare class CorporateService {
             account_note: string;
             created_at: string;
             updated_at: string;
-            corporate_id: number;
+            corporate_id: string;
         }[];
         investigation_log: {
-            id: number;
+            id: string;
             created_at: string;
-            corporate_id: number;
+            corporate_id: string;
             timestamp: string;
             note: string | null;
             from_status: CorporateStatus | null;
             to_status: CorporateStatus | null;
         }[];
-        id: number;
+        id: string;
         company_name: string;
         reg_number: string;
         office_address1: string;
@@ -229,10 +229,10 @@ export declare class CorporateService {
         created_at: string;
         updated_at: string;
     } | null>;
-    delete(id: number): Promise<{
+    delete(id: string): Promise<{
         success: boolean;
     }>;
-    addContact(corporateId: number, contactData: CreateContactDto): Promise<{
+    addContact(corporateId: string, contactData: CreateContactDto): Promise<{
         salutation: string;
         first_name: string;
         last_name: string;
@@ -240,13 +240,13 @@ export declare class CorporateService {
         email: string;
         company_role: string;
         system_role: string;
-        id: number;
+        id: string;
         created_at: string;
         updated_at: string;
-        corporate_id: number;
+        corporate_id: string;
     }>;
-    addSubsidiary(corporateId: number, subsidiaryData: CreateSubsidiaryDto): Promise<{
-        id: number;
+    addSubsidiary(corporateId: string, subsidiaryData: CreateSubsidiaryDto): Promise<{
+        id: string;
         company_name: string;
         reg_number: string;
         office_address1: string;
@@ -259,18 +259,18 @@ export declare class CorporateService {
         account_note: string;
         created_at: string;
         updated_at: string;
-        corporate_id: number;
+        corporate_id: string;
     }>;
-    addInvestigationLog(corporateId: number, logData: Omit<InvestigationLogTable, 'id' | 'corporate_id' | 'created_at'>): Promise<{
-        id: number;
+    addInvestigationLog(corporateId: string, logData: Omit<InvestigationLogTable, 'id' | 'corporate_id' | 'created_at'>): Promise<{
+        id: string;
         created_at: string;
-        corporate_id: number;
+        corporate_id: string;
         timestamp: string;
         note: string | null;
         from_status: CorporateStatus | null;
         to_status: CorporateStatus | null;
     }>;
-    updateContact(id: number, contactData: UpdateContactDto): Promise<{
+    updateContact(id: string, contactData: UpdateContactDto): Promise<{
         salutation: string;
         first_name: string;
         last_name: string;
@@ -278,16 +278,16 @@ export declare class CorporateService {
         email: string;
         company_role: string;
         system_role: string;
-        id: number;
+        id: string;
         created_at: string;
         updated_at: string;
-        corporate_id: number;
+        corporate_id: string;
     }>;
-    deleteContact(id: number): Promise<{
+    deleteContact(id: string): Promise<{
         success: boolean;
     }>;
-    updateSubsidiary(id: number, subsidiaryData: UpdateSubsidiaryDto): Promise<{
-        id: number;
+    updateSubsidiary(id: string, subsidiaryData: UpdateSubsidiaryDto): Promise<{
+        id: string;
         company_name: string;
         reg_number: string;
         office_address1: string;
@@ -300,12 +300,12 @@ export declare class CorporateService {
         account_note: string;
         created_at: string;
         updated_at: string;
-        corporate_id: number;
+        corporate_id: string;
     }>;
-    deleteSubsidiary(id: number): Promise<{
+    deleteSubsidiary(id: string): Promise<{
         success: boolean;
     }>;
-    updateStatus(id: number, status: string, note?: string): Promise<{
+    updateStatus(id: string, status: string, note?: string): Promise<{
         contacts: {
             salutation: string;
             first_name: string;
@@ -314,13 +314,13 @@ export declare class CorporateService {
             email: string;
             company_role: string;
             system_role: string;
-            id: number;
+            id: string;
             created_at: string;
             updated_at: string;
-            corporate_id: number;
+            corporate_id: string;
         }[];
         subsidiaries: {
-            id: number;
+            id: string;
             company_name: string;
             reg_number: string;
             office_address1: string;
@@ -333,18 +333,18 @@ export declare class CorporateService {
             account_note: string;
             created_at: string;
             updated_at: string;
-            corporate_id: number;
+            corporate_id: string;
         }[];
         investigation_log: {
-            id: number;
+            id: string;
             created_at: string;
-            corporate_id: number;
+            corporate_id: string;
             timestamp: string;
             note: string | null;
             from_status: CorporateStatus | null;
             to_status: CorporateStatus | null;
         }[];
-        id: number;
+        id: string;
         company_name: string;
         reg_number: string;
         office_address1: string;

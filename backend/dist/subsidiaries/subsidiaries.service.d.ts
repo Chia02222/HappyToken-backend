@@ -5,11 +5,11 @@ export declare class SubsidiariesService {
     constructor(dbService: DatabaseService);
     private get db();
     findAll(params?: {
-        corporate_id?: number;
+        corporate_id?: string;
         limit?: number;
         offset?: number;
     }): Promise<{
-        id: number;
+        id: string;
         company_name: string;
         reg_number: string;
         office_address1: string;
@@ -22,10 +22,10 @@ export declare class SubsidiariesService {
         account_note: string;
         created_at: string;
         updated_at: string;
-        corporate_id: number;
+        corporate_id: string;
     }[]>;
-    findById(id: number): Promise<{
-        id: number;
+    findById(id: string): Promise<{
+        id: string;
         company_name: string;
         reg_number: string;
         office_address1: string;
@@ -38,10 +38,10 @@ export declare class SubsidiariesService {
         account_note: string;
         created_at: string;
         updated_at: string;
-        corporate_id: number;
+        corporate_id: string;
     }>;
     create(data: Omit<SubsidiaryTable, 'id' | 'created_at' | 'updated_at'>): Promise<{
-        id: number;
+        id: string;
         company_name: string;
         reg_number: string;
         office_address1: string;
@@ -54,10 +54,10 @@ export declare class SubsidiariesService {
         account_note: string;
         created_at: string;
         updated_at: string;
-        corporate_id: number;
+        corporate_id: string;
     }>;
-    update(id: number, data: Partial<Omit<SubsidiaryTable, 'id' | 'created_at'>>): Promise<{
-        id: number;
+    update(id: string, data: Partial<Omit<SubsidiaryTable, 'id' | 'created_at'>>): Promise<{
+        id: string;
         company_name: string;
         reg_number: string;
         office_address1: string;
@@ -70,9 +70,9 @@ export declare class SubsidiariesService {
         account_note: string;
         created_at: string;
         updated_at: string;
-        corporate_id: number;
+        corporate_id: string;
     }>;
-    delete(id: number): Promise<{
+    delete(id: string): Promise<{
         success: boolean;
     }>;
 }

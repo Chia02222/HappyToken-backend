@@ -5,8 +5,8 @@ exports.down = down;
 async function up(db) {
     await db.schema
         .createTable('investigation_logs')
-        .addColumn('id', 'serial', (col) => col.primaryKey())
-        .addColumn('corporate_id', 'integer', (col) => col.notNull().references('corporates.id').onDelete('cascade'))
+        .addColumn('id', 'bigserial', (col) => col.primaryKey())
+        .addColumn('corporate_id', 'bigint', (col) => col.notNull().references('corporates.id').onDelete('cascade'))
         .addColumn('timestamp', 'timestamp', (col) => col.notNull())
         .addColumn('note', 'text')
         .addColumn('from_status', 'varchar(50)')

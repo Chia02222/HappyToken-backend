@@ -5,8 +5,8 @@ exports.down = down;
 async function up(db) {
     await db.schema
         .createTable('contacts')
-        .addColumn('id', 'serial', (col) => col.primaryKey())
-        .addColumn('corporate_id', 'integer', (col) => col.notNull().references('corporates.id').onDelete('cascade'))
+        .addColumn('id', 'bigserial', (col) => col.primaryKey())
+        .addColumn('corporate_id', 'bigint', (col) => col.notNull().references('corporates.id').onDelete('cascade'))
         .addColumn('salutation', 'varchar(10)', (col) => col.notNull())
         .addColumn('first_name', 'varchar(100)', (col) => col.notNull())
         .addColumn('last_name', 'varchar(100)', (col) => col.notNull())

@@ -13,7 +13,7 @@ export class CorporateController {
   }
 
   @Get(':id')
-  async findById(@Param('id', ParseIntPipe) id: number) {
+  async findById(@Param('id') id: string) {
     return await this.corporateService.findById(id);
   }
 
@@ -24,20 +24,20 @@ export class CorporateController {
 
   @Put(':id')
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() updateData: UpdateCorporateDto
   ) {
     return await this.corporateService.update(id, updateData);
   }
 
   @Delete(':id')
-  async delete(@Param('id', ParseIntPipe) id: number) {
+  async delete(@Param('id') id: string) {
     return await this.corporateService.delete(id);
   }
 
   @Post(':id/contacts')
   async addContact(
-    @Param('id', ParseIntPipe) corporateId: number,
+    @Param('id') corporateId: string,
     @Body() contactData: Omit<ContactTable, 'id' | 'corporate_id' | 'created_at' | 'updated_at'>
   ) {
     return await this.corporateService.addContact(corporateId, contactData);
@@ -45,7 +45,7 @@ export class CorporateController {
 
   @Post(':id/subsidiaries')
   async addSubsidiary(
-    @Param('id', ParseIntPipe) corporateId: number,
+    @Param('id') corporateId: string,
     @Body() subsidiaryData: Omit<SubsidiaryTable, 'id' | 'corporate_id' | 'created_at' | 'updated_at'>
   ) {
     return await this.corporateService.addSubsidiary(corporateId, subsidiaryData);
@@ -53,7 +53,7 @@ export class CorporateController {
 
   @Post(':id/investigation-logs')
   async addInvestigationLog(
-    @Param('id', ParseIntPipe) corporateId: number,
+    @Param('id') corporateId: string,
     @Body() logData: Omit<InvestigationLogTable, 'id' | 'corporate_id' | 'created_at'>
   ) {
     return await this.corporateService.addInvestigationLog(corporateId, logData);
@@ -61,7 +61,7 @@ export class CorporateController {
 
   @Put(':id/status')
   async updateStatus(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() body: { status: string; note?: string }
   ) {
     return await this.corporateService.updateStatus(id, body.status, body.note);

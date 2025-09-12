@@ -22,7 +22,7 @@ let ContactsController = class ContactsController {
     }
     async findAll(corporateId, limit, offset) {
         return await this.contactsService.findAll({
-            corporate_id: corporateId ? Number(corporateId) : undefined,
+            corporate_id: corporateId ? String(corporateId) : undefined,
             limit: limit ? Number(limit) : undefined,
             offset: offset ? Number(offset) : undefined,
         });
@@ -54,7 +54,7 @@ __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], ContactsController.prototype, "findById", null);
 __decorate([
@@ -69,14 +69,14 @@ __decorate([
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], ContactsController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], ContactsController.prototype, "delete", null);
 exports.ContactsController = ContactsController = __decorate([

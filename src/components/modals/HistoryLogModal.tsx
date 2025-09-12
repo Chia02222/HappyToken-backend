@@ -9,7 +9,7 @@ interface HistoryLogModalProps {
     isOpen: boolean;
     onClose: () => void;
     corporate: Corporate | null;
-    onSave: (corporateId: number, note: string) => void;
+    onSave: (corporateId: string, note: string) => void;
 }
 
 const HistoryLogModal: React.FC<HistoryLogModalProps> = ({ isOpen, onClose, corporate, onSave }) => {

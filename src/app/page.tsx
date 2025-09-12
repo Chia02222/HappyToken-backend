@@ -18,7 +18,7 @@ const generateTempContactId = () => {
 };
 
 const INITIAL_CORPORATE_FORM_DATA: CorporateDetails = {
-    id: 0,
+    id: '',
     company_name: '',
     reg_number: '',
     status: 'New',
@@ -212,7 +212,7 @@ const App: React.FC = () => {
     handleCloseCorporateForm();
   };
   
-  const handleUpdateStatus = async (id: number, status: CorporateStatus, note?: string) => {
+  const handleUpdateStatus = async (id: string, status: CorporateStatus, note?: string) => {
     try {
         await updateCorporateStatus(id, status, note);
         await fetchCorporates();
@@ -221,7 +221,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleViewHistory = async (corporateId: number) => {
+  const handleViewHistory = async (corporateId: string) => {
     try {
       const fullData = await getCorporateById(corporateId);
       setSelectedCorporateForHistory(fullData);
@@ -236,7 +236,7 @@ const App: React.FC = () => {
     setSelectedCorporateForHistory(null);
   };
 
-  const handleSaveRemark = async (corporateId: number, note: string) => {
+  const handleSaveRemark = async (corporateId: string, note: string) => {
     try {
       // Fetch current corporate data to get its status
       const currentCorporateData = await getCorporateById(corporateId);

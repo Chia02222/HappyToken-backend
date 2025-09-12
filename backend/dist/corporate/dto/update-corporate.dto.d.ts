@@ -62,18 +62,18 @@ export declare class CreateSubsidiaryDto extends BaseSubsidiaryDto {
 }
 declare const UpdateContactDto_base: import("@nestjs/mapped-types").MappedType<Partial<BaseContactDto>>;
 export declare class UpdateContactDto extends UpdateContactDto_base {
-    id?: number;
+    id?: string;
 }
 declare const UpdateSubsidiaryDto_base: import("@nestjs/mapped-types").MappedType<Partial<BaseSubsidiaryDto>>;
 export declare class UpdateSubsidiaryDto extends UpdateSubsidiaryDto_base {
-    id?: number;
+    id?: string;
 }
 declare const UpdateCorporateDto_base: import("@nestjs/mapped-types").MappedType<Partial<CreateCorporateDto>>;
 export declare class UpdateCorporateDto extends UpdateCorporateDto_base {
     contacts?: UpdateContactDto[];
     subsidiaries?: UpdateSubsidiaryDto[];
-    contactIdsToDelete?: number[];
-    subsidiaryIdsToDelete?: number[];
+    contactIdsToDelete?: string[];
+    subsidiaryIdsToDelete?: string[];
     investigation_log?: any;
 }
 export {};

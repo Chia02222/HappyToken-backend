@@ -13,14 +13,14 @@ export class SubsidiariesController {
     @Query('offset') offset?: string,
   ) {
     return await this.subsidiariesService.findAll({
-      corporate_id: corporateId ? Number(corporateId) : undefined,
+      corporate_id: corporateId ? String(corporateId) : undefined,
       limit: limit ? Number(limit) : undefined,
       offset: offset ? Number(offset) : undefined,
     });
   }
 
   @Get(':id')
-  async findById(@Param('id', ParseIntPipe) id: number) {
+  async findById(@Param('id', ParseIntPipe) id: string) {
     return await this.subsidiariesService.findById(id);
   }
 
@@ -33,14 +33,14 @@ export class SubsidiariesController {
 
   @Put(':id')
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe) id: string,
     @Body() body: Partial<Omit<SubsidiaryTable, 'id' | 'created_at'>>,
   ) {
     return await this.subsidiariesService.update(id, body);
   }
 
   @Delete(':id')
-  async delete(@Param('id', ParseIntPipe) id: number) {
+  async delete(@Param('id', ParseIntPipe) id: string) {
     return await this.subsidiariesService.delete(id);
   }
 }

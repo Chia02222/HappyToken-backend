@@ -11,9 +11,9 @@ interface CorporatePageProps {
     onView: (corporate: Corporate) => void;
     onFirstApprove: (corporate: Corporate) => void;
     onSecondApprove: (corporate: Corporate) => void;
-    onViewHistory: (corporateId: number) => void;
+    onViewHistory: (corporateId: string) => void;
     corporates: Corporate[];
-    updateStatus: (id: number, status: CorporateStatus, note?: string) => Promise<void>;
+    updateStatus: (id: string, status: CorporateStatus, note?: string) => Promise<void>;
     corporateToAutoSendLink: Corporate | null;
     setCorporateToAutoSendLink: React.Dispatch<React.SetStateAction<Corporate | null>>;
 }
@@ -59,12 +59,12 @@ const CorporatePage: React.FC<CorporatePageProps> = ({
         setTargetStatus(null);
     };
 
-    const handleSaveStatusChange = (corporateId: number, status: CorporateStatus, note: string) => {
+    const handleSaveStatusChange = (corporateId: string, status: CorporateStatus, note: string) => {
         updateStatus(corporateId, status, note);
         handleCloseModals();
     };
 
-    const handleSendLink = (corporateId: number) => {
+    const handleSendLink = (corporateId: string) => {
         updateStatus(corporateId, 'Send', 'Registration link generated and status updated.');
         handleCloseModals();
     };
