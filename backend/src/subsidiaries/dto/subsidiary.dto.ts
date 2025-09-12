@@ -1,8 +1,8 @@
 import { PartialType } from '@nestjs/mapped-types';
-import { SubsidiaryTable } from '../../database/types';
 
 // Base DTO that explicitly defines properties from the `subsidiaries` table
 export class BaseSubsidiaryDto {
+    corporate_id: string;
     company_name: string;
     reg_number: string;
     office_address1: string;
@@ -13,7 +13,6 @@ export class BaseSubsidiaryDto {
     country: string;
     website?: string | null;
     account_note?: string | null;
-    corporate_id: string;
 }
 
 // DTO for creating a subsidiary
