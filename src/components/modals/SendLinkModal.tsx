@@ -36,7 +36,7 @@ const SendLinkModal: React.FC<SendLinkModalProps> = ({ isOpen, onClose, corporat
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Send Registration Link">
             <div>
-                <p className="text-sm text-gray-600 mb-4">A unique registration link for <span className="font-medium">{corporate.companyName}</span> has been generated. Send this link to the corporate client to proceed with their account setup.</p>
+                <p className="text-sm text-gray-600 mb-4">A unique registration link for <span className="font-medium">{corporate.company_name}</span> has been generated. Send this link to the corporate client to proceed with their account setup.</p>
                 
                 <div className="flex items-center space-x-2">
                     <input

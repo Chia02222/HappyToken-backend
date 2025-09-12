@@ -54,13 +54,13 @@ export const updateCorporateStatus = async (id: number, status: string, note?: s
     return handleResponse(response);
 };
 
-export const addRemark = async (corporateId: number, note: string) => {
+export const addRemark = async (corporateId: number, note: string, fromStatus?: string, toStatus?: string) => {
     const response = await fetch(`${API_BASE_URL}/corporates/${corporateId}/investigation-logs`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ note, timestamp: new Date().toISOString() }),
+        body: JSON.stringify({ note, timestamp: new Date().toISOString(), from_status: fromStatus, to_status: toStatus }),
     });
     return handleResponse(response);
 };

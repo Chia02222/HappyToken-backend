@@ -7,7 +7,7 @@ import SelectField from './common/SelectField';
 import ContentSection from './common/ContentSection';
 import ErrorMessageModal from './modals/ErrorMessageModal';
 
-import { CorporateDetails } from '../types';
+import { CorporateDetails, Contact } from '../types';
 
 interface ECommercialTermsFormProps {
     onCloseForm: () => void;
@@ -48,7 +48,7 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
     
     const handleSecondaryContactSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const contactId = e.target.value;
-        const selectedContact = formData.contacts.find((c: any) => c.id.toString() === contactId);
+        const selectedContact = formData.contacts.find((c: Contact) => c.id?.toString() === contactId);
         
         setFormData(prev => ({
             ...prev,
@@ -189,7 +189,7 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                                     required
                                 >
                                     <option value="">Select a contact</option>
-                                    {otherContacts.map((contact: any) => (
+                                    {otherContacts.map((contact: Contact) => (
                                         <option key={contact.id} value={contact.id}>
                                             {`${contact.first_name} ${contact.last_name}`}
                                         </option>

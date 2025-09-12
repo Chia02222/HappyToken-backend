@@ -48,7 +48,7 @@ export interface Corporate {
   reg_number: string;
   status: CorporateStatus;
   created_at: string;
-  investigation_log: LogEntry[];
+    investigation_log: LogEntry[];
 }
 
 export interface CorporateDetails extends Corporate {

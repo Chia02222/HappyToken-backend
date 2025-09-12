@@ -48,7 +48,7 @@ export class CorporateService {
       ...corporate,
       contacts,
       subsidiaries,
-      investigationLog: investigationLogs,
+      investigation_log: investigationLogs,
     };
   }
 
@@ -100,7 +100,7 @@ export class CorporateService {
 
   // Update corporate
   async update(id: number, updateData: UpdateCorporateDto) {
-    const { contacts, subsidiaries, contactIdsToDelete, subsidiaryIdsToDelete, ...corporateUpdateData } = updateData;
+    const { contacts, subsidiaries, contactIdsToDelete, subsidiaryIdsToDelete, investigation_log, ...corporateUpdateData } = updateData;
 
     // Update main corporate table
     const updatedCorporate = await this.db
@@ -214,19 +214,26 @@ export class CorporateService {
 
   // Add investigation log entry
   async addInvestigationLog(corporateId: number, logData: Omit<InvestigationLogTable, 'id' | 'corporate_id' | 'created_at'>) {
-    const inserted = await this.db
-      .insertInto('investigation_logs')
-      .values({
-        corporate_id: corporateId,
-        timestamp: logData.timestamp,
-        note: logData.note ?? null,
-        from_status: logData.from_status ?? null,
-        to_status: logData.to_status ?? null,
-        created_at: sql`now()`,
-      })
-      .returningAll()
-      .executeTakeFirst();
-    return inserted!;
+    console.log('addInvestigationLog called with:', { corporateId, logData });
+    try {
+      const inserted = await this.db
+        .insertInto('investigation_logs')
+        .values({
+          corporate_id: corporateId,
+          timestamp: logData.timestamp,
+          note: logData.note ?? null,
+          from_status: logData.from_status ?? null,
+          to_status: logData.to_status ?? null,
+          created_at: sql`now()`,
+        })
+        .returningAll()
+        .executeTakeFirst();
+      console.log('Investigation log inserted:', inserted);
+      return inserted!;
+    } catch (error) {
+      console.error('Error inserting investigation log:', error);
+      throw error; // Re-throw the error after logging
+    }
   }
 
   // Update contact

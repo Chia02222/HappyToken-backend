@@ -117,7 +117,7 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                     <InputField id="company_name" label="Company Name" name="company_name" value={formData.company_name} onChange={handleChange} required />
                     <InputField id="reg_number" label="Official Registration Number" name="reg_number" value={formData.reg_number} onChange={handleChange} required />
                     <InputField id="office_address1" label="Office Address 1" name="office_address1" value={formData.office_address1} onChange={handleChange} required />
-                    <InputField id="office_address2" label="Office Address 2" name="office_address2" value={formData.office_address2} onChange={handleChange} />
+                    <InputField id="office_address2" label="Office Address 2" name="office_address2" value={formData.office_address2 ??  null} onChange={handleChange} />
                     <InputField id="postcode" label="Postcode" name="postcode" value={formData.postcode} onChange={handleChange} required />
                     <InputField id="city" label="City" name="city" value={formData.city} onChange={handleChange} required />
                     <SelectField id="state" label="State" name="state" value={formData.state} onChange={handleChange} required>
@@ -148,7 +148,7 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                                 <InputField id={`sub-company_name-${sub.id}`} label="Company Name" name="company_name" value={sub.company_name} onChange={(e) => handleSubsidiaryChange(index, e)} required />
                                 <InputField id={`sub-reg_number-${sub.id}`} label="Official Registration Number" name="reg_number" value={sub.reg_number} onChange={(e) => handleSubsidiaryChange(index, e)} required />
                                 <InputField id={`sub-office_address1-${sub.id}`} label="Office Address 1" name="office_address1" value={sub.office_address1} onChange={(e) => handleSubsidiaryChange(index, e)} required />
-                                <InputField id={`sub-office_address2-${sub.id}`} label="Office Address 2" name="office_address2" value={sub.office_address2} onChange={(e) => handleSubsidiaryChange(index, e)} />
+                                <InputField id={`sub-office_address2-${sub.id}`} label="Office Address 2" name="office_address2" value={sub.office_address2 ?? null} onChange={(e) => handleSubsidiaryChange(index, e)} />
                                 <InputField id={`sub-postcode-${sub.id}`} label="Postcode" name="postcode" value={sub.postcode} onChange={(e) => handleSubsidiaryChange(index, e)} required />
                                 <InputField id={`sub-city-${sub.id}`} label="City" name="city" value={sub.city} onChange={(e) => handleSubsidiaryChange(index, e)} required />
                                 <SelectField id={`sub-state-${sub.id}`} label="State" name="state" value={sub.state} onChange={(e) => handleSubsidiaryChange(index, e)} required>
@@ -160,7 +160,7 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                                     <option>Singapore</option>
                                 </SelectField>
                                 <div className="md:col-span-2">
-                                    <InputField id={`sub-website-${sub.id}`} label="Website" name="website" value={sub.website} onChange={(e) => handleSubsidiaryChange(index, e)} />
+                                    <InputField id={`sub-website-${sub.id}`} label="Website" name="website" value={sub.website ?? null} onChange={(e) => handleSubsidiaryChange(index, e)} />
                                 </div>
                                 <div className="md:col-span-2">
                                     <label htmlFor={`sub-account_note-${sub.id}`} className="block text-xs font-medium text-gray-700 mb-1">Account Note</label>

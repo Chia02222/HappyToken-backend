@@ -51,7 +51,7 @@ let CorporateService = class CorporateService {
             ...corporate,
             contacts,
             subsidiaries,
-            investigationLog: investigationLogs,
+            investigation_log: investigationLogs,
         };
     }
     async create(corporateData) {
@@ -98,7 +98,7 @@ let CorporateService = class CorporateService {
         return inserted;
     }
     async update(id, updateData) {
-        const { contacts, subsidiaries, contactIdsToDelete, subsidiaryIdsToDelete, ...corporateUpdateData } = updateData;
+        const { contacts, subsidiaries, contactIdsToDelete, subsidiaryIdsToDelete, investigation_log, ...corporateUpdateData } = updateData;
         const updatedCorporate = await this.db
             .updateTable('corporates')
             .set({
@@ -189,19 +189,27 @@ let CorporateService = class CorporateService {
         return inserted;
     }
     async addInvestigationLog(corporateId, logData) {
-        const inserted = await this.db
-            .insertInto('investigation_logs')
-            .values({
-            corporate_id: corporateId,
-            timestamp: logData.timestamp,
-            note: logData.note ?? null,
-            from_status: logData.from_status ?? null,
-            to_status: logData.to_status ?? null,
-            created_at: (0, kysely_1.sql) `now()`,
-        })
-            .returningAll()
-            .executeTakeFirst();
-        return inserted;
+        console.log('addInvestigationLog called with:', { corporateId, logData });
+        try {
+            const inserted = await this.db
+                .insertInto('investigation_logs')
+                .values({
+                corporate_id: corporateId,
+                timestamp: logData.timestamp,
+                note: logData.note ?? null,
+                from_status: logData.from_status ?? null,
+                to_status: logData.to_status ?? null,
+                created_at: (0, kysely_1.sql) `now()`,
+            })
+                .returningAll()
+                .executeTakeFirst();
+            console.log('Investigation log inserted:', inserted);
+            return inserted;
+        }
+        catch (error) {
+            console.error('Error inserting investigation log:', error);
+            throw error;
+        }
     }
     async updateContact(id, contactData) {
         const updated = await this.db

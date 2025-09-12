@@ -74,5 +74,6 @@ export declare class UpdateCorporateDto extends UpdateCorporateDto_base {
     subsidiaries?: UpdateSubsidiaryDto[];
     contactIdsToDelete?: number[];
     subsidiaryIdsToDelete?: number[];
+    investigation_log?: any;
 }
 export {};

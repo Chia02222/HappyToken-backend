@@ -72,7 +72,7 @@ export declare class CorporateService {
             updated_at: string;
             corporate_id: number;
         }[];
-        investigationLog: {
+        investigation_log: {
             id: number;
             created_at: string;
             corporate_id: number;
@@ -184,7 +184,7 @@ export declare class CorporateService {
             updated_at: string;
             corporate_id: number;
         }[];
-        investigationLog: {
+        investigation_log: {
             id: number;
             created_at: string;
             corporate_id: number;
@@ -335,7 +335,7 @@ export declare class CorporateService {
             updated_at: string;
             corporate_id: number;
         }[];
-        investigationLog: {
+        investigation_log: {
             id: number;
             created_at: string;
             corporate_id: number;

@@ -82,6 +82,7 @@ class UpdateCorporateDto extends (0, mapped_types_1.PartialType)(CreateCorporate
     subsidiaries;
     contactIdsToDelete;
     subsidiaryIdsToDelete;
+    investigation_log;
 }
 exports.UpdateCorporateDto = UpdateCorporateDto;
 //# sourceMappingURL=update-corporate.dto.js.map

@@ -22,8 +22,10 @@ const HistoryLogModal: React.FC<HistoryLogModalProps> = ({ isOpen, onClose, corp
     }, [isOpen]);
 
     const handleSave = () => {
+        console.log('handleSave called');
         if (corporate && logNote.trim()) {
             onSave(corporate.id, logNote);
+            onClose(); // Add this line to close the modal
         }
     };
 
@@ -36,7 +38,7 @@ const HistoryLogModal: React.FC<HistoryLogModalProps> = ({ isOpen, onClose, corp
                 <div className="max-h-64 overflow-y-auto pr-2 space-y-4 border rounded-md p-3 bg-gray-50">
                     {corporate.investigation_log && corporate.investigation_log.length > 0 ? (
                         [...corporate.investigation_log].map((log, index) => (
-                            <div key={index} className="p-3 border rounded-md bg-white shadow-sm">
+                            <div key={log.id} className="p-3 border rounded-md bg-white shadow-sm">
                                 <p className="text-xs text-gray-500 mb-1">{log.timestamp}</p>
                                 {log.from_status && log.to_status ? (
                                     <p className="text-sm font-semibold text-ht-gray-dark">

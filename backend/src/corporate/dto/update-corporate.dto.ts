@@ -81,4 +81,5 @@ export class UpdateCorporateDto extends PartialType(CreateCorporateDto) {
     subsidiaries?: UpdateSubsidiaryDto[];
     contactIdsToDelete?: number[];
     subsidiaryIdsToDelete?: number[];
+    investigation_log?: any;
 }

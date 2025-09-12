@@ -19,7 +19,7 @@ const SelectField: React.FC<SelectFieldProps> = ({ label, name, id, value, onCha
         <select
             id={id || name}
             name={name}
-            value={value}
+            value={value ?? ''}
             onChange={onChange}
             className="w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm focus:ring-ht-blue focus:border-ht-blue bg-white dark:bg-white"
         >

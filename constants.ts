@@ -1,6 +1,6 @@
 
 import { NavItem } from './types';
-import { DashboardIcon, RfqIcon, MerchantIcon, CorporateIcon, ApiIcon, SettingsIcon, ReportsIcon } from './components/Icons';
+import { DashboardIcon, RfqIcon, MerchantIcon, CorporateIcon, ApiIcon, SettingsIcon, ReportsIcon } from './src/components/Icons';
 
 export const NAV_ITEMS: NavItem[] = [
   { name: 'Dashboard', icon: DashboardIcon },

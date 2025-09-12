@@ -9,8 +9,13 @@ import CorporateForm from '../components/CorporateForm';
 import CommercialTermsForm from '../components/CommercialTermsForm';
 import ECommercialTermsForm from '../components/ECommercialTermsForm';
 import HistoryLogModal from '../components/modals/HistoryLogModal';
-import { Page, Corporate, CorporateDetails, CorporateStatus } from '../types';
+import { Page, Corporate, CorporateDetails, CorporateStatus, Contact} from '../types';
 import { getCorporates, getCorporateById, createCorporate, updateCorporate, updateCorporateStatus, addRemark } from '../services/api';
+
+let tempContactIdCounter = -1;
+const generateTempContactId = () => {
+  return tempContactIdCounter--;
+};
 
 const INITIAL_CORPORATE_FORM_DATA: CorporateDetails = {
     id: 0,
@@ -30,7 +35,7 @@ const INITIAL_CORPORATE_FORM_DATA: CorporateDetails = {
     subsidiaries: [],
     contacts: [
         {
-            id: Date.now(),
+            id: generateTempContactId(),
             salutation: 'Mr',
             first_name: '',
             last_name: '',
@@ -135,16 +140,48 @@ const App: React.FC = () => {
     try {
       if (formMode === 'approve-second' && action === 'submit') {
         formData.second_approval_confirmation = true;
+
+        // Handle secondary approver contact
+        const { secondary_approver } = formData;
+        if (secondary_approver) {
+            if (secondary_approver.use_existing_contact && secondary_approver.selected_contact_id) {
+                // Update existing contact
+                const contactToUpdateIndex = formData.contacts.findIndex(c => c.id === secondary_approver.selected_contact_id);
+                if (contactToUpdateIndex !== -1) {
+                    formData.contacts[contactToUpdateIndex] = {
+                        ...formData.contacts[contactToUpdateIndex],
+                        contact_number: secondary_approver.contact_number || formData.contacts[contactToUpdateIndex].contact_number,
+                        email: secondary_approver.email || formData.contacts[contactToUpdateIndex].email,
+                        company_role: secondary_approver.company_role || formData.contacts[contactToUpdateIndex].company_role,
+                        system_role: secondary_approver.system_role || formData.contacts[contactToUpdateIndex].system_role,
+                    };
+                }
+            } else if (!secondary_approver.use_existing_contact) {
+                // Create new contact from secondary approver details
+                const newSecondaryContact: Contact = {
+                    id: generateTempContactId(), 
+                    salutation: 'Mr', // Default salutation, or infer if possible
+                    first_name: secondary_approver.signatory_name?.split(' ')[0] || '',
+                    last_name: secondary_approver.signatory_name?.split(' ').slice(1).join(' ') || '',
+                    contact_number: secondary_approver.contact_number || '',
+                    email: secondary_approver.email || '',
+                    company_role: secondary_approver.company_role || '',
+                    system_role: secondary_approver.system_role || '',
+                };
+                formData.contacts.push(newSecondaryContact);
+            }
+        }
       } else if (formMode === 'approve' && action === 'submit') {
         formData.first_approval_confirmation = true;
       }
 
-      const { secondary_approver, contacts, subsidiaries, investigation_log, investigationLog, contactIdsToDelete, subsidiaryIdsToDelete, ...corporateData } = formData;
+      const { secondary_approver, contacts, subsidiaries, investigation_log, contactIdsToDelete, subsidiaryIdsToDelete, ...corporateData } = formData;
 
       const dataToSend = {
         ...corporateData,
         contacts,
         subsidiaries,
+        investigation_log,
         contactIdsToDelete,
         subsidiaryIdsToDelete,
       };
@@ -201,9 +238,14 @@ const App: React.FC = () => {
 
   const handleSaveRemark = async (corporateId: number, note: string) => {
     try {
-      await addRemark(corporateId, note);
+      // Fetch current corporate data to get its status
+      const currentCorporateData = await getCorporateById(corporateId);
+      const currentStatus = currentCorporateData?.status;
+
+      await addRemark(corporateId, note, currentStatus, currentStatus); // Pass current status
       // Refresh history data
       const fullData = await getCorporateById(corporateId);
+      console.log('fullData after saving remark:', fullData);
       setSelectedCorporateForHistory(fullData);
       await fetchCorporates(); // Also refresh the main list
     } catch (error) {
@@ -232,25 +274,26 @@ const App: React.FC = () => {
                 <CorporateForm
                   onCloseForm={handleCloseCorporateForm}
                   setFormStep={setFormStep}
-                  formData={formData as any}
-                  setFormData={setFormData as any}
+                  formData={({ ...formData, investigation_log: formData.investigation_log || [] }) as CorporateDetails}
+                  setFormData={setFormData}
                   onSaveCorporate={handleSaveCorporate}
                 />
               ) : formStep === 2 ? (
                 <CommercialTermsForm
                   onCloseForm={handleCloseCorporateForm}
                   setFormStep={setFormStep}
-                  formData={formData as any}
-                  setFormData={setFormData as any}
+                  formData={({ ...formData, investigation_log: formData.investigation_log || [] }) as CorporateDetails}
+                  setFormData={setFormData}
                   onSaveCorporate={handleSaveCorporate}
                 />
               ) : (
                  <ECommercialTermsForm
                   onCloseForm={handleCloseCorporateForm}
                   setFormStep={setFormStep}
-                  formData={formData as any}
-                  setFormData={setFormData as any}
+                  formData={({ ...formData, investigation_log: formData.investigation_log || [] }) as CorporateDetails}
+                  setFormData={setFormData}
                   onSaveCorporate={handleSaveCorporate}
+                  formMode={formMode}
                 />
               )}
           </FormLayout>
@@ -267,7 +310,6 @@ const App: React.FC = () => {
                 onSecondApprove={handleSecondApproval}
                 onViewHistory={handleViewHistory}
                 corporates={corporates}
-                setCorporates={setCorporates}
                 updateStatus={handleUpdateStatus}
                 corporateToAutoSendLink={corporateToAutoSendLink}
                 setCorporateToAutoSendLink={setCorporateToAutoSendLink}
