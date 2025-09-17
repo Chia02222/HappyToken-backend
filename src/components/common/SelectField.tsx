@@ -9,10 +9,11 @@ interface SelectFieldProps {
     onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
     required?: boolean;
     children: React.ReactNode;
+    className?: string;
 }
 
-const SelectField: React.FC<SelectFieldProps> = ({ label, name, id, value, onChange, required = false, children }) => (
-    <div>
+const SelectField: React.FC<SelectFieldProps> = ({ label, name, id, value, onChange, required = false, children, className }) => (
+    <div className={className}>
         <label htmlFor={id || name} className="block text-xs font-medium text-gray-700 mb-1">
             {required && <span className="text-red-500">*</span>}{label}
         </label>

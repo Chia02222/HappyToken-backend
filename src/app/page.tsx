@@ -66,17 +66,6 @@ const INITIAL_CORPORATE_FORM_DATA: CorporateDetails = {
     agreed_to_commercial_terms: false,
     first_approval_confirmation: false,
     second_approval_confirmation: false,
-    secondary_approver: {
-        use_existing_contact: false,
-        selected_contact_id: '',
-        salutation: 'Mr',
-        first_name: '',
-        last_name: '',
-        company_role: '',
-        system_role: '',
-        email: '',
-        contact_number: '',
-    },
 };
 
 const App: React.FC = () => {

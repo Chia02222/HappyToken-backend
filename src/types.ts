@@ -84,7 +84,9 @@ export interface CorporateDetails extends Corporate {
     secondary_approver?: {
         use_existing_contact?: boolean;
         selected_contact_id?: string | number;
-        signatory_name?: string;
+        salutation?: string;
+        first_name?: string;
+        last_name?: string;
         company_role?: string;
         system_role?: string;
         email?: string;

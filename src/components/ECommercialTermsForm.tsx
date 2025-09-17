@@ -203,7 +203,7 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                                         </option>
                                     ))}
                                 </SelectField>
-                                <DisplayField label="Signatory Name" value={secondary_approver.signatory_name ?? null} />
+                                <DisplayField label="Signatory Name" value={`${secondary_approver.last_name || ''} ${secondary_approver.first_name || ''}`.trim()} />
                                 <DisplayField label="Company Role" value={secondary_approver.company_role ?? null} />
                                 <DisplayField label="System Role" value={secondary_approver.system_role ?? null} />
                                 <DisplayField label="Email Address" value={secondary_approver.email ?? null} />
@@ -223,6 +223,7 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                                     <option value="Mrs">Mrs</option>
                                     <option value="Ms">Ms</option>
                                 </SelectField>
+                                <div className="md:col-span-1"></div>
                                 <InputField id="first_name" label="First Name" name="first_name" value={secondary_approver.first_name ?? null} onChange={handleSecondaryApproverChange} required />
                                 <InputField id="last_name" label="Last Name" name="last_name" value={secondary_approver.last_name ?? null} onChange={handleSecondaryApproverChange} required />
                                 <InputField id="company_role" label="Company Role" name="company_role" value={secondary_approver.company_role ?? null} onChange={handleSecondaryApproverChange} required />

@@ -45,7 +45,7 @@ export class CorporateService {
     }
 
     const [contacts, subsidiaries, investigationLogs] = await Promise.all([
-      this.db.selectFrom('contacts').selectAll().where('corporate_id', '=', id).execute(),
+      this.db.selectFrom('contacts').selectAll().where('corporate_id', '=', id).orderBy('created_at', 'asc').execute(),
       this.db.selectFrom('subsidiaries').selectAll().where('corporate_id', '=', id).execute(),
       this.db
         .selectFrom('investigation_logs')
