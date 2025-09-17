@@ -3,6 +3,17 @@ import { PartialType } from '@nestjs/mapped-types';
 import { CreateContactDto, UpdateContactDto} from '../../contacts/dto/contact.dto';
 import { CreateSubsidiaryDto, UpdateSubsidiaryDto } from '../../subsidiaries/dto/subsidiary.dto';
 
+export class SecondaryApproverDto {
+    use_existing_contact?: boolean;
+    selected_contact_id?: string;
+    salutation?: string;
+    first_name?: string;
+    last_name?: string;
+    company_role?: string;
+    system_role?: string;
+    email?: string;
+    contact_number?: string;
+}
 
 export class CreateCorporateDto {
     company_name: string;
@@ -52,6 +63,6 @@ export class UpdateCorporateDto extends PartialType(CreateCorporateDto) {
     subsidiaries?: UpdateSubsidiaryDto[];
     contactIdsToDelete?: string[];
     subsidiaryIdsToDelete?: string[];
-    // Present in client payload but not a column on corporates; handled separately
     investigation_log?: any;
+    secondary_approver?: SecondaryApproverDto; // Add secondary_approver
 }

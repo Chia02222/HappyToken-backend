@@ -1,4 +1,5 @@
 export declare class BaseSubsidiaryDto {
+    corporate_id: string;
     company_name: string;
     reg_number: string;
     office_address1: string;
@@ -9,7 +10,6 @@ export declare class BaseSubsidiaryDto {
     country: string;
     website?: string | null;
     account_note?: string | null;
-    corporate_id: string;
 }
 export declare class CreateSubsidiaryDto extends BaseSubsidiaryDto {
 }

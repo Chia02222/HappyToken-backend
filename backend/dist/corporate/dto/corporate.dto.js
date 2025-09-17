@@ -1,7 +1,19 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UpdateCorporateDto = exports.CreateCorporateWithRelationsDto = exports.CreateCorporateDto = void 0;
+exports.UpdateCorporateDto = exports.CreateCorporateWithRelationsDto = exports.CreateCorporateDto = exports.SecondaryApproverDto = void 0;
 const mapped_types_1 = require("@nestjs/mapped-types");
+class SecondaryApproverDto {
+    use_existing_contact;
+    selected_contact_id;
+    salutation;
+    first_name;
+    last_name;
+    company_role;
+    system_role;
+    email;
+    contact_number;
+}
+exports.SecondaryApproverDto = SecondaryApproverDto;
 class CreateCorporateDto {
     company_name;
     reg_number;
@@ -50,6 +62,7 @@ class UpdateCorporateDto extends (0, mapped_types_1.PartialType)(CreateCorporate
     contactIdsToDelete;
     subsidiaryIdsToDelete;
     investigation_log;
+    secondary_approver;
 }
 exports.UpdateCorporateDto = UpdateCorporateDto;
 //# sourceMappingURL=corporate.dto.js.map

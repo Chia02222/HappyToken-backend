@@ -24,10 +24,20 @@ let ContactsService = class ContactsService {
     async addContact(contactData) {
         console.log('addContact called with:', contactData);
         const { id: _ignoreId, ...insertData } = contactData;
+        const dataWithDefaults = {
+            ...insertData,
+            salutation: insertData.salutation || 'Mr',
+            first_name: insertData.first_name || 'N/A',
+            last_name: insertData.last_name || 'N/A',
+            contact_number: insertData.contact_number || 'N/A',
+            email: insertData.email || 'N/A',
+            company_role: insertData.company_role || 'N/A',
+            system_role: insertData.system_role || 'N/A',
+        };
         const inserted = await this.db
             .insertInto('contacts')
             .values({
-            ...insertData,
+            ...dataWithDefaults,
             created_at: (0, kysely_1.sql) `date_trunc('second', now())::timestamp(0)`,
             updated_at: (0, kysely_1.sql) `date_trunc('second', now())::timestamp(0)`,
         })

@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UpdateSubsidiaryDto = exports.CreateSubsidiaryDto = exports.BaseSubsidiaryDto = void 0;
 const mapped_types_1 = require("@nestjs/mapped-types");
 class BaseSubsidiaryDto {
+    corporate_id;
     company_name;
     reg_number;
     office_address1;
@@ -13,7 +14,6 @@ class BaseSubsidiaryDto {
     country;
     website;
     account_note;
-    corporate_id;
 }
 exports.BaseSubsidiaryDto = BaseSubsidiaryDto;
 class CreateSubsidiaryDto extends BaseSubsidiaryDto {

@@ -61,9 +61,11 @@ let CorporateService = class CorporateService {
         };
     }
     async create(corporateData) {
-        const { contacts, subsidiaries, investigation_log, ...corporateBaseData } = corporateData;
+        const { contacts, subsidiaries, investigation_log, id: _ignoreId, secondary_approver, ...corporateBaseData } = corporateData;
         const corporateInsertData = {
             ...corporateBaseData,
+            agreement_from: corporateBaseData.agreement_from === '' ? null : corporateBaseData.agreement_from,
+            agreement_to: corporateBaseData.agreement_to === '' ? null : corporateBaseData.agreement_to,
             created_at: (0, kysely_1.sql) `date_trunc('second', now())::timestamp(0)`,
             updated_at: (0, kysely_1.sql) `date_trunc('second', now())::timestamp(0)`,
         };
@@ -85,6 +87,31 @@ let CorporateService = class CorporateService {
                 await this.subsidiariesService.addSubsidiary({ ...subsidiary, corporate_id: inserted.id });
             }
         }
+        if (secondary_approver) {
+            if (secondary_approver.use_existing_contact && secondary_approver.selected_contact_id) {
+                await this.contactsService.updateContact(secondary_approver.selected_contact_id, {
+                    salutation: secondary_approver.salutation ?? '',
+                    first_name: secondary_approver.first_name ?? '',
+                    last_name: secondary_approver.last_name ?? '',
+                    company_role: secondary_approver.company_role ?? '',
+                    system_role: secondary_approver.system_role ?? '',
+                    email: secondary_approver.email ?? '',
+                    contact_number: secondary_approver.contact_number ?? '',
+                });
+            }
+            else if (!secondary_approver.use_existing_contact) {
+                await this.contactsService.addContact({
+                    corporate_id: inserted.id,
+                    salutation: secondary_approver.salutation ?? '',
+                    first_name: secondary_approver.first_name ?? '',
+                    last_name: secondary_approver.last_name ?? '',
+                    company_role: secondary_approver.company_role ?? '',
+                    system_role: secondary_approver.system_role ?? '',
+                    email: secondary_approver.email ?? '',
+                    contact_number: secondary_approver.contact_number ?? '',
+                });
+            }
+        }
         return inserted;
     }
     async update(id, updateData) {
@@ -93,10 +120,36 @@ let CorporateService = class CorporateService {
             console.log('Raw updateData:', JSON.stringify(updateData));
         }
         catch { }
-        const { contacts, subsidiaries, contactIdsToDelete, subsidiaryIdsToDelete, investigation_log, id: _ignoreId, ...corporateUpdateData } = updateData;
+        const { contacts, subsidiaries, contactIdsToDelete, subsidiaryIdsToDelete, investigation_log, id: _ignoreId, secondary_approver, ...corporateUpdateData } = updateData;
+        const secondaryApproverData = updateData.secondary_approver;
         console.log('Derived corporateUpdateData keys:', Object.keys(corporateUpdateData));
         console.log('contactIdsToDelete:', contactIdsToDelete);
         console.log('subsidiaryIdsToDelete:', subsidiaryIdsToDelete);
+        if (secondaryApproverData) {
+            if (secondaryApproverData.use_existing_contact && secondaryApproverData.selected_contact_id) {
+                await this.contactsService.updateContact(secondaryApproverData.selected_contact_id, {
+                    salutation: secondaryApproverData.salutation ?? '',
+                    first_name: secondaryApproverData.first_name ?? '',
+                    last_name: secondaryApproverData.last_name ?? '',
+                    company_role: secondaryApproverData.company_role ?? '',
+                    system_role: secondaryApproverData.system_role ?? '',
+                    email: secondaryApproverData.email ?? '',
+                    contact_number: secondaryApproverData.contact_number ?? '',
+                });
+            }
+            else if (!secondaryApproverData.use_existing_contact) {
+                await this.contactsService.addContact({
+                    corporate_id: id,
+                    salutation: secondaryApproverData.salutation ?? '',
+                    first_name: secondaryApproverData.first_name ?? '',
+                    last_name: secondaryApproverData.last_name ?? '',
+                    company_role: secondaryApproverData.company_role ?? '',
+                    system_role: secondaryApproverData.system_role ?? '',
+                    email: secondaryApproverData.email ?? '',
+                    contact_number: secondaryApproverData.contact_number ?? '',
+                });
+            }
+        }
         const updatedCorporate = await this.db
             .updateTable('corporates')
             .set({
@@ -114,6 +167,7 @@ let CorporateService = class CorporateService {
         const isUuid = (value) => typeof value === 'string' && /^[0-9a-fA-F-]{36}$/.test(value);
         if (contacts) {
             for (const contact of contacts) {
+                console.log('Processing contact:', contact);
                 if (isUuid(contact.id)) {
                     await this.contactsService.updateContact(contact.id, contact);
                 }

@@ -66,6 +66,17 @@ const INITIAL_CORPORATE_FORM_DATA: CorporateDetails = {
     agreed_to_commercial_terms: false,
     first_approval_confirmation: false,
     second_approval_confirmation: false,
+    secondary_approver: {
+        use_existing_contact: false,
+        selected_contact_id: '',
+        salutation: 'Mr',
+        first_name: '',
+        last_name: '',
+        company_role: '',
+        system_role: '',
+        email: '',
+        contact_number: '',
+    },
 };
 
 const App: React.FC = () => {
@@ -138,44 +149,47 @@ const App: React.FC = () => {
 
   const handleSaveCorporate = async (formData: CorporateDetails, action: 'submit' | 'send' | 'save') => {
     try {
-      if (formMode === 'approve-second' && action === 'submit') {
-        formData.second_approval_confirmation = true;
+      const updatedFormData = { ...formData };
 
-        // Handle secondary approver contact
-        const { secondary_approver } = formData;
+      if (formMode === 'approve-second' && action === 'submit') {
+        updatedFormData.second_approval_confirmation = true;
+
+        const { secondary_approver } = updatedFormData;
         if (secondary_approver) {
             if (secondary_approver.use_existing_contact && secondary_approver.selected_contact_id) {
-                // Update existing contact
-                const contactToUpdateIndex = formData.contacts.findIndex(c => c.id === secondary_approver.selected_contact_id);
+                const contactToUpdateIndex = updatedFormData.contacts.findIndex(c => c.id === secondary_approver.selected_contact_id);
                 if (contactToUpdateIndex !== -1) {
-                    formData.contacts[contactToUpdateIndex] = {
-                        ...formData.contacts[contactToUpdateIndex],
-                        contact_number: secondary_approver.contact_number || formData.contacts[contactToUpdateIndex].contact_number,
-                        email: secondary_approver.email || formData.contacts[contactToUpdateIndex].email,
-                        company_role: secondary_approver.company_role || formData.contacts[contactToUpdateIndex].company_role,
-                        system_role: secondary_approver.system_role || formData.contacts[contactToUpdateIndex].system_role,
+                    const updatedContacts = [...updatedFormData.contacts];
+                    updatedContacts[contactToUpdateIndex] = {
+                        ...updatedContacts[contactToUpdateIndex],
+                        contact_number: secondary_approver.contact_number || updatedContacts[contactToUpdateIndex].contact_number,
+                        email: secondary_approver.email || updatedContacts[contactToUpdateIndex].email,
+                        company_role: secondary_approver.company_role || updatedContacts[contactToUpdateIndex].company_role,
+                        system_role: secondary_approver.system_role || updatedContacts[contactToUpdateIndex].system_role,
                     };
+                    updatedFormData.contacts = updatedContacts;
                 }
             } else if (!secondary_approver.use_existing_contact) {
-                // Create new contact from secondary approver details
+                console.log('Creating new secondary contact:', JSON.stringify(secondary_approver, null, 2));
                 const newSecondaryContact: Contact = {
                     id: generateTempContactId(), 
-                    salutation: 'Mr', // Default salutation, or infer if possible
-                    first_name: secondary_approver.signatory_name?.split(' ')[0] || '',
-                    last_name: secondary_approver.signatory_name?.split(' ').slice(1).join(' ') || '',
+                    salutation: secondary_approver.salutation || 'Mr',
+                    first_name: secondary_approver.first_name || '',
+                    last_name: secondary_approver.last_name || '',
                     contact_number: secondary_approver.contact_number || '',
                     email: secondary_approver.email || '',
                     company_role: secondary_approver.company_role || '',
                     system_role: secondary_approver.system_role || '',
                 };
-                formData.contacts.push(newSecondaryContact);
+                updatedFormData.contacts = [...updatedFormData.contacts, newSecondaryContact];
+                console.log('updatedFormData.contacts after adding newSecondaryContact:', JSON.stringify(updatedFormData.contacts, null, 2));
             }
         }
       } else if (formMode === 'approve' && action === 'submit') {
-        formData.first_approval_confirmation = true;
+        updatedFormData.first_approval_confirmation = true;
       }
 
-      const { secondary_approver, contacts, subsidiaries, investigation_log, contactIdsToDelete, subsidiaryIdsToDelete, ...corporateData } = formData;
+      const { contacts, subsidiaries, investigation_log, contactIdsToDelete, subsidiaryIdsToDelete, ...corporateData } = updatedFormData;
 
       const dataToSend = {
         ...corporateData,
@@ -184,12 +198,15 @@ const App: React.FC = () => {
         investigation_log,
         contactIdsToDelete,
         subsidiaryIdsToDelete,
+        secondary_approver: updatedFormData.secondary_approver, // Include secondary_approver
       };
+      console.log('dataToSend before sending to backend:', JSON.stringify(dataToSend, null, 2));
 
       let savedCorporateId = editingCorporate?.id;
 
       if (editingCorporate) {
-        await updateCorporate(editingCorporate.id, dataToSend);
+        const updatedCorporate = await updateCorporate(editingCorporate.id, dataToSend);
+        console.log('Data stored in backend:', JSON.stringify(updatedCorporate, null, 2));
       } else {
         const newCorporate = await createCorporate(dataToSend);
         savedCorporateId = newCorporate.id;

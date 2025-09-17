@@ -37,11 +37,13 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
     const handleSecondaryApproverChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;
         const checked = 'checked' in e.target ? e.target.checked : false;
+        const sanitizedValue = typeof value === 'string' ? value.replace(/'/g, '') : value; // Remove single quotes
+        console.log('handleSecondaryApproverChange - name:', name, 'value:', sanitizedValue, 'checked:', checked);
         setFormData(prev => ({
             ...prev,
             secondary_approver: {
                 ...prev.secondary_approver,
-                [name]: type === 'checkbox' ? checked : value
+                [name]: type === 'checkbox' ? checked : sanitizedValue
             }
         }));
     };
@@ -55,7 +57,9 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
             secondary_approver: {
                 ...prev.secondary_approver,
                 selected_contact_id: contactId,
-                signatory_name: selectedContact ? `${selectedContact.first_name} ${selectedContact.last_name}`.trim() : '',
+                salutation: selectedContact ? selectedContact.salutation : 'Mr',
+                first_name: selectedContact ? selectedContact.first_name : '',
+                last_name: selectedContact ? selectedContact.last_name : '',
                 company_role: selectedContact ? selectedContact.company_role : '',
                 system_role: selectedContact ? selectedContact.system_role : '',
                 email: selectedContact ? selectedContact.email : '',
@@ -68,7 +72,9 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
     const secondary_approver = secondaryApproverFromData || {
         use_existing_contact: false,
         selected_contact_id: '',
-        signatory_name: '',
+        salutation: 'Mr',
+        first_name: '',
+        last_name: '',
         company_role: '',
         system_role: '',
         email: '',
@@ -88,7 +94,9 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                 return false;
             }
         } else {
-            if (!secondary_approver.signatory_name ||
+            if (!secondary_approver.salutation ||
+                !secondary_approver.first_name ||
+                !secondary_approver.last_name ||
                 !secondary_approver.company_role ||
                 !secondary_approver.system_role ||
                 !secondary_approver.email ||
@@ -203,7 +211,20 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                             </>
                         ) : (
                             <>
-                                <InputField id="signatory_name" label="Signatory Name" name="signatory_name" value={secondary_approver.signatory_name ?? null} onChange={handleSecondaryApproverChange} required />
+                                <SelectField
+                                    id="salutation"
+                                    label="Salutation"
+                                    name="salutation"
+                                    value={secondary_approver.salutation ?? 'Mr'}
+                                    onChange={handleSecondaryApproverChange}
+                                    required
+                                >
+                                    <option value="Mr">Mr</option>
+                                    <option value="Mrs">Mrs</option>
+                                    <option value="Ms">Ms</option>
+                                </SelectField>
+                                <InputField id="first_name" label="First Name" name="first_name" value={secondary_approver.first_name ?? null} onChange={handleSecondaryApproverChange} required />
+                                <InputField id="last_name" label="Last Name" name="last_name" value={secondary_approver.last_name ?? null} onChange={handleSecondaryApproverChange} required />
                                 <InputField id="company_role" label="Company Role" name="company_role" value={secondary_approver.company_role ?? null} onChange={handleSecondaryApproverChange} required />
                                 <InputField id="system_role" label="System Role" name="system_role" value={secondary_approver.system_role ?? null} onChange={handleSecondaryApproverChange} required />
                                 <InputField id="email" label="Email Address" name="email" type="email" value={secondary_approver.email ?? null} onChange={handleSecondaryApproverChange} required />
@@ -266,6 +287,7 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                  <button 
                     type="button"
                     onClick={() => {
+                        console.log('Submitting form data:', JSON.stringify(formData, null, 2));
                         if (formMode === 'approve-second') {
                             if (!validateSecondaryApprover()) {
                                 setShowValidationError(true);

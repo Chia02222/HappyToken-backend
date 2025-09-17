@@ -1,6 +1,17 @@
 import { CorporateStatus } from '../../database/types';
 import { CreateContactDto, UpdateContactDto } from '../../contacts/dto/contact.dto';
 import { CreateSubsidiaryDto, UpdateSubsidiaryDto } from '../../subsidiaries/dto/subsidiary.dto';
+export declare class SecondaryApproverDto {
+    use_existing_contact?: boolean;
+    selected_contact_id?: string;
+    salutation?: string;
+    first_name?: string;
+    last_name?: string;
+    company_role?: string;
+    system_role?: string;
+    email?: string;
+    contact_number?: string;
+}
 export declare class CreateCorporateDto {
     company_name: string;
     reg_number: string;
@@ -48,5 +59,6 @@ export declare class UpdateCorporateDto extends UpdateCorporateDto_base {
     contactIdsToDelete?: string[];
     subsidiaryIdsToDelete?: string[];
     investigation_log?: any;
+    secondary_approver?: SecondaryApproverDto;
 }
 export {};
