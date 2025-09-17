@@ -236,11 +236,22 @@ export class CorporateService {
         }
     }
 
-    return this.findById(id);
+    const result = await this.findById(id);
+    console.log('CorporateService.update returning:', JSON.stringify(result));
+    return result;
   }
 
   async delete(id: string) {
-    await this.db.deleteFrom('corporates').where('id', '=', id).execute();
+    await this.db.transaction().execute(async (trx) => {
+      // Delete related investigation logs
+      await trx.deleteFrom('investigation_logs').where('corporate_id', '=', id).execute();
+      // Delete related contacts
+      await trx.deleteFrom('contacts').where('corporate_id', '=', id).execute();
+      // Delete related subsidiaries
+      await trx.deleteFrom('subsidiaries').where('corporate_id', '=', id).execute();
+      // Finally, delete the corporate record
+      await trx.deleteFrom('corporates').where('id', '=', id).execute();
+    });
     return { success: true };
   }
 

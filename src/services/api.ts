@@ -64,3 +64,10 @@ export const addRemark = async (corporateId: string, note: string, fromStatus?: 
     });
     return handleResponse(response);
 };
+
+export const deleteCorporate = async (id: string) => {
+    const response = await fetch(`${API_BASE_URL}/corporates/${id}`, {
+        method: 'DELETE',
+    });
+    return handleResponse(response);
+};

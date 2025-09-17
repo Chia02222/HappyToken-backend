@@ -10,7 +10,8 @@ import CommercialTermsForm from '../components/CommercialTermsForm';
 import ECommercialTermsForm from '../components/ECommercialTermsForm';
 import HistoryLogModal from '../components/modals/HistoryLogModal';
 import { Page, Corporate, CorporateDetails, CorporateStatus, Contact} from '../types';
-import { getCorporates, getCorporateById, createCorporate, updateCorporate, updateCorporateStatus, addRemark } from '../services/api';
+import { getCorporates, getCorporateById, createCorporate, updateCorporate, updateCorporateStatus, addRemark, deleteCorporate } from '../services/api';
+import ConfirmationModal from '../components/modals/ConfirmationModal';
 
 let tempContactIdCounter = -1;
 const generateTempContactId = () => {
@@ -80,6 +81,8 @@ const App: React.FC = () => {
   const [editingCorporate, setEditingCorporate] = useState<Corporate | null>(null);
   const [selectedCorporateForHistory, setSelectedCorporateForHistory] = useState<CorporateDetails | null>(null);
   const [formMode, setFormMode] = useState<'new' | 'edit' | 'approve' | 'approve-second'>('new');
+  const [isConfirmDeleteModalVisible, setIsConfirmDeleteModalVisible] = useState(false);
+  const [corporateToDeleteId, setCorporateToDeleteId] = useState<string | null>(null);
 
   const fetchCorporates = async () => {
     try {
@@ -134,6 +137,25 @@ const App: React.FC = () => {
     setIsCorporateFormVisible(false);
     setEditingCorporate(null);
     setFormData(INITIAL_CORPORATE_FORM_DATA);
+  };
+
+  const handleDeleteCorporate = async (id: string) => {
+    setCorporateToDeleteId(id);
+    setIsConfirmDeleteModalVisible(true);
+  };
+
+  const confirmDeleteCorporate = async () => {
+    if (corporateToDeleteId) {
+      try {
+        await deleteCorporate(corporateToDeleteId);
+        fetchCorporates();
+      } catch (error) {
+        console.error(`Failed to delete corporate ${corporateToDeleteId}:`, error);
+      } finally {
+        setIsConfirmDeleteModalVisible(false);
+        setCorporateToDeleteId(null);
+      }
+    }
   };
 
   const handleSaveCorporate = async (formData: CorporateDetails, action: 'submit' | 'send' | 'save') => {
@@ -319,6 +341,7 @@ const App: React.FC = () => {
                 updateStatus={handleUpdateStatus}
                 corporateToAutoSendLink={corporateToAutoSendLink}
                 setCorporateToAutoSendLink={setCorporateToAutoSendLink}
+                onDeleteCorporate={handleDeleteCorporate}
             />
         );
       case 'Dashboard':
@@ -340,6 +363,13 @@ const App: React.FC = () => {
         onClose={handleCloseHistoryModal}
         corporate={selectedCorporateForHistory}
         onSave={handleSaveRemark}
+      />
+      <ConfirmationModal
+        isOpen={isConfirmDeleteModalVisible}
+        onClose={() => setIsConfirmDeleteModalVisible(false)}
+        onConfirm={confirmDeleteCorporate}
+        title="Confirm Deletion"
+        message="Are you sure you want to delete this corporate account? This action cannot be undone."
       />
     </MainLayout>
   );

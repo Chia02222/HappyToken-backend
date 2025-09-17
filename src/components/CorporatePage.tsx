@@ -5,6 +5,7 @@ import { Corporate, CorporateStatus } from '../types';
 import StatusBadge from './common/StatusBadge';
 import ChangeStatusModal from './modals/ChangeStatusModal';
 import SendLinkModal from './modals/SendLinkModal';
+import EllipsisMenu from './common/EllipsisMenu';
 
 interface CorporatePageProps {
     onAddNew: () => void;
@@ -16,6 +17,7 @@ interface CorporatePageProps {
     updateStatus: (id: string, status: CorporateStatus, note?: string) => Promise<void>;
     corporateToAutoSendLink: Corporate | null;
     setCorporateToAutoSendLink: React.Dispatch<React.SetStateAction<Corporate | null>>;
+    onDeleteCorporate: (id: string) => Promise<void>;
 }
 
 const CorporatePage: React.FC<CorporatePageProps> = ({
@@ -28,6 +30,7 @@ const CorporatePage: React.FC<CorporatePageProps> = ({
     updateStatus,
     corporateToAutoSendLink,
     setCorporateToAutoSendLink,
+    onDeleteCorporate,
 }) => {
     const [selectedCorporate, setSelectedCorporate] = useState<Corporate | null>(null);
     const [targetStatus, setTargetStatus] = useState<CorporateStatus | null>(null);
@@ -192,6 +195,9 @@ const CorporatePage: React.FC<CorporatePageProps> = ({
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Remark
                                 </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
@@ -229,6 +235,9 @@ const CorporatePage: React.FC<CorporatePageProps> = ({
                                         >
                                             View
                                         </button>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <EllipsisMenu onDelete={() => onDeleteCorporate(corporate.id)} />
                                     </td>
                                 </tr>
                             ))}

@@ -206,10 +206,17 @@ let CorporateService = class CorporateService {
                 await this.subsidiariesService.deleteSubsidiary(subsidiaryId);
             }
         }
-        return this.findById(id);
+        const result = await this.findById(id);
+        console.log('CorporateService.update returning:', JSON.stringify(result));
+        return result;
     }
     async delete(id) {
-        await this.db.deleteFrom('corporates').where('id', '=', id).execute();
+        await this.db.transaction().execute(async (trx) => {
+            await trx.deleteFrom('investigation_logs').where('corporate_id', '=', id).execute();
+            await trx.deleteFrom('contacts').where('corporate_id', '=', id).execute();
+            await trx.deleteFrom('subsidiaries').where('corporate_id', '=', id).execute();
+            await trx.deleteFrom('corporates').where('id', '=', id).execute();
+        });
         return { success: true };
     }
     async addInvestigationLog(corporateId, logData) {
