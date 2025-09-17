@@ -1,10 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-interface EllipsisMenuProps {
-  onDelete: () => Promise<void>;
+interface MenuItem {
+  label: string;
+  onClick: () => Promise<void> | void;
 }
 
-const EllipsisMenu: React.FC<EllipsisMenuProps> = ({ onDelete }) => {
+interface EllipsisMenuProps {
+  items: MenuItem[];
+}
+
+const EllipsisMenu: React.FC<EllipsisMenuProps> = ({ items }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -50,19 +55,22 @@ const EllipsisMenu: React.FC<EllipsisMenuProps> = ({ onDelete }) => {
           tabIndex={-1}
         >
           <div className="py-1" role="none">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-                setIsOpen(false);
-              }}
-              className="text-gray-700 block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-              role="menuitem"
-              tabIndex={-1}
-              id="menu-item-0"
-            >
-              Delete
-            </button>
+            {items.map((item, index) => (
+              <button
+                key={index}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  item.onClick();
+                  setIsOpen(false);
+                }}
+                className="text-gray-700 block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                role="menuitem"
+                tabIndex={-1}
+                id={`menu-item-${index}`}
+              >
+                {item.label}
+              </button>
+            ))}
           </div>
         </div>
       )}

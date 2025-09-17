@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import {
   CorporateTable,
@@ -12,6 +12,10 @@ import { CreateContactDto } from '../contacts/dto/contact.dto';
 import { CreateSubsidiaryDto } from '../subsidiaries/dto/subsidiary.dto';
 import { ContactsService } from '../contacts/contacts.service';
 import { SubsidiariesService } from '../subsidiaries/subsidiaries.service';
+import { ResendService } from '../resend/resend.service';
+
+// Define a type for CorporateTable without the 'id' property
+type UpdatableCorporateTable = Omit<CorporateTable, 'id'>;
 
 @Injectable()
 export class CorporateService {
@@ -19,6 +23,8 @@ export class CorporateService {
     private readonly dbService: DatabaseService,
     private readonly contactsService: ContactsService,
     private readonly subsidiariesService: SubsidiariesService,
+    @Inject(forwardRef(() => ResendService))
+    private readonly resendService: ResendService,
   ) {}
 
   private get db() {
@@ -64,7 +70,7 @@ export class CorporateService {
   }
 
   async create(corporateData: CreateCorporateWithRelationsDto) {
-    const { contacts, subsidiaries, /* not a column */ investigation_log, id: _ignoreId, secondary_approver, ...corporateBaseData } = corporateData as any;
+    const { contacts, subsidiaries, secondary_approver, ...corporateBaseData } = corporateData;
 
     const corporateInsertData: NewCorporate = {
       ...corporateBaseData,
@@ -132,20 +138,13 @@ export class CorporateService {
       console.log('Raw updateData:', JSON.stringify(updateData));
     } catch {}
     const {
+      id: updateDtoId, // Destructure to remove id from the rest of the object
       contacts,
       subsidiaries,
       contactIdsToDelete,
       subsidiaryIdsToDelete,
-      // investigation logs are stored in a separate table; ensure it's not applied to corporates update
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      investigation_log,
-      // never allow updating primary key
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      id: _ignoreId,
-      // secondary_approver is handled separately, not part of corporate table update
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       secondary_approver,
-      ...corporateUpdateData
+      ...corporateUpdateData // This should now be free of 'id'
     } = updateData;
 
     const secondaryApproverData = updateData.secondary_approver;
@@ -181,14 +180,17 @@ export class CorporateService {
       }
     }
 
+    // Explicitly construct the update object to ensure 'id' is not included
+    const corporateFieldsToUpdate: Partial<UpdatableCorporateTable> = {
+      ...corporateUpdateData, // This should not contain 'id'
+      agreement_from: corporateUpdateData.agreement_from === '' ? null : corporateUpdateData.agreement_from,
+      agreement_to: corporateUpdateData.agreement_to === '' ? null : corporateUpdateData.agreement_to,
+      updated_at: sql`date_trunc('second', now())::timestamp(0)` as unknown as string,
+    };
+
     const updatedCorporate = await this.db
       .updateTable('corporates')
-      .set({
-        ...(corporateUpdateData as Partial<CorporateTable>),
-        agreement_from: corporateUpdateData.agreement_from === '' ? null : corporateUpdateData.agreement_from,
-        agreement_to: corporateUpdateData.agreement_to === '' ? null : corporateUpdateData.agreement_to,
-        updated_at: sql`date_trunc('second', now())::timestamp(0)` as unknown as string,
-      } as any)
+      .set(corporateFieldsToUpdate) // Pass the explicitly constructed object
       .where('id', '=', id)
       .returningAll()
       .executeTakeFirst();
@@ -197,13 +199,13 @@ export class CorporateService {
       return null;
     }
 
-    const isUuid = (value: unknown) => typeof value === 'string' && /^[0-9a-fA-F-]{36}$/.test(value);
+    const isUuid = (value: unknown): value is string => typeof value === 'string' && /^[0-9a-fA-F-]{36}$/.test(value);
 
     if (contacts) {
       for (const contact of contacts) {
         console.log('Processing contact:', contact);
-        if (isUuid(contact.id as any)) {
-          await this.contactsService.updateContact(contact.id as string, contact);
+        if (isUuid(contact.id)) {
+          await this.contactsService.updateContact(contact.id, contact);
         } else {
           await this.contactsService.addContact({ ...(contact as CreateContactDto), corporate_id: id });
         }
@@ -220,8 +222,8 @@ export class CorporateService {
 
     if (subsidiaries) {
       for (const subsidiary of subsidiaries) {
-        if (isUuid(subsidiary.id as any)) {
-          await this.subsidiariesService.updateSubsidiary(subsidiary.id as string, subsidiary);
+        if (isUuid(subsidiary.id)) {
+          await this.subsidiariesService.updateSubsidiary(subsidiary.id, subsidiary);
         } else {
           await this.subsidiariesService.addSubsidiary({ ...(subsidiary as CreateSubsidiaryDto), corporate_id: id });
         }
@@ -288,8 +290,8 @@ export class CorporateService {
       await this.addInvestigationLog(id, {
         timestamp: new Date().toISOString(),
         note,
-        from_status: corporate.status as any,
-        to_status: status as any,
+        from_status: corporate.status as CorporateStatus,
+        to_status: status as CorporateStatus,
       });
     }
 

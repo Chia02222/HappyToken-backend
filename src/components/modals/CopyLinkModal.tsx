@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -6,14 +5,13 @@ import Modal from '../common/Modal';
 import { Corporate } from '../../types';
 import { CopyIcon, CheckIcon } from '../Icons';
 
-interface SendLinkModalProps {
+interface CopyLinkModalProps {
     isOpen: boolean;
     onClose: () => void;
     corporate: Corporate | null;
-    onSend: (corporateId: string) => void;
 }
 
-const SendLinkModal: React.FC<SendLinkModalProps> = ({ isOpen, onClose, corporate, onSend }) => {
+const CopyLinkModal: React.FC<CopyLinkModalProps> = ({ isOpen, onClose, corporate }) => {
     const [isCopied, setIsCopied] = useState(false);
 
     if (!corporate) return null;
@@ -27,16 +25,10 @@ const SendLinkModal: React.FC<SendLinkModalProps> = ({ isOpen, onClose, corporat
         });
     };
 
-    const handleSend = () => {
-        if (corporate) {
-            onSend(corporate.id);
-        }
-    };
-
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Send Registration Link">
+        <Modal isOpen={isOpen} onClose={onClose} title="Copy Registration Link">
             <div>
-                <p className="text-sm text-gray-600 mb-4">A unique registration link for <span className="font-medium">{corporate.company_name}</span> has been generated. Send this link to the corporate client to proceed with their account setup.</p>
+                <p className="text-sm text-gray-600 mb-4">A unique registration link for <span className="font-medium">{corporate.company_name}</span> has been generated. Copy this link and share it with the corporate client to proceed with their account setup.</p>
                 
                 <div className="flex items-center space-x-2">
                     <input
@@ -56,12 +48,11 @@ const SendLinkModal: React.FC<SendLinkModalProps> = ({ isOpen, onClose, corporat
                 </div>
 
                 <div className="flex justify-end space-x-3 mt-6">
-                    <button onClick={onClose} className="text-sm bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300">Cancel</button>
-                    <button onClick={handleSend} className="text-sm bg-ht-blue text-white px-4 py-2 rounded-md hover:bg-ht-blue-dark">Send & Update Status</button>
+                    <button onClick={onClose} className="text-sm bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300">Close</button>
                 </div>
             </div>
         </Modal>
     );
 };
 
-export default SendLinkModal;
+export default CopyLinkModal;

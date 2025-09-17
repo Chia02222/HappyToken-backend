@@ -15,11 +15,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CorporateController = void 0;
 const common_1 = require("@nestjs/common");
 const corporate_service_1 = require("./corporate.service");
+const resend_service_1 = require("../resend/resend.service");
 const corporate_dto_1 = require("./dto/corporate.dto");
 let CorporateController = class CorporateController {
     corporateService;
-    constructor(corporateService) {
+    resendService;
+    constructor(corporateService, resendService) {
         this.corporateService = corporateService;
+        this.resendService = resendService;
     }
     async findAll() {
         return await this.corporateService.findAll();
@@ -41,6 +44,9 @@ let CorporateController = class CorporateController {
     }
     async updateStatus(id, body) {
         return await this.corporateService.updateStatus(id, body.status, body.note);
+    }
+    async resendRegistrationLink(id) {
+        return await this.resendService.resendRegistrationLink(id);
     }
 };
 exports.CorporateController = CorporateController;
@@ -95,8 +101,16 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], CorporateController.prototype, "updateStatus", null);
+__decorate([
+    (0, common_1.Post)(':id/resend-link'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], CorporateController.prototype, "resendRegistrationLink", null);
 exports.CorporateController = CorporateController = __decorate([
     (0, common_1.Controller)('corporates'),
-    __metadata("design:paramtypes", [corporate_service_1.CorporateService])
+    __metadata("design:paramtypes", [corporate_service_1.CorporateService,
+        resend_service_1.ResendService])
 ], CorporateController);
 //# sourceMappingURL=corporate.controller.js.map

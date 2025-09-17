@@ -1,5 +1,5 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { neon } from '@neondatabase/serverless';
+import { neon, NeonQueryFunction } from '@neondatabase/serverless';
 import { Kysely, sql } from 'kysely';
 import { NeonDialect } from 'kysely-neon';
 import type { Database } from './types';
@@ -9,7 +9,7 @@ dotenv.config();
 
 @Injectable()
 export class DatabaseService implements OnModuleInit {
-  private sql: any;
+  private sql: NeonQueryFunction<boolean, boolean>;
   private db!: Kysely<Database>;
 
   constructor() {

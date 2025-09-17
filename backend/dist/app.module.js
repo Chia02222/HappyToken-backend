@@ -15,12 +15,13 @@ const corporate_module_1 = require("./corporate/corporate.module");
 const seed_module_1 = require("./seed/seed.module");
 const contacts_module_1 = require("./contacts/contacts.module");
 const subsidiaries_module_1 = require("./subsidiaries/subsidiaries.module");
+const resend_module_1 = require("./resend/resend.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
-        imports: [database_module_1.DatabaseModule, corporate_module_1.CorporateModule, contacts_module_1.ContactsModule, subsidiaries_module_1.SubsidiariesModule, seed_module_1.SeedModule],
+        imports: [database_module_1.DatabaseModule, corporate_module_1.CorporateModule, contacts_module_1.ContactsModule, subsidiaries_module_1.SubsidiariesModule, seed_module_1.SeedModule, resend_module_1.ResendModule],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],
     })

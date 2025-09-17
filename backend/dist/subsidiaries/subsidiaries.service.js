@@ -23,7 +23,7 @@ let SubsidiariesService = class SubsidiariesService {
     }
     async addSubsidiary(subsidiaryData) {
         console.log('addSubsidiary called with:', subsidiaryData);
-        const { id: _ignoreId, ...insertData } = subsidiaryData;
+        const { ...insertData } = subsidiaryData;
         const inserted = await this.db
             .insertInto('subsidiaries')
             .values({
@@ -37,7 +37,7 @@ let SubsidiariesService = class SubsidiariesService {
     }
     async updateSubsidiary(id, subsidiaryData) {
         console.log('updateSubsidiary called with:', { id, subsidiaryData });
-        const { id: _ignoreId, ...updateData } = subsidiaryData;
+        const { id: subsidiaryId, ...updateData } = subsidiaryData;
         const updated = await this.db
             .updateTable('subsidiaries')
             .set({

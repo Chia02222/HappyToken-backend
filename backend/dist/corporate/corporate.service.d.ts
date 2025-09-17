@@ -3,11 +3,13 @@ import { InvestigationLogTable, CorporateStatus } from '../database/types';
 import { CreateCorporateWithRelationsDto, UpdateCorporateDto } from './dto/corporate.dto';
 import { ContactsService } from '../contacts/contacts.service';
 import { SubsidiariesService } from '../subsidiaries/subsidiaries.service';
+import { ResendService } from '../resend/resend.service';
 export declare class CorporateService {
     private readonly dbService;
     private readonly contactsService;
     private readonly subsidiariesService;
-    constructor(dbService: DatabaseService, contactsService: ContactsService, subsidiariesService: SubsidiariesService);
+    private readonly resendService;
+    constructor(dbService: DatabaseService, contactsService: ContactsService, subsidiariesService: SubsidiariesService, resendService: ResendService);
     private get db();
     findAll(): Promise<{
         id: string;

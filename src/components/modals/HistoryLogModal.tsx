@@ -37,7 +37,7 @@ const HistoryLogModal: React.FC<HistoryLogModalProps> = ({ isOpen, onClose, corp
                 {/* History Section */}
                 <div className="max-h-64 overflow-y-auto pr-2 space-y-4 border rounded-md p-3 bg-gray-50">
                     {corporate.investigation_log && corporate.investigation_log.length > 0 ? (
-                        [...corporate.investigation_log].map((log, index) => (
+                        [...corporate.investigation_log].map((log) => (
                             <div key={log.id} className="p-3 border rounded-md bg-white shadow-sm">
                                 <p className="text-xs text-gray-500 mb-1">{log.timestamp}</p>
                                 {log.from_status && log.to_status ? (

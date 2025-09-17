@@ -1,4 +1,5 @@
 import { OnModuleInit } from '@nestjs/common';
+import { NeonQueryFunction } from '@neondatabase/serverless';
 import { Kysely } from 'kysely';
 import type { Database } from './types';
 export declare class DatabaseService implements OnModuleInit {
@@ -7,6 +8,6 @@ export declare class DatabaseService implements OnModuleInit {
     constructor();
     private initializeDatabase;
     onModuleInit(): Promise<void>;
-    getSql(): any;
+    getSql(): NeonQueryFunction<boolean, boolean>;
     getDb(): Kysely<Database>;
 }

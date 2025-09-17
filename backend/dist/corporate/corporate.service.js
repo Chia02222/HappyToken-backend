@@ -8,6 +8,9 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CorporateService = void 0;
 const common_1 = require("@nestjs/common");
@@ -15,14 +18,17 @@ const database_service_1 = require("../database/database.service");
 const kysely_1 = require("kysely");
 const contacts_service_1 = require("../contacts/contacts.service");
 const subsidiaries_service_1 = require("../subsidiaries/subsidiaries.service");
+const resend_service_1 = require("../resend/resend.service");
 let CorporateService = class CorporateService {
     dbService;
     contactsService;
     subsidiariesService;
-    constructor(dbService, contactsService, subsidiariesService) {
+    resendService;
+    constructor(dbService, contactsService, subsidiariesService, resendService) {
         this.dbService = dbService;
         this.contactsService = contactsService;
         this.subsidiariesService = subsidiariesService;
+        this.resendService = resendService;
     }
     get db() {
         return this.dbService.getDb();
@@ -61,7 +67,7 @@ let CorporateService = class CorporateService {
         };
     }
     async create(corporateData) {
-        const { contacts, subsidiaries, investigation_log, id: _ignoreId, secondary_approver, ...corporateBaseData } = corporateData;
+        const { contacts, subsidiaries, secondary_approver, ...corporateBaseData } = corporateData;
         const corporateInsertData = {
             ...corporateBaseData,
             agreement_from: corporateBaseData.agreement_from === '' ? null : corporateBaseData.agreement_from,
@@ -120,7 +126,7 @@ let CorporateService = class CorporateService {
             console.log('Raw updateData:', JSON.stringify(updateData));
         }
         catch { }
-        const { contacts, subsidiaries, contactIdsToDelete, subsidiaryIdsToDelete, investigation_log, id: _ignoreId, secondary_approver, ...corporateUpdateData } = updateData;
+        const { id: updateDtoId, contacts, subsidiaries, contactIdsToDelete, subsidiaryIdsToDelete, secondary_approver, ...corporateUpdateData } = updateData;
         const secondaryApproverData = updateData.secondary_approver;
         console.log('Derived corporateUpdateData keys:', Object.keys(corporateUpdateData));
         console.log('contactIdsToDelete:', contactIdsToDelete);
@@ -150,14 +156,15 @@ let CorporateService = class CorporateService {
                 });
             }
         }
-        const updatedCorporate = await this.db
-            .updateTable('corporates')
-            .set({
+        const corporateFieldsToUpdate = {
             ...corporateUpdateData,
             agreement_from: corporateUpdateData.agreement_from === '' ? null : corporateUpdateData.agreement_from,
             agreement_to: corporateUpdateData.agreement_to === '' ? null : corporateUpdateData.agreement_to,
             updated_at: (0, kysely_1.sql) `date_trunc('second', now())::timestamp(0)`,
-        })
+        };
+        const updatedCorporate = await this.db
+            .updateTable('corporates')
+            .set(corporateFieldsToUpdate)
             .where('id', '=', id)
             .returningAll()
             .executeTakeFirst();
@@ -261,8 +268,10 @@ let CorporateService = class CorporateService {
 exports.CorporateService = CorporateService;
 exports.CorporateService = CorporateService = __decorate([
     (0, common_1.Injectable)(),
+    __param(3, (0, common_1.Inject)((0, common_1.forwardRef)(() => resend_service_1.ResendService))),
     __metadata("design:paramtypes", [database_service_1.DatabaseService,
         contacts_service_1.ContactsService,
-        subsidiaries_service_1.SubsidiariesService])
+        subsidiaries_service_1.SubsidiariesService,
+        resend_service_1.ResendService])
 ], CorporateService);
 //# sourceMappingURL=corporate.service.js.map

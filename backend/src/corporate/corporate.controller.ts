@@ -1,11 +1,15 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
 import { CorporateService } from './corporate.service';
+import { ResendService } from '../resend/resend.service';
 import { CorporateTable, InvestigationLogTable } from '../database/types';
 import { UpdateCorporateDto } from './dto/corporate.dto';
 
 @Controller('corporates')
 export class CorporateController {
-  constructor(private readonly corporateService: CorporateService) {}
+  constructor(
+    private readonly corporateService: CorporateService,
+    private readonly resendService: ResendService,
+  ) {}
 
   @Get()
   async findAll() {
@@ -49,5 +53,10 @@ export class CorporateController {
     @Body() body: { status: string; note?: string }
   ) {
     return await this.corporateService.updateStatus(id, body.status, body.note);
+  }
+
+  @Post(':id/resend-link')
+  async resendRegistrationLink(@Param('id') id: string) {
+    return await this.resendService.resendRegistrationLink(id);
   }
 }

@@ -3,7 +3,6 @@ import { DatabaseService } from '../database/database.service';
 import { sql } from 'kysely';
 import { CreateContactDto, UpdateContactDto } from './dto/contact.dto';
 
-
 @Injectable()
 export class ContactsService {
   constructor(private readonly dbService: DatabaseService) {}
@@ -15,7 +14,7 @@ export class ContactsService {
   async addContact(contactData: CreateContactDto) {
     console.log('addContact called with:', contactData);
     // Ignore any client-provided id; let DB generate UUID
-    const { id: _ignoreId, ...insertData } = contactData as any;
+    const { ...insertData } = contactData;
 
     const dataWithDefaults = {
       ...insertData,
@@ -43,13 +42,13 @@ export class ContactsService {
   async updateContact(id: string, contactData: UpdateContactDto) {
     console.log('updateContact called with:', { id, contactData });
     // Never update primary key
-    const { id: _ignoreId, ...updateData } = contactData as any;
+    const { id: contactId, ...updateData } = contactData;
     const updated = await this.db
       .updateTable('contacts')
       .set({
         ...updateData,
         updated_at: sql`date_trunc('second', now())::timestamp(0)`,
-      } as any)
+      })
       .where('id', '=', id)
       .returningAll()
       .executeTakeFirst();

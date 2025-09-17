@@ -71,3 +71,10 @@ export const deleteCorporate = async (id: string) => {
     });
     return handleResponse(response);
 };
+
+export const resendRegistrationLink = async (id: string) => {
+    const response = await fetch(`${API_BASE_URL}/corporates/${id}/resend-link`, {
+        method: 'POST',
+    });
+    return handleResponse(response);
+};

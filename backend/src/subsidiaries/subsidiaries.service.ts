@@ -13,7 +13,7 @@ export class SubsidiariesService {
 
   async addSubsidiary(subsidiaryData: CreateSubsidiaryDto) {
     console.log('addSubsidiary called with:', subsidiaryData);
-    const { id: _ignoreId, ...insertData } = subsidiaryData as any;
+    const { ...insertData } = subsidiaryData;
     const inserted = await this.db
       .insertInto('subsidiaries')
       .values({
@@ -28,13 +28,13 @@ export class SubsidiariesService {
 
   async updateSubsidiary(id: string, subsidiaryData: UpdateSubsidiaryDto) {
     console.log('updateSubsidiary called with:', { id, subsidiaryData });
-    const { id: _ignoreId, ...updateData } = subsidiaryData as any;
+    const { id: subsidiaryId, ...updateData } = subsidiaryData;
     const updated = await this.db
       .updateTable('subsidiaries')
       .set({
         ...updateData,
         updated_at: sql`date_trunc('second', now())::timestamp(0)`,
-      } as any)
+      })
       .where('id', '=', id)
       .returningAll()
       .executeTakeFirst();

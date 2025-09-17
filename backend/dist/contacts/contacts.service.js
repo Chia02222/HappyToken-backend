@@ -23,7 +23,7 @@ let ContactsService = class ContactsService {
     }
     async addContact(contactData) {
         console.log('addContact called with:', contactData);
-        const { id: _ignoreId, ...insertData } = contactData;
+        const { ...insertData } = contactData;
         const dataWithDefaults = {
             ...insertData,
             salutation: insertData.salutation || 'Mr',
@@ -47,7 +47,7 @@ let ContactsService = class ContactsService {
     }
     async updateContact(id, contactData) {
         console.log('updateContact called with:', { id, contactData });
-        const { id: _ignoreId, ...updateData } = contactData;
+        const { id: contactId, ...updateData } = contactData;
         const updated = await this.db
             .updateTable('contacts')
             .set({

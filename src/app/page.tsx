@@ -10,8 +10,10 @@ import CommercialTermsForm from '../components/CommercialTermsForm';
 import ECommercialTermsForm from '../components/ECommercialTermsForm';
 import HistoryLogModal from '../components/modals/HistoryLogModal';
 import { Page, Corporate, CorporateDetails, CorporateStatus, Contact} from '../types';
-import { getCorporates, getCorporateById, createCorporate, updateCorporate, updateCorporateStatus, addRemark, deleteCorporate } from '../services/api';
+import { getCorporates, getCorporateById, createCorporate, updateCorporate, updateCorporateStatus, addRemark, deleteCorporate, resendRegistrationLink } from '../services/api';
 import ConfirmationModal from '../components/modals/ConfirmationModal';
+import SuccessModal from '../components/modals/SuccessModal';
+import ErrorMessageModal from '../components/modals/ErrorMessageModal';
 
 let tempContactIdCounter = -1;
 const generateTempContactId = () => {
@@ -83,6 +85,10 @@ const App: React.FC = () => {
   const [formMode, setFormMode] = useState<'new' | 'edit' | 'approve' | 'approve-second'>('new');
   const [isConfirmDeleteModalVisible, setIsConfirmDeleteModalVisible] = useState(false);
   const [corporateToDeleteId, setCorporateToDeleteId] = useState<string | null>(null);
+  const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
+  const [successModalContent, setSuccessModalContent] = useState({ title: '', message: '' });
+  const [isErrorModalVisible, setIsErrorModalVisible] = useState(false);
+  const [errorModalContent, setErrorModalContent] = useState('');
 
   const fetchCorporates = async () => {
     try {
@@ -155,6 +161,21 @@ const App: React.FC = () => {
         setIsConfirmDeleteModalVisible(false);
         setCorporateToDeleteId(null);
       }
+    }
+  };
+
+  const handleResendRegistrationLink = async (id: string) => {
+    try {
+      await resendRegistrationLink(id);
+      setSuccessModalContent({
+        title: 'Success',
+        message: `Registration link has been successfully resent for corporate ${id}.`,
+      });
+      setIsSuccessModalVisible(true);
+    } catch (error) {
+      setErrorModalContent(`Failed to resend registration link for corporate ${id}. Please try again.`);
+      setIsErrorModalVisible(true);
+      console.error(`Failed to resend registration link for corporate ${id}:`, error);
     }
   };
 
@@ -342,6 +363,8 @@ const App: React.FC = () => {
                 corporateToAutoSendLink={corporateToAutoSendLink}
                 setCorporateToAutoSendLink={setCorporateToAutoSendLink}
                 onDeleteCorporate={handleDeleteCorporate}
+                onResendRegistrationLink={handleResendRegistrationLink}
+                onSendRegistrationLink={handleResendRegistrationLink}
             />
         );
       case 'Dashboard':
@@ -370,6 +393,17 @@ const App: React.FC = () => {
         onConfirm={confirmDeleteCorporate}
         title="Confirm Deletion"
         message="Are you sure you want to delete this corporate account? This action cannot be undone."
+      />
+      <SuccessModal
+        isOpen={isSuccessModalVisible}
+        onClose={() => setIsSuccessModalVisible(false)}
+        title={successModalContent.title}
+        message={successModalContent.message}
+      />
+      <ErrorMessageModal
+        isOpen={isErrorModalVisible}
+        onClose={() => setIsErrorModalVisible(false)}
+        message={errorModalContent}
       />
     </MainLayout>
   );

@@ -424,7 +424,7 @@ async function migrateData() {
             `;
             const corporateId = insertedCorporate[0].id;
             console.log(`✅ Migrated corporate: ${corporate.companyName} (ID: ${corporateId})`);
-            if (details.contacts) {
+            if (details.contacts && Array.isArray(details.contacts)) {
                 for (const contact of details.contacts) {
                     await sql `
                         INSERT INTO contacts (
@@ -441,7 +441,7 @@ async function migrateData() {
                 }
                 console.log(`  📞 Migrated ${details.contacts.length} contacts`);
             }
-            if (details.subsidiaries) {
+            if (details.subsidiaries && Array.isArray(details.subsidiaries)) {
                 for (const subsidiary of details.subsidiaries) {
                     await sql `
                         INSERT INTO subsidiaries (

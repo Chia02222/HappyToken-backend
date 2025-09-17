@@ -1,9 +1,11 @@
 import { CorporateService } from './corporate.service';
+import { ResendService } from '../resend/resend.service';
 import { CorporateTable, InvestigationLogTable } from '../database/types';
 import { UpdateCorporateDto } from './dto/corporate.dto';
 export declare class CorporateController {
     private readonly corporateService;
-    constructor(corporateService: CorporateService);
+    private readonly resendService;
+    constructor(corporateService: CorporateService, resendService: ResendService);
     findAll(): Promise<{
         id: string;
         company_name: string;
@@ -318,4 +320,8 @@ export declare class CorporateController {
         created_at: string;
         updated_at: string;
     } | null>;
+    resendRegistrationLink(id: string): Promise<{
+        success: boolean;
+        message: any;
+    }>;
 }

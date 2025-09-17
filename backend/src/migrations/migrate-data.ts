@@ -25,7 +25,7 @@ const CORPORATES_DATA = [
 ];
 
 // Detailed corporate data from constants
-const CORPORATE_DETAILS_DATA: Record<number, any> = {
+const CORPORATE_DETAILS_DATA: Record<number, Record<string, unknown>> = {
     1: {
         companyName: 'Global Tech Inc.',
         regNumber: '202201012345',
@@ -408,8 +408,8 @@ async function migrateData() {
             console.log(`✅ Migrated corporate: ${corporate.companyName} (ID: ${corporateId})`);
 
             // Migrate contacts
-            if (details.contacts) {
-                for (const contact of details.contacts) {
+            if (details.contacts && Array.isArray(details.contacts)) {
+                for (const contact of details.contacts as any[]) {
                     await sql`
                         INSERT INTO contacts (
                             corporate_id, salutation, first_name, last_name,
@@ -427,8 +427,8 @@ async function migrateData() {
             }
 
             // Migrate subsidiaries
-            if (details.subsidiaries) {
-                for (const subsidiary of details.subsidiaries) {
+            if (details.subsidiaries && Array.isArray(details.subsidiaries)) {
+                for (const subsidiary of details.subsidiaries as any[]) {
                     await sql`
                         INSERT INTO subsidiaries (
                             corporate_id, company_name, reg_number, office_address1,

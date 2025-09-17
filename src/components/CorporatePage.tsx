@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { Corporate, CorporateStatus } from '../types';
 import StatusBadge from './common/StatusBadge';
 import ChangeStatusModal from './modals/ChangeStatusModal';
-import SendLinkModal from './modals/SendLinkModal';
+import CopyLinkModal from './modals/CopyLinkModal';
+import ResendModal from './modals/ResendModal';
 import EllipsisMenu from './common/EllipsisMenu';
 
 interface CorporatePageProps {
@@ -18,6 +19,8 @@ interface CorporatePageProps {
     corporateToAutoSendLink: Corporate | null;
     setCorporateToAutoSendLink: React.Dispatch<React.SetStateAction<Corporate | null>>;
     onDeleteCorporate: (id: string) => Promise<void>;
+    onResendRegistrationLink: (id: string) => Promise<void>;
+    onSendRegistrationLink: (id: string) => Promise<void>;
 }
 
 const CorporatePage: React.FC<CorporatePageProps> = ({
@@ -31,15 +34,18 @@ const CorporatePage: React.FC<CorporatePageProps> = ({
     corporateToAutoSendLink,
     setCorporateToAutoSendLink,
     onDeleteCorporate,
+    onResendRegistrationLink,
+    onSendRegistrationLink,
 }) => {
     const [selectedCorporate, setSelectedCorporate] = useState<Corporate | null>(null);
     const [targetStatus, setTargetStatus] = useState<CorporateStatus | null>(null);
     const [isChangeStatusModalVisible, setIsChangeStatusModalVisible] = useState(false);
-    const [isSendLinkModalVisible, setIsSendLinkModalVisible] = useState(false);
+    const [isCopyLinkModalVisible, setIsCopyLinkModalVisible] = useState(false);
+    const [isResendModalVisible, setIsResendModalVisible] = useState(false);
 
     useEffect(() => {
         if (corporateToAutoSendLink) {
-            handleOpenSendLinkModal(corporateToAutoSendLink);
+            handleOpenCopyLinkModal(corporateToAutoSendLink);
             setCorporateToAutoSendLink(null);
         }
     }, [corporateToAutoSendLink, setCorporateToAutoSendLink]);
@@ -50,14 +56,20 @@ const CorporatePage: React.FC<CorporatePageProps> = ({
         setIsChangeStatusModalVisible(true);
     };
 
-    const handleOpenSendLinkModal = (corporate: Corporate) => {
+    const handleOpenCopyLinkModal = (corporate: Corporate) => {
         setSelectedCorporate(corporate);
-        setIsSendLinkModalVisible(true);
+        setIsCopyLinkModalVisible(true);
+    };
+
+    const handleOpenResendModal = (corporate: Corporate) => {
+        setSelectedCorporate(corporate);
+        setIsResendModalVisible(true);
     };
 
     const handleCloseModals = () => {
         setIsChangeStatusModalVisible(false);
-        setIsSendLinkModalVisible(false);
+        setIsCopyLinkModalVisible(false);
+        setIsResendModalVisible(false);
         setSelectedCorporate(null);
         setTargetStatus(null);
     };
@@ -67,17 +79,14 @@ const CorporatePage: React.FC<CorporatePageProps> = ({
         handleCloseModals();
     };
 
-    const handleSendLink = (corporateId: string) => {
-        updateStatus(corporateId, 'Send', 'Registration link generated and status updated.');
-        handleCloseModals();
-    };
+    
 
     const renderActions = (corporate: Corporate) => {
         switch (corporate.status) {
             case 'New':
                 return (
                     <button
-                        onClick={() => handleOpenSendLinkModal(corporate)}
+                        onClick={() => onSendRegistrationLink(corporate.id)}
                         className="text-sm text-ht-blue hover:text-ht-blue-dark font-semibold"
                     >
                         Send Link
@@ -237,7 +246,22 @@ const CorporatePage: React.FC<CorporatePageProps> = ({
                                         </button>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <EllipsisMenu onDelete={() => onDeleteCorporate(corporate.id)} />
+                                        <EllipsisMenu
+                                            items={[
+                                                {
+                                                    label: 'Copy Link',
+                                                    onClick: () => handleOpenCopyLinkModal(corporate),
+                                                },
+                                                {
+                                                    label: 'Resend',
+                                                    onClick: () => handleOpenResendModal(corporate),
+                                                },
+                                                {
+                                                    label: 'Delete',
+                                                    onClick: () => onDeleteCorporate(corporate.id),
+                                                },
+                                            ]}
+                                        />
                                     </td>
                                 </tr>
                             ))}
@@ -254,11 +278,17 @@ const CorporatePage: React.FC<CorporatePageProps> = ({
                 onSave={handleSaveStatusChange}
             />
 
-            <SendLinkModal
-                isOpen={isSendLinkModalVisible}
+            <CopyLinkModal
+                isOpen={isCopyLinkModalVisible}
                 onClose={handleCloseModals}
                 corporate={selectedCorporate}
-                onSend={handleSendLink}
+            />
+
+            <ResendModal
+                isOpen={isResendModalVisible}
+                onClose={handleCloseModals}
+                corporate={selectedCorporate}
+                onResend={onResendRegistrationLink}
             />
         </>
     );

@@ -1,4 +1,4 @@
-import { CorporateStatus } from '../../database/types';
+import { CorporateStatus, InvestigationLogTable } from '../../database/types';
 import { CreateContactDto, UpdateContactDto } from '../../contacts/dto/contact.dto';
 import { CreateSubsidiaryDto, UpdateSubsidiaryDto } from '../../subsidiaries/dto/subsidiary.dto';
 export declare class SecondaryApproverDto {
@@ -49,7 +49,8 @@ export declare class CreateCorporateDto {
 export declare class CreateCorporateWithRelationsDto extends CreateCorporateDto {
     contacts?: CreateContactDto[];
     subsidiaries?: CreateSubsidiaryDto[];
-    investigation_log?: any;
+    investigation_log?: InvestigationLogTable[];
+    secondary_approver?: SecondaryApproverDto;
 }
 declare const UpdateCorporateDto_base: import("@nestjs/mapped-types").MappedType<Partial<CreateCorporateDto>>;
 export declare class UpdateCorporateDto extends UpdateCorporateDto_base {
@@ -58,7 +59,7 @@ export declare class UpdateCorporateDto extends UpdateCorporateDto_base {
     subsidiaries?: UpdateSubsidiaryDto[];
     contactIdsToDelete?: string[];
     subsidiaryIdsToDelete?: string[];
-    investigation_log?: any;
+    investigation_log?: InvestigationLogTable[];
     secondary_approver?: SecondaryApproverDto;
 }
 export {};
