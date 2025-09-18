@@ -1,5 +1,5 @@
 
-export type Page = 'Dashboard' | 'RFQ' | 'Merchant' | 'Corporate' | 'API' | 'Configuration' | 'Management' | 'Reports';
+export type Page = 'Dashboard' | 'RFQ' | 'Merchant' | 'CRT Corporate' | 'Approver Corporate' | 'API' | 'Configuration' | 'Management' | 'Reports';
 
 export interface NavItem {
   name: Page;
@@ -7,7 +7,7 @@ export interface NavItem {
   subItems?: string[];
 }
 
-export type CorporateStatus = 'New' | 'Send' | 'Pending 1st Approval' | 'Pending 2nd Approval' | 'Approved' | 'Rejected' | 'Cooling Period' | 'Resolved' | 'Closed' | 'Reopened';
+export type CorporateStatus = 'New' | 'Send' | 'Pending 1st Approval' | 'Pending 2nd Approval' | 'Approved' | 'Rejected' | 'Cooling Period' | 'Resolved' | 'Closed' | 'Reopened' | 'Pending Contract Setup';
 
 export interface LogEntry {
   id?: number;

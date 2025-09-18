@@ -5,7 +5,8 @@ export const NAV_ITEMS: NavItem[] = [
   { name: 'Dashboard', icon: DashboardIcon },
   { name: 'RFQ', icon: RfqIcon },
   { name: 'Merchant', icon: MerchantIcon },
-  { name: 'Corporate', icon: CorporateIcon },
+  { name: 'CRT Corporate', icon: CorporateIcon },
+  { name: 'Approver Corporate', icon: CorporateIcon },
   { name: 'API', icon: ApiIcon },
 ];
 

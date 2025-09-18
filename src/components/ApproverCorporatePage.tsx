@@ -8,7 +8,7 @@ import CopyLinkModal from './modals/CopyLinkModal';
 import ResendModal from './modals/ResendModal';
 import EllipsisMenu from './common/EllipsisMenu';
 
-interface CorporatePageProps {
+interface ApproverCorporatePageProps {
     onAddNew: () => void;
     onView: (corporate: Corporate) => void;
     onFirstApprove: (corporate: Corporate) => void;
@@ -23,7 +23,7 @@ interface CorporatePageProps {
     onSendRegistrationLink: (id: string) => Promise<void>;
 }
 
-const CorporatePage: React.FC<CorporatePageProps> = ({
+const ApproverCorporatePage: React.FC<ApproverCorporatePageProps> = ({
     onAddNew,
     onView,
     onFirstApprove,
@@ -83,15 +83,30 @@ const CorporatePage: React.FC<CorporatePageProps> = ({
 
     const renderActions = (corporate: Corporate) => {
         switch (corporate.status) {
-            case 'New':
+            case 'Pending Contract Setup':
                 return (
-                    <button
-                        type="button" // Add type="button" to prevent form submission
-                        onClick={() => onSendRegistrationLink(corporate.id)}
-                        className="text-sm text-ht-blue hover:text-ht-blue-dark font-semibold"
-                    >
-                        Send Link
-                    </button>
+                    <div className="relative">
+                        <select
+                            defaultValue=""
+                            onChange={(e) => {
+                                const newStatus = e.target.value as CorporateStatus;
+                                if (newStatus === 'Approved') {
+                                    updateStatus(corporate.id, 'Pending 2nd Approval');
+                                } else if (newStatus === 'Rejected') {
+                                    handleOpenChangeStatusModal(corporate, 'Rejected');
+                                }
+                                e.target.value = '';
+                            }}
+                            className="text-sm border border-gray-300 rounded-md p-2 focus:ring-ht-blue focus:border-ht-blue bg-white"
+                            aria-label="Select action for pending contract setup account"
+                        >
+                            <option value="" disabled>
+                                Select Action...
+                            </option>
+                            <option value="Approved">Approve and Send to 2nd Approver</option>
+                            <option value="Rejected">Reject</option>
+                        </select>
+                    </div>
                 );
             case 'Send':
             case 'Pending 1st Approval':
@@ -173,18 +188,18 @@ const CorporatePage: React.FC<CorporatePageProps> = ({
 
     return (
         <>
-            <div className="bg-white p-6 rounded-lg shadow-sm">
+            <div className="bg-white p-6 rounded-lg shadow-sm h-full flex flex-col"> 
                 <div className="flex justify-between items-center mb-6 pb-4 border-b">
-                    <h2 className="text-lg font-semibold text-ht-gray-dark">Corporate Accounts</h2>
+                    <h2 className="text-lg font-semibold text-ht-gray-dark">Approver Corporate Accounts</h2>
                     <button
                         onClick={onAddNew}
                         className="text-sm bg-ht-blue text-white px-4 py-2 rounded-md hover:bg-ht-blue-dark transition-colors"
                     >
-                        Add New Corporate
+                        Add New Approver Corporate
                     </button>
                 </div>
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
+                <div className="overflow-auto flex-grow">
+                    <table className="min-w-full divide-y divide-gray-200 h-full">
                         <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -261,6 +276,10 @@ const CorporatePage: React.FC<CorporatePageProps> = ({
                                                     label: 'Delete',
                                                     onClick: () => onDeleteCorporate(corporate.id),
                                                 },
+                                                {
+                                                    label: 'Send to Approval',
+                                                    onClick: () => onSendRegistrationLink(corporate.id),
+                                                },
                                             ]}
                                         />
                                     </td>
@@ -295,4 +314,4 @@ const CorporatePage: React.FC<CorporatePageProps> = ({
     );
 };
 
-export default CorporatePage;
+export default ApproverCorporatePage;

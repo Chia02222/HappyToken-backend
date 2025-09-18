@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import MainLayout from '../components/layout/MainLayout';
 import FormLayout from '../components/layout/FormLayout';
 import Dashboard from '../components/Dashboard';
-import CorporatePage from '../components/CorporatePage';
+import CRTCorporatePage from '../components/CRTCorporatePage';
+import ApproverCorporatePage from '../components/ApproverCorporatePage';
 import CorporateForm from '../components/CorporateForm';
 import CommercialTermsForm from '../components/CommercialTermsForm';
 import ECommercialTermsForm from '../components/ECommercialTermsForm';
@@ -71,8 +72,12 @@ const INITIAL_CORPORATE_FORM_DATA: CorporateDetails = {
     second_approval_confirmation: false,
 };
 
+import LoginPage from '../components/LoginPage';
+
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('Dashboard');
+  const [userRole, setUserRole] = useState<'admin' | 'client'>('admin');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isCorporateFormVisible, setIsCorporateFormVisible] = useState(false);
   const [isHistoryModalVisible, setIsHistoryModalVisible] = useState(false);
   const [formStep, setFormStep] = useState(1);
@@ -106,7 +111,11 @@ const App: React.FC = () => {
   const handleAddNewCorporate = () => {
     setEditingCorporate(null);
     setFormMode('new');
-    setFormData(INITIAL_CORPORATE_FORM_DATA);
+    const initialData = { ...INITIAL_CORPORATE_FORM_DATA };
+    if (userRole === 'admin') {
+      initialData.status = 'Pending Contract Setup' as CorporateStatus;
+    }
+    setFormData(initialData);
     setFormStep(1);
     setIsCorporateFormVisible(true);
   };
@@ -182,6 +191,7 @@ const App: React.FC = () => {
       }
 
       await resendRegistrationLink(id);
+      await updateCorporateStatus(id, 'Send', 'Registration link sent.');
       await fetchCorporates(); // Refresh the list of corporates
       setSuccessModalContent({
         title: 'Success',
@@ -367,9 +377,26 @@ const App: React.FC = () => {
     }
 
     switch (currentPage) {
-      case 'Corporate':
+      case 'CRT Corporate':
         return (
-            <CorporatePage 
+            <CRTCorporatePage 
+                onAddNew={handleAddNewCorporate}
+                onView={handleViewCorporate}
+                onFirstApprove={handleFirstApproval}
+                onSecondApprove={handleSecondApproval}
+                onViewHistory={handleViewHistory}
+                corporates={corporates}
+                updateStatus={handleUpdateStatus}
+                corporateToAutoSendLink={corporateToAutoSendLink}
+                setCorporateToAutoSendLink={setCorporateToAutoSendLink}
+                onDeleteCorporate={handleDeleteCorporate}
+                onResendRegistrationLink={handleResendRegistrationLink}
+                onSendRegistrationLink={handleResendRegistrationLink}
+            />
+        );
+    case 'Approver Corporate':
+        return (
+            <ApproverCorporatePage
                 onAddNew={handleAddNewCorporate}
                 onView={handleViewCorporate}
                 onFirstApprove={handleFirstApproval}
@@ -390,12 +417,27 @@ const App: React.FC = () => {
     }
   };
 
+  const handleLogin = (role: 'admin' | 'client') => {
+    setUserRole(role);
+    if (role === 'admin') {
+        setCurrentPage('CRT Corporate');
+    } else {
+        setCurrentPage('Approver Corporate');
+    }
+    setIsLoggedIn(true);
+  };
+
+  if (!isLoggedIn) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
+
   return (
     <MainLayout
       currentPage={currentPage}
       setCurrentPage={setCurrentPage}
       isSidebarCollapsed={isSidebarCollapsed}
       onToggleSidebar={() => setIsSidebarCollapsed(prev => !prev)}
+      userRole={userRole}
     >
       {renderMainContent()}
       <HistoryLogModal

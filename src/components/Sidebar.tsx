@@ -9,9 +9,10 @@ interface SidebarProps {
   setCurrentPage: (page: Page) => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
+  userRole: 'admin' | 'client';
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, isCollapsed, onToggleCollapse }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, isCollapsed, onToggleCollapse, userRole }) => {
 
   const NavLink: React.FC<{ item: NavItem }> = ({ item }) => {
     const isActive = currentPage === item.name;
@@ -51,15 +52,25 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, isCollap
     );
   };
 
+  const filteredNavItems = NAV_ITEMS.filter(item => {
+    if (userRole === 'admin' && item.name === 'Approver Corporate') {
+        return false;
+    }
+    if (userRole === 'client' && item.name === 'CRT Corporate') {
+        return false;
+    }
+    return true;
+  });
+
   return (
     <aside className={`bg-ht-blue-light flex flex-col ${isCollapsed ? 'w-20' : 'w-64'} transition-all duration-300 ease-in-out`}>
       <div className="text-2xl font-bold text-ht-blue-dark py-4 text-center p-4">
-        {isCollapsed ? 'A' : 'ADMIN'}
+        {isCollapsed ? (userRole === 'admin' ? 'A' : 'C') : (userRole === 'admin' ? 'ADMIN' : 'CLIENT')}
       </div>
       <nav className="flex-1 flex flex-col justify-between overflow-y-auto overflow-x-hidden p-4">
         <div>
             <div className="space-y-2">
-                {NAV_ITEMS.map((item) => <NavLink key={item.name} item={item} />)}
+                {filteredNavItems.map((item) => <NavLink key={item.name} item={item} />)}
             </div>
             
             <div className="mt-8">
