@@ -144,6 +144,7 @@ export class CorporateService {
       contactIdsToDelete,
       subsidiaryIdsToDelete,
       secondary_approver,
+      investigation_log, // Explicitly destructure and exclude
       ...corporateUpdateData // This should now be free of 'id'
     } = updateData;
 

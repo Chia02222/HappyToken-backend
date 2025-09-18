@@ -31,11 +31,15 @@ let ResendService = class ResendService {
         if (!corporate) {
             return { success: false, message: 'Corporate not found.' };
         }
-        const recipientEmail = corporate.contacts?.[0]?.email;
-        if (!recipientEmail) {
-            return { success: false, message: 'Recipient email not found for corporate.' };
+        let recipientEmail = corporate.contacts?.[0]?.email;
+        if (recipientEmail) {
+            recipientEmail = recipientEmail.replace(/[^a-zA-Z0-9._%+-@]/g, '');
         }
-        const registrationLink = `https://happietoken.com/register?token=${Buffer.from(`corp_${corporate.id}`).toString('base64')}`;
+        if (!recipientEmail || recipientEmail === 'N/A' || recipientEmail === '') {
+            return { success: false, message: 'Recipient email not found or is invalid for corporate.' };
+        }
+        const sanitizedCorporateId = corporate.id.replace(/[^a-zA-Z0-9]/g, '');
+        const registrationLink = `https://happietoken.com/register?token=${Buffer.from(`corp_${sanitizedCorporateId}`).toString('base64')}`;
         try {
             const response = await fetch('https://api.resend.com/emails', {
                 method: 'POST',
