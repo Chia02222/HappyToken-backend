@@ -12,9 +12,10 @@ interface ResendModalProps {
 const ResendModal: React.FC<ResendModalProps> = ({ isOpen, onClose, corporate, onResend }) => {
     if (!corporate) return null;
 
-    const handleResend = () => {
+    const handleResend = async () => { // Make it async
         if (corporate) {
-            onResend(corporate.id);
+            await onResend(corporate.id); // Await the onResend call
+            onClose(); // Close the modal after resend is complete
         }
     };
 

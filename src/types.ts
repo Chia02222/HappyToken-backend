@@ -18,7 +18,7 @@ export interface LogEntry {
 }
 
 export interface Contact {
-  id?: number;
+  id?: string;
   salutation: string;
   first_name: string;
   last_name: string;
@@ -29,7 +29,7 @@ export interface Contact {
 }
 
 export interface Subsidiary {
-    id?: number;
+    id?: string;
     company_name: string;
     reg_number: string;
     office_address1: string;
@@ -48,7 +48,7 @@ export interface Corporate {
   reg_number: string;
   status: CorporateStatus;
   created_at: string;
-    investigation_log: LogEntry[];
+  
 }
 
 export interface CorporateDetails extends Corporate {
@@ -83,7 +83,7 @@ export interface CorporateDetails extends Corporate {
     second_approval_confirmation: boolean;
     secondary_approver?: {
         use_existing_contact?: boolean;
-        selected_contact_id?: string | number;
+        selected_contact_id?: string;
         salutation?: string;
         first_name?: string;
         last_name?: string;
@@ -94,6 +94,6 @@ export interface CorporateDetails extends Corporate {
     };
     contacts: Contact[];
     subsidiaries: Subsidiary[];
-    contactIdsToDelete?: number[];
-    subsidiaryIdsToDelete?: number[];
+    contactIdsToDelete?: string[];
+    subsidiaryIdsToDelete?: string[];
 }

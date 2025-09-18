@@ -2,7 +2,7 @@ import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common'
 import { CorporateService } from './corporate.service';
 import { ResendService } from '../resend/resend.service';
 import { CorporateTable, InvestigationLogTable } from '../database/types';
-import { UpdateCorporateDto } from './dto/corporate.dto';
+import { CreateCorporateWithRelationsDto, UpdateCorporateDto } from './dto/corporate.dto';
 
 @Controller('corporates')
 export class CorporateController {
@@ -22,8 +22,10 @@ export class CorporateController {
   }
 
   @Post()
-  async create(@Body() corporateData: Omit<CorporateTable, 'id'>) {
-    return await this.corporateService.create(corporateData);
+  async create(@Body() corporateData: any) {
+    const { investigation_log, id, ...corporateDataWithoutLogAndId } = corporateData;
+    const dataToPassToService: CreateCorporateWithRelationsDto = corporateDataWithoutLogAndId;
+    return await this.corporateService.create(dataToPassToService);
   }
 
   @Put(':id')

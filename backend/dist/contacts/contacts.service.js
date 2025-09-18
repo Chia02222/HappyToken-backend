@@ -23,7 +23,17 @@ let ContactsService = class ContactsService {
     }
     async addContact(contactData) {
         console.log('addContact called with:', contactData);
-        const { ...insertData } = contactData;
+        const { id, ...contactDataWithoutId } = contactData;
+        const insertData = {
+            corporate_id: contactDataWithoutId.corporate_id,
+            salutation: contactDataWithoutId.salutation,
+            first_name: contactDataWithoutId.first_name,
+            last_name: contactDataWithoutId.last_name,
+            contact_number: contactDataWithoutId.contact_number,
+            email: contactDataWithoutId.email,
+            company_role: contactDataWithoutId.company_role,
+            system_role: contactDataWithoutId.system_role,
+        };
         const dataWithDefaults = {
             ...insertData,
             salutation: insertData.salutation || 'Mr',

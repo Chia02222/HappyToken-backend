@@ -13,7 +13,7 @@ export class SubsidiariesService {
 
   async addSubsidiary(subsidiaryData: CreateSubsidiaryDto) {
     console.log('addSubsidiary called with:', subsidiaryData);
-    const { ...insertData } = subsidiaryData;
+    const { id, ...insertData } = subsidiaryData as any; // Explicitly omit 'id'
     const inserted = await this.db
       .insertInto('subsidiaries')
       .values({

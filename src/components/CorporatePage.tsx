@@ -86,6 +86,7 @@ const CorporatePage: React.FC<CorporatePageProps> = ({
             case 'New':
                 return (
                     <button
+                        type="button" // Add type="button" to prevent form submission
                         onClick={() => onSendRegistrationLink(corporate.id)}
                         className="text-sm text-ht-blue hover:text-ht-blue-dark font-semibold"
                     >

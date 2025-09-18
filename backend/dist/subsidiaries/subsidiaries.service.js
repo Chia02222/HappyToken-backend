@@ -23,7 +23,7 @@ let SubsidiariesService = class SubsidiariesService {
     }
     async addSubsidiary(subsidiaryData) {
         console.log('addSubsidiary called with:', subsidiaryData);
-        const { ...insertData } = subsidiaryData;
+        const { id, ...insertData } = subsidiaryData;
         const inserted = await this.db
             .insertInto('subsidiaries')
             .values({

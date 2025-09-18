@@ -69,7 +69,7 @@ export class CorporateService {
     };
   }
 
-  async create(corporateData: CreateCorporateWithRelationsDto) {
+  async create(corporateData: Omit<CreateCorporateWithRelationsDto, 'investigation_log'>) {
     const { contacts, subsidiaries, secondary_approver, ...corporateBaseData } = corporateData;
 
     const corporateInsertData: NewCorporate = {
@@ -132,21 +132,24 @@ export class CorporateService {
     return inserted!;
   }
 
-  async update(id: string, updateData: UpdateCorporateDto) {
+  async update(id: string, updateData: Omit<UpdateCorporateDto, 'investigation_log'>) {
     console.log('CorporateService.update called with id:', id);
     try {
       console.log('Raw updateData:', JSON.stringify(updateData));
     } catch {}
+
+    // Explicitly remove investigation_log from updateData if it exists
+    const { investigation_log, ...restOfUpdateData } = updateData as any;
+
     const {
-      id: updateDtoId, // Destructure to remove id from the rest of the object
+      id: updateDtoId,
       contacts,
       subsidiaries,
       contactIdsToDelete,
       subsidiaryIdsToDelete,
       secondary_approver,
-      investigation_log, // Explicitly destructure and exclude
-      ...corporateUpdateData // This should now be free of 'id'
-    } = updateData;
+      ...corporateUpdateData // This should now be free of 'id' and 'investigation_log'
+    } = restOfUpdateData;
 
     const secondaryApproverData = updateData.secondary_approver;
 

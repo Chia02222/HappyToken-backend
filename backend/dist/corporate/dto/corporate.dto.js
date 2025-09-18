@@ -52,7 +52,6 @@ exports.CreateCorporateDto = CreateCorporateDto;
 class CreateCorporateWithRelationsDto extends CreateCorporateDto {
     contacts;
     subsidiaries;
-    investigation_log;
     secondary_approver;
 }
 exports.CreateCorporateWithRelationsDto = CreateCorporateWithRelationsDto;
@@ -62,7 +61,6 @@ class UpdateCorporateDto extends (0, mapped_types_1.PartialType)(CreateCorporate
     subsidiaries;
     contactIdsToDelete;
     subsidiaryIdsToDelete;
-    investigation_log;
     secondary_approver;
 }
 exports.UpdateCorporateDto = UpdateCorporateDto;

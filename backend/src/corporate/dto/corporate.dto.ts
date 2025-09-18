@@ -53,8 +53,6 @@ export class CreateCorporateDto {
 export class CreateCorporateWithRelationsDto extends CreateCorporateDto {
   contacts?: CreateContactDto[];
   subsidiaries?: CreateSubsidiaryDto[];
-  // Present in client payload; not persisted on corporates
-  investigation_log?: InvestigationLogTable[];
   secondary_approver?: SecondaryApproverDto;
 }
 
@@ -64,6 +62,5 @@ export class UpdateCorporateDto extends PartialType(CreateCorporateDto) {
     subsidiaries?: UpdateSubsidiaryDto[];
     contactIdsToDelete?: string[];
     subsidiaryIdsToDelete?: string[];
-    investigation_log?: InvestigationLogTable[];
-    secondary_approver?: SecondaryApproverDto; // Add secondary_approver
+    secondary_approver?: SecondaryApproverDto; 
 }

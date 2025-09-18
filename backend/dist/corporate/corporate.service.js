@@ -126,7 +126,8 @@ let CorporateService = class CorporateService {
             console.log('Raw updateData:', JSON.stringify(updateData));
         }
         catch { }
-        const { id: updateDtoId, contacts, subsidiaries, contactIdsToDelete, subsidiaryIdsToDelete, secondary_approver, investigation_log, ...corporateUpdateData } = updateData;
+        const { investigation_log, ...restOfUpdateData } = updateData;
+        const { id: updateDtoId, contacts, subsidiaries, contactIdsToDelete, subsidiaryIdsToDelete, secondary_approver, ...corporateUpdateData } = restOfUpdateData;
         const secondaryApproverData = updateData.secondary_approver;
         console.log('Derived corporateUpdateData keys:', Object.keys(corporateUpdateData));
         console.log('contactIdsToDelete:', contactIdsToDelete);

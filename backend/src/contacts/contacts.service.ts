@@ -13,8 +13,19 @@ export class ContactsService {
 
   async addContact(contactData: CreateContactDto) {
     console.log('addContact called with:', contactData);
-    // Ignore any client-provided id; let DB generate UUID
-    const { ...insertData } = contactData;
+    // Explicitly remove 'id' from contactData if it exists, before constructing insertData
+    const { id, ...contactDataWithoutId } = contactData as any; // Cast to any to allow destructuring 'id'
+
+    const insertData: CreateContactDto = {
+      corporate_id: contactDataWithoutId.corporate_id,
+      salutation: contactDataWithoutId.salutation,
+      first_name: contactDataWithoutId.first_name,
+      last_name: contactDataWithoutId.last_name,
+      contact_number: contactDataWithoutId.contact_number,
+      email: contactDataWithoutId.email,
+      company_role: contactDataWithoutId.company_role,
+      system_role: contactDataWithoutId.system_role,
+    };
 
     const dataWithDefaults = {
       ...insertData,

@@ -11,13 +11,14 @@ interface CorporateFormProps {
     formData: CorporateDetails;
     setFormData: (dataUpdater: (prevData: CorporateDetails) => CorporateDetails) => void;
     onSaveCorporate: (formData: CorporateDetails, action: 'submit' | 'send' | 'save') => void;
+    generateClientSideId: () => string;
 }
 
 const malaysianStates = [
     'Johor', 'Kedah', 'Kelantan', 'Melaka', 'Negeri Sembilan', 'Pahang', 'Penang', 'Perak', 'Perlis', 'Sabah', 'Sarawak', 'Selangor', 'Terengganu', 'W.P. Kuala Lumpur', 'W.P. Labuan', 'W.P. Putrajaya'
 ];
 
-const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep, formData, setFormData, onSaveCorporate }) => {
+const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep, formData, setFormData, onSaveCorporate, generateClientSideId }) => {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target;
@@ -45,7 +46,7 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
             subsidiaries: [
                 ...prev.subsidiaries,
                 {
-                    id: Date.now(),
+                    id: generateClientSideId(),
                     company_name: '',
                     reg_number: '',
                     office_address1: '',
@@ -86,7 +87,7 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
             contacts: [
                 ...prev.contacts,
                 {
-                    id: Date.now(),
+                    id: generateClientSideId(),
                     salutation: 'Mr',
                     first_name: '',
                     last_name: '',

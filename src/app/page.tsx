@@ -15,9 +15,10 @@ import ConfirmationModal from '../components/modals/ConfirmationModal';
 import SuccessModal from '../components/modals/SuccessModal';
 import ErrorMessageModal from '../components/modals/ErrorMessageModal';
 
-let tempContactIdCounter = -1;
-const generateTempContactId = () => {
-  return tempContactIdCounter--;
+let clientSideIdCounter = 0;
+const generateClientSideId = (): string => {
+  clientSideIdCounter -= 1; // Use negative numbers to avoid collision with actual IDs
+  return `client-${clientSideIdCounter}`;
 };
 
 const INITIAL_CORPORATE_FORM_DATA: CorporateDetails = {
@@ -26,7 +27,6 @@ const INITIAL_CORPORATE_FORM_DATA: CorporateDetails = {
     reg_number: '',
     status: 'New',
     created_at: '',
-    investigation_log: [],
     office_address1: '',
     office_address2: '',
     postcode: '',
@@ -38,7 +38,7 @@ const INITIAL_CORPORATE_FORM_DATA: CorporateDetails = {
     subsidiaries: [],
     contacts: [
         {
-            id: generateTempContactId(),
+            id: generateClientSideId(),
             salutation: 'Mr',
             first_name: '',
             last_name: '',
@@ -166,7 +166,23 @@ const App: React.FC = () => {
 
   const handleResendRegistrationLink = async (id: string) => {
     try {
+      const corporate = await getCorporateById(id);
+      if (!corporate || !corporate.contacts || corporate.contacts.length === 0) {
+        setErrorModalContent(`No contact information found for corporate ${id}. Cannot send registration link.`);
+        setIsErrorModalVisible(true);
+        return;
+      }
+
+      const hasValidEmail = corporate.contacts.some(contact => contact.email && contact.email !== 'N/A');
+
+      if (!hasValidEmail) {
+        setErrorModalContent(`No valid contact email found for corporate ${id}. Cannot send registration link.`);
+        setIsErrorModalVisible(true);
+        return;
+      }
+
       await resendRegistrationLink(id);
+      await fetchCorporates(); // Refresh the list of corporates
       setSuccessModalContent({
         title: 'Success',
         message: `Registration link has been successfully resent for corporate ${id}.`,
@@ -204,7 +220,6 @@ const App: React.FC = () => {
             } else if (!secondary_approver.use_existing_contact) {
                 console.log('Creating new secondary contact:', JSON.stringify(secondary_approver, null, 2));
                 const newSecondaryContact: Contact = {
-                    id: generateTempContactId(), 
                     salutation: secondary_approver.salutation || 'Mr',
                     first_name: secondary_approver.first_name || '',
                     last_name: secondary_approver.last_name || '',
@@ -221,13 +236,13 @@ const App: React.FC = () => {
         updatedFormData.first_approval_confirmation = true;
       }
 
-      const { contacts, subsidiaries, investigation_log, contactIdsToDelete, subsidiaryIdsToDelete, ...corporateData } = updatedFormData;
+      const { contacts, subsidiaries, contactIdsToDelete, subsidiaryIdsToDelete, ...corporateData } = updatedFormData;
 
       const dataToSend = {
         ...corporateData,
         contacts,
         subsidiaries,
-        investigation_log,
+
         contactIdsToDelete,
         subsidiaryIdsToDelete,
         secondary_approver: updatedFormData.secondary_approver, // Include secondary_approver
@@ -241,6 +256,7 @@ const App: React.FC = () => {
         console.log('Data stored in backend:', JSON.stringify(updatedCorporate, null, 2));
       } else {
         const newCorporate = await createCorporate(dataToSend);
+        console.log('New corporate created:', newCorporate);
         savedCorporateId = newCorporate.id;
         if (action === 'send') {
             await updateCorporateStatus(newCorporate.id, 'Send', 'Registration link generated and status updated.');
@@ -323,15 +339,16 @@ const App: React.FC = () => {
                 <CorporateForm
                   onCloseForm={handleCloseCorporateForm}
                   setFormStep={setFormStep}
-                  formData={({ ...formData, investigation_log: formData.investigation_log || [] }) as CorporateDetails}
+                  formData={({ ...formData}) as CorporateDetails}
                   setFormData={setFormData}
                   onSaveCorporate={handleSaveCorporate}
+                  generateClientSideId={generateClientSideId}
                 />
               ) : formStep === 2 ? (
                 <CommercialTermsForm
                   onCloseForm={handleCloseCorporateForm}
                   setFormStep={setFormStep}
-                  formData={({ ...formData, investigation_log: formData.investigation_log || [] }) as CorporateDetails}
+                  formData={({ ...formData}) as CorporateDetails}
                   setFormData={setFormData}
                   onSaveCorporate={handleSaveCorporate}
                 />
@@ -339,7 +356,7 @@ const App: React.FC = () => {
                  <ECommercialTermsForm
                   onCloseForm={handleCloseCorporateForm}
                   setFormStep={setFormStep}
-                  formData={({ ...formData, investigation_log: formData.investigation_log || [] }) as CorporateDetails}
+                  formData={({ ...formData}) as CorporateDetails}
                   setFormData={setFormData}
                   onSaveCorporate={handleSaveCorporate}
                   formMode={formMode}

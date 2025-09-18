@@ -15,7 +15,6 @@ export declare class CorporateService {
         id: string;
         company_name: string;
         reg_number: string;
-        status: CorporateStatus;
         office_address1: string;
         office_address2: string | null;
         postcode: string;
@@ -24,6 +23,9 @@ export declare class CorporateService {
         country: string;
         website: string | null;
         account_note: string | null;
+        created_at: string;
+        updated_at: string;
+        status: CorporateStatus;
         billing_same_as_official: boolean;
         billing_address1: string;
         billing_address2: string;
@@ -45,15 +47,13 @@ export declare class CorporateService {
         agreed_to_commercial_terms: boolean;
         first_approval_confirmation: boolean;
         second_approval_confirmation: boolean;
-        created_at: string;
-        updated_at: string;
     }[]>;
     findById(id: string): Promise<{
         contacts: {
             id: string;
+            corporate_id: string;
             created_at: string;
             updated_at: string;
-            corporate_id: string;
             salutation: string;
             first_name: string;
             last_name: string;
@@ -64,6 +64,7 @@ export declare class CorporateService {
         }[];
         subsidiaries: {
             id: string;
+            corporate_id: string;
             company_name: string;
             reg_number: string;
             office_address1: string;
@@ -76,12 +77,11 @@ export declare class CorporateService {
             account_note: string | null;
             created_at: string;
             updated_at: string;
-            corporate_id: string;
         }[];
         investigation_log: {
             id: string;
-            created_at: string;
             corporate_id: string;
+            created_at: string;
             timestamp: string;
             note: string | null;
             from_status: CorporateStatus | null;
@@ -90,7 +90,6 @@ export declare class CorporateService {
         id: string;
         company_name: string;
         reg_number: string;
-        status: CorporateStatus;
         office_address1: string;
         office_address2: string | null;
         postcode: string;
@@ -99,6 +98,9 @@ export declare class CorporateService {
         country: string;
         website: string | null;
         account_note: string | null;
+        created_at: string;
+        updated_at: string;
+        status: CorporateStatus;
         billing_same_as_official: boolean;
         billing_address1: string;
         billing_address2: string;
@@ -120,14 +122,11 @@ export declare class CorporateService {
         agreed_to_commercial_terms: boolean;
         first_approval_confirmation: boolean;
         second_approval_confirmation: boolean;
-        created_at: string;
-        updated_at: string;
     } | null>;
-    create(corporateData: CreateCorporateWithRelationsDto): Promise<{
+    create(corporateData: Omit<CreateCorporateWithRelationsDto, 'investigation_log'>): Promise<{
         id: string;
         company_name: string;
         reg_number: string;
-        status: CorporateStatus;
         office_address1: string;
         office_address2: string | null;
         postcode: string;
@@ -136,6 +135,9 @@ export declare class CorporateService {
         country: string;
         website: string | null;
         account_note: string | null;
+        created_at: string;
+        updated_at: string;
+        status: CorporateStatus;
         billing_same_as_official: boolean;
         billing_address1: string;
         billing_address2: string;
@@ -157,15 +159,13 @@ export declare class CorporateService {
         agreed_to_commercial_terms: boolean;
         first_approval_confirmation: boolean;
         second_approval_confirmation: boolean;
-        created_at: string;
-        updated_at: string;
     }>;
-    update(id: string, updateData: UpdateCorporateDto): Promise<{
+    update(id: string, updateData: Omit<UpdateCorporateDto, 'investigation_log'>): Promise<{
         contacts: {
             id: string;
+            corporate_id: string;
             created_at: string;
             updated_at: string;
-            corporate_id: string;
             salutation: string;
             first_name: string;
             last_name: string;
@@ -176,6 +176,7 @@ export declare class CorporateService {
         }[];
         subsidiaries: {
             id: string;
+            corporate_id: string;
             company_name: string;
             reg_number: string;
             office_address1: string;
@@ -188,12 +189,11 @@ export declare class CorporateService {
             account_note: string | null;
             created_at: string;
             updated_at: string;
-            corporate_id: string;
         }[];
         investigation_log: {
             id: string;
-            created_at: string;
             corporate_id: string;
+            created_at: string;
             timestamp: string;
             note: string | null;
             from_status: CorporateStatus | null;
@@ -202,7 +202,6 @@ export declare class CorporateService {
         id: string;
         company_name: string;
         reg_number: string;
-        status: CorporateStatus;
         office_address1: string;
         office_address2: string | null;
         postcode: string;
@@ -211,6 +210,9 @@ export declare class CorporateService {
         country: string;
         website: string | null;
         account_note: string | null;
+        created_at: string;
+        updated_at: string;
+        status: CorporateStatus;
         billing_same_as_official: boolean;
         billing_address1: string;
         billing_address2: string;
@@ -232,16 +234,14 @@ export declare class CorporateService {
         agreed_to_commercial_terms: boolean;
         first_approval_confirmation: boolean;
         second_approval_confirmation: boolean;
-        created_at: string;
-        updated_at: string;
     } | null>;
     delete(id: string): Promise<{
         success: boolean;
     }>;
     addInvestigationLog(corporateId: string, logData: Omit<InvestigationLogTable, 'id' | 'corporate_id' | 'created_at'>): Promise<{
         id: string;
-        created_at: string;
         corporate_id: string;
+        created_at: string;
         timestamp: string;
         note: string | null;
         from_status: CorporateStatus | null;
@@ -250,9 +250,9 @@ export declare class CorporateService {
     updateStatus(id: string, status: string, note?: string): Promise<{
         contacts: {
             id: string;
+            corporate_id: string;
             created_at: string;
             updated_at: string;
-            corporate_id: string;
             salutation: string;
             first_name: string;
             last_name: string;
@@ -263,6 +263,7 @@ export declare class CorporateService {
         }[];
         subsidiaries: {
             id: string;
+            corporate_id: string;
             company_name: string;
             reg_number: string;
             office_address1: string;
@@ -275,12 +276,11 @@ export declare class CorporateService {
             account_note: string | null;
             created_at: string;
             updated_at: string;
-            corporate_id: string;
         }[];
         investigation_log: {
             id: string;
-            created_at: string;
             corporate_id: string;
+            created_at: string;
             timestamp: string;
             note: string | null;
             from_status: CorporateStatus | null;
@@ -289,7 +289,6 @@ export declare class CorporateService {
         id: string;
         company_name: string;
         reg_number: string;
-        status: CorporateStatus;
         office_address1: string;
         office_address2: string | null;
         postcode: string;
@@ -298,6 +297,9 @@ export declare class CorporateService {
         country: string;
         website: string | null;
         account_note: string | null;
+        created_at: string;
+        updated_at: string;
+        status: CorporateStatus;
         billing_same_as_official: boolean;
         billing_address1: string;
         billing_address2: string;
@@ -319,7 +321,5 @@ export declare class CorporateService {
         agreed_to_commercial_terms: boolean;
         first_approval_confirmation: boolean;
         second_approval_confirmation: boolean;
-        created_at: string;
-        updated_at: string;
     } | null>;
 }
