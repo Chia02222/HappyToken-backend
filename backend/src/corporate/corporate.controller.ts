@@ -57,6 +57,11 @@ export class CorporateController {
 
   @Post(':id/resend-link')
   async resendRegistrationLink(@Param('id') id: string) {
-    return await this.resendService.resendRegistrationLink(id);
+    const result = await this.resendService.resendRegistrationLink(id);
+    if (result.success) {
+      // Update corporate status to 'Approval (1st)' after successfully sending the link
+      await this.corporateService.updateStatus(id, 'Pending 1st Approval', 'Registration link resent, status updated to Pending 1st Approval.');
+    }
+    return result;
   }
 }

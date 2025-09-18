@@ -46,7 +46,11 @@ let CorporateController = class CorporateController {
         return await this.corporateService.updateStatus(id, body.status, body.note);
     }
     async resendRegistrationLink(id) {
-        return await this.resendService.resendRegistrationLink(id);
+        const result = await this.resendService.resendRegistrationLink(id);
+        if (result.success) {
+            await this.corporateService.updateStatus(id, 'Pending 1st Approval', 'Registration link resent, status updated to Pending 1st Approval.');
+        }
+        return result;
     }
 };
 exports.CorporateController = CorporateController;
