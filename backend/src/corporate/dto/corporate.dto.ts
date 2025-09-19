@@ -1,4 +1,4 @@
-import { CorporateStatus, InvestigationLogTable } from '../../database/types';
+import { CorporateStatus } from '../../database/types';
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateContactDto, UpdateContactDto} from '../../contacts/dto/contact.dto';
 import { CreateSubsidiaryDto, UpdateSubsidiaryDto } from '../../subsidiaries/dto/subsidiary.dto';

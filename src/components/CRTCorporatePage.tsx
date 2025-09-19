@@ -2,7 +2,7 @@
 
 import { getCorporateById } from '../services/api';
 import React, { useState, useEffect } from 'react';
-import { Corporate, CorporateStatus } from '../types';
+import { Corporate, CorporateStatus, Contact } from '../types';
 import StatusBadge from './common/StatusBadge';
 import ChangeStatusModal from './modals/ChangeStatusModal';
 import CopyLinkModal from './modals/CopyLinkModal';
@@ -48,6 +48,11 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
         }
     }, [corporateToAutoSendLink, setCorporateToAutoSendLink]);
 
+    const handleOpenCopyLinkModal = (corporate: Corporate) => {
+        setSelectedCorporate(corporate);
+        setIsCopyLinkModalVisible(true);
+    };
+
     useEffect(() => {
         const intervals = new Map<string, NodeJS.Timeout>();
 
@@ -57,16 +62,16 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
                     // Initialize or continue countdown
                     const initialTime = coolingPeriodTimers[corporate.id] !== undefined ? coolingPeriodTimers[corporate.id] : 30;
                     if (coolingPeriodTimers[corporate.id] === undefined) {
-                        setCoolingPeriodTimers(prev => ({ ...prev, [corporate.id]: initialTime }));
+                        setCoolingPeriodTimers((prev: { [corporateId: string]: number }) => ({ ...prev, [corporate.id]: initialTime }));
                     }
 
                     const countdownInterval = setInterval(() => {
-                        setCoolingPeriodTimers((prevTimers) => {
+                        setCoolingPeriodTimers((prevTimers: { [corporateId: string]: number }) => {
                             const newTime = (prevTimers[corporate.id] || initialTime) - 1;
                             if (newTime <= 0) {
                                 clearInterval(intervals.get(`countdown_${corporate.id}`));
                                 getCorporateById(corporate.id).then(details => {
-                                    if (details.contacts.some(c => c.contact_number === '0123456789')) {
+                                    if (details.contacts.some((c: Contact) => c.contact_number === '0123456789')) {
                                         updateStatus(corporate.id, 'Under Fraud Investigation');
                                     }
                                 });
@@ -97,13 +102,28 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
         return () => {
             intervals.forEach((interval) => clearInterval(interval));
         };
-    }, [corporates]);
+    }, [corporates, coolingPeriodTimers, updateStatus]);
 
 
 
 
 
     
+
+    const handleCloseModals = () => {
+        setIsChangeStatusModalVisible(false);
+        setIsCopyLinkModalVisible(false);
+        setIsResendModalVisible(false);
+        setSelectedCorporate(null);
+        setTargetStatus(null);
+    };
+
+    const handleSaveStatusChange = async (note?: string) => {
+        if (selectedCorporate && targetStatus) {
+            await updateStatus(selectedCorporate.id, targetStatus, note);
+            handleCloseModals();
+        }
+    };
 
     const renderActions = (corporate: Corporate) => {
         const remainingTime = coolingPeriodTimers[corporate.id];

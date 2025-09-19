@@ -12,7 +12,6 @@ export declare class CorporateService {
     constructor(dbService: DatabaseService, contactsService: ContactsService, subsidiariesService: SubsidiariesService, resendService: ResendService);
     private get db();
     findAll(): Promise<{
-        id: string;
         company_name: string;
         reg_number: string;
         status: CorporateStatus;
@@ -45,6 +44,7 @@ export declare class CorporateService {
         agreed_to_commercial_terms: boolean;
         first_approval_confirmation: boolean;
         second_approval_confirmation: boolean;
+        id: string;
         created_at: string;
         updated_at: string;
     }[]>;
@@ -63,7 +63,6 @@ export declare class CorporateService {
             system_role: string;
         }[];
         subsidiaries: {
-            id: string;
             company_name: string;
             reg_number: string;
             office_address1: string;
@@ -74,6 +73,7 @@ export declare class CorporateService {
             country: string;
             website: string | null;
             account_note: string | null;
+            id: string;
             created_at: string;
             updated_at: string;
             corporate_id: string;
@@ -87,7 +87,6 @@ export declare class CorporateService {
             from_status: CorporateStatus | null;
             to_status: CorporateStatus | null;
         }[];
-        id: string;
         company_name: string;
         reg_number: string;
         status: CorporateStatus;
@@ -120,11 +119,11 @@ export declare class CorporateService {
         agreed_to_commercial_terms: boolean;
         first_approval_confirmation: boolean;
         second_approval_confirmation: boolean;
+        id: string;
         created_at: string;
         updated_at: string;
     } | null>;
     create(corporateData: Omit<CreateCorporateWithRelationsDto, 'investigation_log'>): Promise<{
-        id: string;
         company_name: string;
         reg_number: string;
         status: CorporateStatus;
@@ -157,10 +156,11 @@ export declare class CorporateService {
         agreed_to_commercial_terms: boolean;
         first_approval_confirmation: boolean;
         second_approval_confirmation: boolean;
+        id: string;
         created_at: string;
         updated_at: string;
     }>;
-    update(id: string, updateData: Omit<UpdateCorporateDto, 'investigation_log'>): Promise<{
+    update(id: string, updateData: UpdateCorporateDto): Promise<{
         contacts: {
             id: string;
             created_at: string;
@@ -175,7 +175,6 @@ export declare class CorporateService {
             system_role: string;
         }[];
         subsidiaries: {
-            id: string;
             company_name: string;
             reg_number: string;
             office_address1: string;
@@ -186,6 +185,7 @@ export declare class CorporateService {
             country: string;
             website: string | null;
             account_note: string | null;
+            id: string;
             created_at: string;
             updated_at: string;
             corporate_id: string;
@@ -199,7 +199,6 @@ export declare class CorporateService {
             from_status: CorporateStatus | null;
             to_status: CorporateStatus | null;
         }[];
-        id: string;
         company_name: string;
         reg_number: string;
         status: CorporateStatus;
@@ -232,6 +231,7 @@ export declare class CorporateService {
         agreed_to_commercial_terms: boolean;
         first_approval_confirmation: boolean;
         second_approval_confirmation: boolean;
+        id: string;
         created_at: string;
         updated_at: string;
     } | null>;
@@ -262,7 +262,6 @@ export declare class CorporateService {
             system_role: string;
         }[];
         subsidiaries: {
-            id: string;
             company_name: string;
             reg_number: string;
             office_address1: string;
@@ -273,6 +272,7 @@ export declare class CorporateService {
             country: string;
             website: string | null;
             account_note: string | null;
+            id: string;
             created_at: string;
             updated_at: string;
             corporate_id: string;
@@ -286,7 +286,6 @@ export declare class CorporateService {
             from_status: CorporateStatus | null;
             to_status: CorporateStatus | null;
         }[];
-        id: string;
         company_name: string;
         reg_number: string;
         status: CorporateStatus;
@@ -319,6 +318,7 @@ export declare class CorporateService {
         agreed_to_commercial_terms: boolean;
         first_approval_confirmation: boolean;
         second_approval_confirmation: boolean;
+        id: string;
         created_at: string;
         updated_at: string;
     } | null>;
@@ -337,7 +337,6 @@ export declare class CorporateService {
             system_role: string;
         }[];
         subsidiaries: {
-            id: string;
             company_name: string;
             reg_number: string;
             office_address1: string;
@@ -348,6 +347,7 @@ export declare class CorporateService {
             country: string;
             website: string | null;
             account_note: string | null;
+            id: string;
             created_at: string;
             updated_at: string;
             corporate_id: string;
@@ -361,7 +361,6 @@ export declare class CorporateService {
             from_status: CorporateStatus | null;
             to_status: CorporateStatus | null;
         }[];
-        id: string;
         company_name: string;
         reg_number: string;
         status: CorporateStatus;
@@ -394,6 +393,7 @@ export declare class CorporateService {
         agreed_to_commercial_terms: boolean;
         first_approval_confirmation: boolean;
         second_approval_confirmation: boolean;
+        id: string;
         created_at: string;
         updated_at: string;
     } | null>;

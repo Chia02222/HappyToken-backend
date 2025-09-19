@@ -140,14 +140,6 @@ const App: React.FC = () => {
     openFormForCorporate(corporate, 'edit');
   };
 
-  const handleFirstApproval = (corporate: Corporate) => {
-    openFormForCorporate(corporate, 'approve');
-  };
-
-  const handleSecondApproval = (corporate: Corporate) => {
-    openFormForCorporate(corporate, 'approve-second');
-  };
-
   const handleCloseCorporateForm = () => {
     setIsCorporateFormVisible(false);
     setEditingCorporate(null);
@@ -382,8 +374,6 @@ const App: React.FC = () => {
             <CRTCorporatePage 
                 onAddNew={handleAddNewCorporate}
                 onView={handleViewCorporate}
-                onFirstApprove={handleFirstApproval}
-                onSecondApprove={handleSecondApproval}
                 onViewHistory={handleViewHistory}
                 corporates={corporates}
                 updateStatus={handleUpdateStatus}
@@ -399,13 +389,9 @@ const App: React.FC = () => {
             <ApproverCorporatePage
                 onAddNew={handleAddNewCorporate}
                 onView={handleViewCorporate}
-                onFirstApprove={handleFirstApproval}
-                onSecondApprove={handleSecondApproval}
                 onViewHistory={handleViewHistory}
                 corporates={corporates}
                 updateStatus={handleUpdateStatus}
-                corporateToAutoSendLink={corporateToAutoSendLink}
-                setCorporateToAutoSendLink={setCorporateToAutoSendLink}
                 onDeleteCorporate={handleDeleteCorporate}
                 onResendRegistrationLink={handleResendRegistrationLink}
                 onSendRegistrationLink={handleResendRegistrationLink}

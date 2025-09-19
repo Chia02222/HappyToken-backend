@@ -13,7 +13,7 @@ export class SubsidiariesService {
 
   async addSubsidiary(subsidiaryData: CreateSubsidiaryDto) {
     console.log('addSubsidiary called with:', subsidiaryData);
-    const { id, ...insertData } = subsidiaryData as any; // Explicitly omit 'id'
+    const { id: _id, ...insertData } = subsidiaryData as CreateSubsidiaryDto & { id?: string }; // Explicitly omit 'id'
     const inserted = await this.db
       .insertInto('subsidiaries')
       .values({
@@ -28,7 +28,7 @@ export class SubsidiariesService {
 
   async updateSubsidiary(id: string, subsidiaryData: UpdateSubsidiaryDto) {
     console.log('updateSubsidiary called with:', { id, subsidiaryData });
-    const { id: subsidiaryId, ...updateData } = subsidiaryData;
+    const { id: _subsidiaryId, ...updateData } = subsidiaryData;
     const updated = await this.db
       .updateTable('subsidiaries')
       .set({

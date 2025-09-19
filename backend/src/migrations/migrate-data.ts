@@ -4,6 +4,31 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
+interface ContactData {
+    id: number;
+    salutation: string;
+    firstName: string;
+    lastName: string;
+    contactNumber: string;
+    email: string;
+    companyRole: string;
+    systemRole: string;
+}
+
+interface SubsidiaryData {
+    id: number;
+    companyName: string;
+    regNumber: string;
+    officeAddress1: string;
+    officeAddress2: string;
+    postcode: string;
+    city: string;
+    state: string;
+    country: string;
+    website: string;
+    accountNote: string;
+}
+
 // Import the data from the frontend constants
 const CORPORATES_DATA = [
     { id: 1, companyName: 'Global Tech Inc.', regNumber: '202201012345', status: 'Approved', createdAt: '2024-07-28', investigationLog: [] },
@@ -409,7 +434,7 @@ async function migrateData() {
 
             // Migrate contacts
             if (details.contacts && Array.isArray(details.contacts)) {
-                for (const contact of details.contacts as any[]) {
+                for (const contact of details.contacts as ContactData[]) {
                     await sql`
                         INSERT INTO contacts (
                             corporate_id, salutation, first_name, last_name,
@@ -428,7 +453,7 @@ async function migrateData() {
 
             // Migrate subsidiaries
             if (details.subsidiaries && Array.isArray(details.subsidiaries)) {
-                for (const subsidiary of details.subsidiaries as any[]) {
+                for (const subsidiary of details.subsidiaries as SubsidiaryData[]) {
                     await sql`
                         INSERT INTO subsidiaries (
                             corporate_id, company_name, reg_number, office_address1,

@@ -132,22 +132,22 @@ export class CorporateService {
     return inserted!;
   }
 
-  async update(id: string, updateData: Omit<UpdateCorporateDto, 'investigation_log'>) {
+  async update(id: string, updateData: UpdateCorporateDto) {
     console.log('CorporateService.update called with id:', id);
     try {
       console.log('Raw updateData:', JSON.stringify(updateData));
     } catch {}
 
     // Explicitly remove investigation_log from updateData if it exists
-    const { investigation_log, ...restOfUpdateData } = updateData as any;
+    const { investigation_log: _investigation_log, ...restOfUpdateData } = updateData as UpdateCorporateDto & { investigation_log?: InvestigationLogTable };
 
     const {
-      id: updateDtoId,
+      id: _updateDtoId,
       contacts,
       subsidiaries,
       contactIdsToDelete,
       subsidiaryIdsToDelete,
-      secondary_approver,
+      secondary_approver: _secondary_approver,
       ...corporateUpdateData // This should now be free of 'id' and 'investigation_log'
     } = restOfUpdateData;
 

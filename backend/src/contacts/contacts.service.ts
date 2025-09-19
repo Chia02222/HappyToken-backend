@@ -14,7 +14,7 @@ export class ContactsService {
   async addContact(contactData: CreateContactDto) {
     console.log('addContact called with:', contactData);
     // Explicitly remove 'id' from contactData if it exists, before constructing insertData
-    const { id, ...contactDataWithoutId } = contactData as any; // Cast to any to allow destructuring 'id'
+    const { id: _id, ...contactDataWithoutId } = contactData as CreateContactDto & { id?: string }; // Cast to allow destructuring 'id'
 
     const insertData: CreateContactDto = {
       corporate_id: contactDataWithoutId.corporate_id,
@@ -53,7 +53,7 @@ export class ContactsService {
   async updateContact(id: string, contactData: UpdateContactDto) {
     console.log('updateContact called with:', { id, contactData });
     // Never update primary key
-    const { id: contactId, ...updateData } = contactData;
+    const { id: _contactId, ...updateData } = contactData;
     const updated = await this.db
       .updateTable('contacts')
       .set({
