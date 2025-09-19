@@ -8,6 +8,45 @@ export class ResendService {
     private readonly corporateService: CorporateService,
   ) {}
 
+  async sendCustomEmail(to: string, subject: string, html: string) {
+    const RESEND_API_KEY = process.env.RESEND_API_KEY;
+    const SENDER_EMAIL = process.env.SENDER_EMAIL;
+
+    if (!RESEND_API_KEY || !SENDER_EMAIL) {
+      console.error('Resend API Key or Sender Email is not configured.');
+      return { success: false, message: 'Resend API Key or Sender Email is not configured.' };
+    }
+
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: SENDER_EMAIL,
+          to: to,
+          subject: subject,
+          html: html,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('Failed to send custom email via Resend:', data);
+        return { success: false, message: data.message || 'Failed to send custom email.' };
+      }
+
+      console.log(`Custom email sent to ${to} with subject: ${subject}`);
+      return { success: true, message: `Custom email sent to ${to}.` };
+    } catch (error) {
+      console.error('Error sending custom email via Resend:', error);
+      return { success: false, message: 'Error sending custom email.' };
+    }
+  }
+
   async resendRegistrationLink(id: string) {
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
     const SENDER_EMAIL = process.env.SENDER_EMAIL;

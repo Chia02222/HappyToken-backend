@@ -54,6 +54,9 @@ let CorporateController = class CorporateController {
         }
         return result;
     }
+    async completeCoolingPeriod(id) {
+        return await this.corporateService.handleCoolingPeriodCompletion(id);
+    }
 };
 exports.CorporateController = CorporateController;
 __decorate([
@@ -114,6 +117,13 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], CorporateController.prototype, "resendRegistrationLink", null);
+__decorate([
+    (0, common_1.Post)(':id/complete-cooling-period'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], CorporateController.prototype, "completeCoolingPeriod", null);
 exports.CorporateController = CorporateController = __decorate([
     (0, common_1.Controller)('corporates'),
     __metadata("design:paramtypes", [corporate_service_1.CorporateService,

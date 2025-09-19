@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Corporate, CorporateStatus } from '../types';
 import StatusBadge from './common/StatusBadge';
 import ChangeStatusModal from './modals/ChangeStatusModal';
@@ -8,16 +8,13 @@ import CopyLinkModal from './modals/CopyLinkModal';
 import ResendModal from './modals/ResendModal';
 import EllipsisMenu from './common/EllipsisMenu';
 
+
 interface ApproverCorporatePageProps {
     onAddNew: () => void;
     onView: (corporate: Corporate) => void;
-    onFirstApprove: (corporate: Corporate) => void;
-    onSecondApprove: (corporate: Corporate) => void;
     onViewHistory: (corporateId: string) => void;
     corporates: Corporate[];
     updateStatus: (id: string, status: CorporateStatus, note?: string) => Promise<void>;
-    corporateToAutoSendLink: Corporate | null;
-    setCorporateToAutoSendLink: React.Dispatch<React.SetStateAction<Corporate | null>>;
     onDeleteCorporate: (id: string) => Promise<void>;
     onResendRegistrationLink: (id: string) => Promise<void>;
     onSendRegistrationLink: (id: string) => Promise<void>;
@@ -26,13 +23,9 @@ interface ApproverCorporatePageProps {
 const ApproverCorporatePage: React.FC<ApproverCorporatePageProps> = ({
     onAddNew,
     onView,
-    onFirstApprove,
-    onSecondApprove,
     onViewHistory,
     corporates,
     updateStatus,
-    corporateToAutoSendLink,
-    setCorporateToAutoSendLink,
     onDeleteCorporate,
     onResendRegistrationLink,
     onSendRegistrationLink,
@@ -42,17 +35,12 @@ const ApproverCorporatePage: React.FC<ApproverCorporatePageProps> = ({
     const [isChangeStatusModalVisible, setIsChangeStatusModalVisible] = useState(false);
     const [isCopyLinkModalVisible, setIsCopyLinkModalVisible] = useState(false);
     const [isResendModalVisible, setIsResendModalVisible] = useState(false);
-
-    useEffect(() => {
-        if (corporateToAutoSendLink) {
-            handleOpenCopyLinkModal(corporateToAutoSendLink);
-            setCorporateToAutoSendLink(null);
-        }
-    }, [corporateToAutoSendLink, setCorporateToAutoSendLink]);
+    const [isRejectingStatus, setIsRejectingStatus] = useState(false); // New state variable
 
     const handleOpenChangeStatusModal = (corporate: Corporate, status: CorporateStatus) => {
         setSelectedCorporate(corporate);
         setTargetStatus(status);
+        setIsRejectingStatus(status === 'Rejected' || status === 'Under Fraud Investigation');
         setIsChangeStatusModalVisible(true);
     };
 
@@ -72,6 +60,7 @@ const ApproverCorporatePage: React.FC<ApproverCorporatePageProps> = ({
         setIsResendModalVisible(false);
         setSelectedCorporate(null);
         setTargetStatus(null);
+        setIsRejectingStatus(false);
     };
 
     const handleSaveStatusChange = (corporateId: string, status: CorporateStatus, note: string) => {
@@ -82,6 +71,7 @@ const ApproverCorporatePage: React.FC<ApproverCorporatePageProps> = ({
     
 
     const renderActions = (corporate: Corporate) => {
+
         switch (corporate.status) {
             case 'Pending Contract Setup':
                 return (
@@ -111,36 +101,20 @@ const ApproverCorporatePage: React.FC<ApproverCorporatePageProps> = ({
             case 'Send':
             case 'Pending 1st Approval':
                 return (
-                    <button
-                        onClick={() => onFirstApprove(corporate)}
-                        className="text-sm text-ht-blue hover:text-ht-blue-dark font-semibold"
-                    >
-                        Approve (1st)
-                    </button>
-                );
-            case 'Pending 2nd Approval':
-                return (
-                    <button
-                        onClick={() => onSecondApprove(corporate)}
-                        className="text-sm text-ht-blue hover:text-ht-blue-dark font-semibold"
-                    >
-                        Approve (2nd)
-                    </button>
-                );
-            case 'Cooling Period':
-                return (
                     <div className="relative">
                         <select
                             defaultValue=""
                             onChange={(e) => {
                                 const newStatus = e.target.value as CorporateStatus;
-                                if (['Approved', 'Rejected'].includes(newStatus)) {
-                                    updateStatus(corporate.id, newStatus);
+                                if (newStatus === 'Approved') {
+                                    updateStatus(corporate.id, 'Pending 2nd Approval');
+                                } else if (newStatus === 'Rejected') {
+                                    handleOpenChangeStatusModal(corporate, 'Rejected');
                                 }
                                 e.target.value = '';
                             }}
                             className="text-sm border border-gray-300 rounded-md p-2 focus:ring-ht-blue focus:border-ht-blue bg-white"
-                            aria-label="Select action for cooling period account"
+                            aria-label="Select action for 1st approval account"
                         >
                             <option value="" disabled>
                                 Select Action...
@@ -150,7 +124,36 @@ const ApproverCorporatePage: React.FC<ApproverCorporatePageProps> = ({
                         </select>
                     </div>
                 );
+            case 'Pending 2nd Approval':
+                return (
+                    <div className="relative">
+                        <select
+                            defaultValue=""
+                            onChange={(e) => {
+                                const newStatus = e.target.value as CorporateStatus;
+                                if (newStatus === 'Approved') {
+                                    updateStatus(corporate.id, 'Cooling Period');
+                                } else if (newStatus === 'Rejected') {
+                                    handleOpenChangeStatusModal(corporate, 'Rejected');
+                                }
+                                e.target.value = '';
+                            }}
+                            className="text-sm border border-gray-300 rounded-md p-2 focus:ring-ht-blue focus:border-ht-blue bg-white"
+                            aria-label="Select action for 2nd approval account"
+                        >
+                            <option value="" disabled>
+                                Select Action...
+                            </option>
+                            <option value="Approved">Approve</option>
+                            <option value="Rejected">Reject</option>
+                        </select>
+                    </div>
+                );
+            case 'Cooling Period':
+                return <span className="text-gray-400 text-xs">No actions</span>;
             case 'Rejected':
+                return <span className="text-gray-400 text-xs">No actions</span>;
+            case 'Under Fraud Investigation':
                 return (
                     <div className="relative">
                         <select
@@ -163,7 +166,7 @@ const ApproverCorporatePage: React.FC<ApproverCorporatePageProps> = ({
                                 e.target.value = '';
                             }}
                             className="text-sm border border-gray-300 rounded-md p-2 focus:ring-ht-blue focus:border-ht-blue bg-white"
-                            aria-label="Select action for rejected account"
+                            aria-label="Select action for fraud investigation account"
                         >
                             <option value="" disabled>
                                 Select Action...
@@ -296,6 +299,7 @@ const ApproverCorporatePage: React.FC<ApproverCorporatePageProps> = ({
                 corporate={selectedCorporate}
                 targetStatus={targetStatus}
                 onSave={handleSaveStatusChange}
+                isRejecting={isRejectingStatus}
             />
 
             <CopyLinkModal
@@ -315,3 +319,4 @@ const ApproverCorporatePage: React.FC<ApproverCorporatePageProps> = ({
 };
 
 export default ApproverCorporatePage;
+

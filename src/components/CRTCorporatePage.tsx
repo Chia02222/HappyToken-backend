@@ -1,5 +1,6 @@
 "use client";
 
+import { getCorporateById } from '../services/api';
 import React, { useState, useEffect } from 'react';
 import { Corporate, CorporateStatus } from '../types';
 import StatusBadge from './common/StatusBadge';
@@ -11,8 +12,6 @@ import EllipsisMenu from './common/EllipsisMenu';
 interface CorporatePageProps {
     onAddNew: () => void;
     onView: (corporate: Corporate) => void;
-    onFirstApprove: (corporate: Corporate) => void;
-    onSecondApprove: (corporate: Corporate) => void;
     onViewHistory: (corporateId: string) => void;
     corporates: Corporate[];
     updateStatus: (id: string, status: CorporateStatus, note?: string) => Promise<void>;
@@ -26,8 +25,6 @@ interface CorporatePageProps {
 const CRTCorporatePage: React.FC<CorporatePageProps> = ({
     onAddNew,
     onView,
-    onFirstApprove,
-    onSecondApprove,
     onViewHistory,
     corporates,
     updateStatus,
@@ -42,6 +39,7 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
     const [isChangeStatusModalVisible, setIsChangeStatusModalVisible] = useState(false);
     const [isCopyLinkModalVisible, setIsCopyLinkModalVisible] = useState(false);
     const [isResendModalVisible, setIsResendModalVisible] = useState(false);
+    const [coolingPeriodTimers, setCoolingPeriodTimers] = useState<{ [corporateId: string]: number }>({}); // New state variable
 
     useEffect(() => {
         if (corporateToAutoSendLink) {
@@ -50,106 +48,77 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
         }
     }, [corporateToAutoSendLink, setCorporateToAutoSendLink]);
 
-    const handleOpenChangeStatusModal = (corporate: Corporate, status: CorporateStatus) => {
-        setSelectedCorporate(corporate);
-        setTargetStatus(status);
-        setIsChangeStatusModalVisible(true);
-    };
+    useEffect(() => {
+        const intervals = new Map<string, NodeJS.Timeout>();
 
-    const handleOpenCopyLinkModal = (corporate: Corporate) => {
-        setSelectedCorporate(corporate);
-        setIsCopyLinkModalVisible(true);
-    };
+        corporates.forEach((corporate) => {
+            if (corporate.status === 'Cooling Period') {
+                if (coolingPeriodTimers[corporate.id] === undefined || coolingPeriodTimers[corporate.id] > 0) {
+                    // Initialize or continue countdown
+                    const initialTime = coolingPeriodTimers[corporate.id] !== undefined ? coolingPeriodTimers[corporate.id] : 30;
+                    if (coolingPeriodTimers[corporate.id] === undefined) {
+                        setCoolingPeriodTimers(prev => ({ ...prev, [corporate.id]: initialTime }));
+                    }
 
-    const handleOpenResendModal = (corporate: Corporate) => {
-        setSelectedCorporate(corporate);
-        setIsResendModalVisible(true);
-    };
+                    const countdownInterval = setInterval(() => {
+                        setCoolingPeriodTimers((prevTimers) => {
+                            const newTime = (prevTimers[corporate.id] || initialTime) - 1;
+                            if (newTime <= 0) {
+                                clearInterval(intervals.get(`countdown_${corporate.id}`));
+                                getCorporateById(corporate.id).then(details => {
+                                    if (details.contacts.some(c => c.contact_number === '0123456789')) {
+                                        updateStatus(corporate.id, 'Under Fraud Investigation');
+                                    }
+                                });
+                                return { ...prevTimers, [corporate.id]: 0 };
+                            }
+                            return { ...prevTimers, [corporate.id]: newTime };
+                        });
+                    }, 1000);
+                    intervals.set(`countdown_${corporate.id}`, countdownInterval);
 
-    const handleCloseModals = () => {
-        setIsChangeStatusModalVisible(false);
-        setIsCopyLinkModalVisible(false);
-        setIsResendModalVisible(false);
-        setSelectedCorporate(null);
-        setTargetStatus(null);
-    };
+                    const pollingInterval = setInterval(async () => {
+                        try {
+                            const updatedCorporate = await getCorporateById(corporate.id);
+                            if (updatedCorporate.status !== 'Cooling Period') {
+                                clearInterval(intervals.get(`polling_${corporate.id}`));
+                                clearInterval(intervals.get(`countdown_${corporate.id}`));
+                                setCoolingPeriodTimers(prev => ({ ...prev, [corporate.id]: 0 }));
+                            }
+                        } catch (error) {
+                            console.error('Failed to poll corporate status:', error);
+                        }
+                    }, 3000);
+                    intervals.set(`polling_${corporate.id}`, pollingInterval);
+                }
+            }
+        });
 
-    const handleSaveStatusChange = (corporateId: string, status: CorporateStatus, note: string) => {
-        updateStatus(corporateId, status, note);
-        handleCloseModals();
-    };
+        return () => {
+            intervals.forEach((interval) => clearInterval(interval));
+        };
+    }, [corporates]);
+
+
+
+
 
     
 
     const renderActions = (corporate: Corporate) => {
+        const remainingTime = coolingPeriodTimers[corporate.id];
+
         switch (corporate.status) {
 
-            case 'Send':
-            case 'Pending 1st Approval':
-                return (
-                    <button
-                        onClick={() => onFirstApprove(corporate)}
-                        className="text-sm text-ht-blue hover:text-ht-blue-dark font-semibold"
-                    >
-                        Approve (1st)
-                    </button>
-                );
-            case 'Pending 2nd Approval':
-                return (
-                    <button
-                        onClick={() => onSecondApprove(corporate)}
-                        className="text-sm text-ht-blue hover:text-ht-blue-dark font-semibold"
-                    >
-                        Approve (2nd)
-                    </button>
-                );
+
             case 'Cooling Period':
                 return (
-                    <div className="relative">
-                        <select
-                            defaultValue=""
-                            onChange={(e) => {
-                                const newStatus = e.target.value as CorporateStatus;
-                                if (['Approved', 'Rejected'].includes(newStatus)) {
-                                    updateStatus(corporate.id, newStatus);
-                                }
-                                e.target.value = '';
-                            }}
-                            className="text-sm border border-gray-300 rounded-md p-2 focus:ring-ht-blue focus:border-ht-blue bg-white"
-                            aria-label="Select action for cooling period account"
-                        >
-                            <option value="" disabled>
-                                Select Action...
-                            </option>
-                            <option value="Approved">Approve</option>
-                            <option value="Rejected">Reject</option>
-                        </select>
-                    </div>
+                    <span className="text-gray-500 text-xs">
+                        Cooling Period (Auto-processing in {remainingTime !== undefined ? remainingTime : '...'}s...)
+                    </span>
                 );
             case 'Rejected':
-                return (
-                    <div className="relative">
-                        <select
-                            defaultValue=""
-                            onChange={(e) => {
-                                const newStatus = e.target.value as CorporateStatus;
-                                if (['Resolved', 'Closed', 'Reopened'].includes(newStatus)) {
-                                    handleOpenChangeStatusModal(corporate, newStatus);
-                                }
-                                e.target.value = '';
-                            }}
-                            className="text-sm border border-gray-300 rounded-md p-2 focus:ring-ht-blue focus:border-ht-blue bg-white"
-                            aria-label="Select action for rejected account"
-                        >
-                            <option value="" disabled>
-                                Select Action...
-                            </option>
-                            <option value="Resolved">Resolve</option>
-                            <option value="Closed">Close</option>
-                            <option value="Reopened">Reopen</option>
-                        </select>
-                    </div>
-                );
+                return <span className="text-gray-400 text-xs">No actions</span>;
             case 'Closed':
                 return <span className="text-gray-400 text-xs">No actions</span>;
             default:

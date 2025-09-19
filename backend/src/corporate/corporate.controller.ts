@@ -66,4 +66,8 @@ export class CorporateController {
     }
     return result;
   }
-}
+
+  @Post(':id/complete-cooling-period')
+  async completeCoolingPeriod(@Param('id') id: string) {
+    return await this.corporateService.handleCoolingPeriodCompletion(id);
+  }}

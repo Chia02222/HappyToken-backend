@@ -290,15 +290,84 @@ export class CorporateService {
       throw new Error('Corporate not found');
     }
 
-    if (note) {
+    const oldStatus = corporate.status;
+
+    if (note || status !== oldStatus) {
       await this.addInvestigationLog(id, {
         timestamp: new Date().toISOString(),
-        note,
-        from_status: corporate.status as CorporateStatus,
+        note: note || `Status changed from ${oldStatus} to ${status}`,
+        from_status: oldStatus as CorporateStatus,
         to_status: status as CorporateStatus,
       });
+
+      if (status === 'Rejected' || status === 'Under Fraud Investigation') {
+        const subject = `Corporate ${status} Notification: ${corporate.company_name}`;
+        const html = `
+          <p>Dear CRT Member,</p>
+          <p>The corporate account for <strong>${corporate.company_name}</strong> (Registration Number: ${corporate.reg_number}) has been ${status.toLowerCase()}.</p>
+          <p><strong>Reason:</strong></p>
+          <p>${note || 'No specific reason provided.'}</p>
+          <p>Please review the corporate details and the provided reason.</p>
+          <p>Sincerely,</p>
+          <p>The HappyToken Team</p>
+        `;
+        await this.resendService.sendCustomEmail('wanjun123@1utar.my', subject, html);
+      }
+
+      if (status === 'Cooling Period') {
+        console.log(`[updateStatus] Corporate ${id} entered Cooling Period. Scheduling completion in 30 seconds.`);
+        setTimeout(async () => {
+          try {
+            console.log(`[setTimeout] Calling handleCoolingPeriodCompletion for corporate ${id}.`);
+            await this.handleCoolingPeriodCompletion(id);
+            console.log(`[setTimeout] Cooling period completed for corporate ${id}.`);
+          } catch (error) {
+            console.error(`[setTimeout] Error completing cooling period for corporate ${id}:`, error);
+          }
+        }, 30000); // 30 seconds
+      }
     }
 
     return await this.update(id, { status: status as CorporateStatus });
+  }
+
+  async handleCoolingPeriodCompletion(corporateId: string) {
+    console.log(`[handleCoolingPeriodCompletion] called for corporateId: ${corporateId}`);
+    const corporate = await this.findById(corporateId);
+    if (!corporate) {
+      console.error(`[handleCoolingPeriodCompletion] Corporate ${corporateId} not found.`);
+      throw new Error('Corporate not found');
+    }
+    console.log(`[handleCoolingPeriodCompletion] Corporate found: ${JSON.stringify(corporate)}`);
+
+    // Find the secondary approver's contact number
+    const secondaryApproverContact = corporate.contacts.find(
+      (contact) => contact.system_role === 'secondary_approver',
+    );
+    console.log(`[handleCoolingPeriodCompletion] Secondary approver contact: ${JSON.stringify(secondaryApproverContact)}`);
+
+    const contactNumber = secondaryApproverContact?.contact_number;
+    console.log(`[handleCoolingPeriodCompletion] Contact number: ${contactNumber}`);
+    console.log(`[handleCoolingPeriodCompletion] Condition (contactNumber === '0123456789'): ${contactNumber === '0123456789'}`);
+
+    let newStatus: CorporateStatus;
+    let note: string;
+
+    if (contactNumber === '0123456789') {
+      newStatus = 'Under Fraud Investigation';
+      note = `Corporate flagged for fraud investigation due to secondary approver's contact number.`;
+      console.log(`[handleCoolingPeriodCompletion] Updating status to: ${newStatus}`);
+      await this.updateStatus(corporateId, newStatus, note);
+    } else {
+      newStatus = 'Approved';
+      note = 'Corporate auto-approved after cooling period.';
+      console.log(`[handleCoolingPeriodCompletion] Updating status to: ${newStatus}`);
+      await this.updateStatus(corporateId, newStatus, note);
+    }
+
+    const updatedCorporate = await this.findById(corporateId);
+    console.log(`[handleCoolingPeriodCompletion] Status updated successfully for corporate ${corporateId}. New status: ${updatedCorporate?.status}`);
+    console.log(`[handleCoolingPeriodCompletion] Returning corporate: ${JSON.stringify(updatedCorporate)}`);
+    return updatedCorporate;
   }
 }

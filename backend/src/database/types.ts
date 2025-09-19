@@ -19,7 +19,8 @@ export type CorporateStatus =
   | 'Cooling Period' 
   | 'Resolved' 
   | 'Closed' 
-  | 'Reopened';
+  | 'Reopened'
+  | 'Under Fraud Investigation';
 
 export type CorporateSystemRole = 'admin' | 'user';
 

@@ -182,7 +182,7 @@ const App: React.FC = () => {
         return;
       }
 
-      const hasValidEmail = corporate.contacts.some(contact => contact.email && contact.email !== 'N/A');
+      const hasValidEmail = corporate.contacts.some((contact: Contact) => contact.email && contact.email !== 'N/A');
 
       if (!hasValidEmail) {
         setErrorModalContent(`No valid contact email found for corporate ${id}. Cannot send registration link.`);

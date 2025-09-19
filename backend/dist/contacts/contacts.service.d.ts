@@ -6,6 +6,8 @@ export declare class ContactsService {
     private get db();
     addContact(contactData: CreateContactDto): Promise<{
         id: string;
+        created_at: string;
+        updated_at: string;
         corporate_id: string;
         salutation: string;
         first_name: string;
@@ -14,11 +16,11 @@ export declare class ContactsService {
         email: string;
         company_role: string;
         system_role: string;
-        created_at: string;
-        updated_at: string;
     }>;
     updateContact(id: string, contactData: UpdateContactDto): Promise<{
         id: string;
+        created_at: string;
+        updated_at: string;
         corporate_id: string;
         salutation: string;
         first_name: string;
@@ -27,8 +29,6 @@ export declare class ContactsService {
         email: string;
         company_role: string;
         system_role: string;
-        created_at: string;
-        updated_at: string;
     }>;
     deleteContact(id: string): Promise<{
         success: boolean;
