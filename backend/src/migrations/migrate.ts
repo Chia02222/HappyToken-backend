@@ -1,49 +1,54 @@
-import { neon } from '@neondatabase/serverless';
+import { Pool } from 'pg';
+import { Kysely, Migrator, FileMigrationProvider } from 'kysely';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
+import { PostgresDialect } from 'kysely';
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 async function migrateToLatest() {
   const connectionString = process.env.DATABASE_URL || process.env.NEON_DATABASE_URL;
-  
+
   if (!connectionString) {
     throw new Error('Database connection string not found in environment variables');
   }
 
-  const sql = neon(connectionString);
+  const db = new Kysely<any>({
+    dialect: new PostgresDialect({
+      pool: new Pool({
+        connectionString,
+      }),
+    }),
+  });
 
-  console.log('🔄 Running migrations...');
-  
-  try {
-    // Read and execute each migration file
-    const migrationFiles = [
-      '001_create_corporates_table.ts',
-      '002_create_contacts_table.ts', 
-      '003_create_subsidiaries_table.ts',
-      '004_create_investigation_logs_table.ts'
-    ];
+  const migrator = new Migrator({
+    db,
+    provider: new FileMigrationProvider({
+      fs,
+      path,
+      // This needs to be an absolute path.
+      migrationFolder: path.join(__dirname, './'),
+    }),
+  });
 
-    for (const fileName of migrationFiles) {
-      const filePath = path.join(__dirname, fileName);
-      const migrationContent = await fs.readFile(filePath, 'utf-8');
-      
-      // Extract SQL from the migration file
-      const sqlMatch = migrationContent.match(/sql`([\s\S]*?)`/);
-      if (sqlMatch) {
-        const sqlQuery = sqlMatch[1].trim();
-        console.log(`🔄 Executing migration: ${fileName}`);
-        await sql(sqlQuery);
-        console.log(`✅ Migration "${fileName}" was executed successfully`);
-      }
+  const { error, results } = await migrator.migrateToLatest();
+
+  results?.forEach((it) => {
+    if (it.status === 'Success') {
+      console.log(`migration "${it.migrationName}" was executed successfully`);
+    } else if (it.status === 'Error') {
+      console.error(`failed to execute migration "${it.migrationName}"`);
     }
+  });
 
-    console.log('✅ All migrations completed successfully');
-  } catch (error) {
-    console.error('❌ Failed to migrate:', error);
+  if (error) {
+    console.error('failed to migrate');
+    console.error(error);
     process.exit(1);
   }
+
+  await db.destroy();
 }
 
 migrateToLatest().catch((error) => {

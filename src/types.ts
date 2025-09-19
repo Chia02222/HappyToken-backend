@@ -48,6 +48,8 @@ export interface Corporate {
   reg_number: string;
   status: CorporateStatus;
   created_at: string;
+  cooling_period_start?: string | null;
+  cooling_period_end?: string | null;
   
 }
 

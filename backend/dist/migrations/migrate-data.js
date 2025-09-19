@@ -33,6 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.migrateData = migrateData;
 const serverless_1 = require("@neondatabase/serverless");
 const dotenv = __importStar(require("dotenv"));
 dotenv.config();
@@ -482,8 +483,8 @@ async function migrateData() {
         throw error;
     }
 }
-migrateData().catch((error) => {
-    console.error('❌ Migration failed:', error);
+migrateData().catch((err) => {
+    console.error('❌ Data migration failed:', err);
     process.exit(1);
 });
 //# sourceMappingURL=migrate-data.js.map

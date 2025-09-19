@@ -33,6 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.migrateToLatest = migrateToLatest;
 const serverless_1 = require("@neondatabase/serverless");
 const dotenv = __importStar(require("dotenv"));
 dotenv.config();
@@ -141,8 +142,8 @@ async function migrateToLatest() {
         process.exit(1);
     }
 }
-migrateToLatest().catch((error) => {
-    console.error('❌ Migration failed:', error);
+migrateToLatest().catch((err) => {
+    console.error('❌ Migration failed:', err);
     process.exit(1);
 });
 //# sourceMappingURL=migrate-sql.js.map

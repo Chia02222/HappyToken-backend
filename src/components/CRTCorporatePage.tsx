@@ -39,7 +39,7 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
     const [isChangeStatusModalVisible, setIsChangeStatusModalVisible] = useState(false);
     const [isCopyLinkModalVisible, setIsCopyLinkModalVisible] = useState(false);
     const [isResendModalVisible, setIsResendModalVisible] = useState(false);
-    const [coolingPeriodTimers, setCoolingPeriodTimers] = useState<{ [corporateId: string]: number }>({}); // New state variable
+    const [remainingTimes, setRemainingTimes] = useState<{ [corporateId: string]: number }>({});
 
     useEffect(() => {
         if (corporateToAutoSendLink) {
@@ -57,52 +57,53 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
         const intervals = new Map<string, NodeJS.Timeout>();
 
         corporates.forEach((corporate) => {
-            if (corporate.status === 'Cooling Period') {
-                if (coolingPeriodTimers[corporate.id] === undefined || coolingPeriodTimers[corporate.id] > 0) {
-                    // Initialize or continue countdown
-                    const initialTime = coolingPeriodTimers[corporate.id] !== undefined ? coolingPeriodTimers[corporate.id] : 30;
-                    if (coolingPeriodTimers[corporate.id] === undefined) {
-                        setCoolingPeriodTimers((prev: { [corporateId: string]: number }) => ({ ...prev, [corporate.id]: initialTime }));
-                    }
+            if (corporate.status === 'Cooling Period' && corporate.cooling_period_end) {
+                const endTime = new Date(corporate.cooling_period_end).getTime();
 
-                    const countdownInterval = setInterval(() => {
-                        setCoolingPeriodTimers((prevTimers: { [corporateId: string]: number }) => {
-                            const newTime = (prevTimers[corporate.id] || initialTime) - 1;
-                            if (newTime <= 0) {
-                                clearInterval(intervals.get(`countdown_${corporate.id}`));
-                                getCorporateById(corporate.id).then(details => {
-                                    if (details.contacts.some((c: Contact) => c.contact_number === '0123456789')) {
-                                        updateStatus(corporate.id, 'Under Fraud Investigation');
-                                    }
-                                });
-                                return { ...prevTimers, [corporate.id]: 0 };
+                const updateRemainingTime = () => {
+                    const now = new Date().getTime();
+                    const timeLeft = Math.max(0, Math.floor((endTime - now) / 1000));
+                    setRemainingTimes(prev => ({ ...prev, [corporate.id]: timeLeft }));
+
+                    if (timeLeft <= 0) {
+                        clearInterval(intervals.get(`countdown_${corporate.id}`));
+                        // Trigger the fraud investigation logic if needed
+                        getCorporateById(corporate.id).then(details => {
+                            if (details.contacts.some((c: Contact) => c.contact_number === '0123456789')) {
+                                updateStatus(corporate.id, 'Under Fraud Investigation');
                             }
-                            return { ...prevTimers, [corporate.id]: newTime };
                         });
-                    }, 1000);
-                    intervals.set(`countdown_${corporate.id}`, countdownInterval);
+                    }
+                };
 
-                    const pollingInterval = setInterval(async () => {
-                        try {
-                            const updatedCorporate = await getCorporateById(corporate.id);
-                            if (updatedCorporate.status !== 'Cooling Period') {
-                                clearInterval(intervals.get(`polling_${corporate.id}`));
-                                clearInterval(intervals.get(`countdown_${corporate.id}`));
-                                setCoolingPeriodTimers(prev => ({ ...prev, [corporate.id]: 0 }));
-                            }
-                        } catch (error) {
-                            console.error('Failed to poll corporate status:', error);
+                // Initial call
+                updateRemainingTime();
+
+                // Set up countdown interval
+                const countdownInterval = setInterval(updateRemainingTime, 1000);
+                intervals.set(`countdown_${corporate.id}`, countdownInterval);
+
+                // Set up polling interval to check for status changes
+                const pollingInterval = setInterval(async () => {
+                    try {
+                        const updatedCorporate = await getCorporateById(corporate.id);
+                        if (updatedCorporate.status !== 'Cooling Period') {
+                            clearInterval(intervals.get(`polling_${corporate.id}`));
+                            clearInterval(intervals.get(`countdown_${corporate.id}`));
+                            setRemainingTimes(prev => ({ ...prev, [corporate.id]: 0 }));
                         }
-                    }, 3000);
-                    intervals.set(`polling_${corporate.id}`, pollingInterval);
-                }
+                    } catch (error) {
+                        console.error('Failed to poll corporate status:', error);
+                    }
+                }, 3000);
+                intervals.set(`polling_${corporate.id}`, pollingInterval);
             }
         });
 
         return () => {
             intervals.forEach((interval) => clearInterval(interval));
         };
-    }, [corporates, coolingPeriodTimers, updateStatus]);
+    }, [corporates, updateStatus]);
 
 
 
@@ -126,7 +127,7 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
     };
 
     const renderActions = (corporate: Corporate) => {
-        const remainingTime = coolingPeriodTimers[corporate.id];
+        const remainingTime = remainingTimes[corporate.id];
 
         switch (corporate.status) {
 

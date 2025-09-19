@@ -339,7 +339,7 @@ const CORPORATE_DETAILS_DATA: Record<number, Record<string, unknown>> = {
     },
 };
 
-async function migrateData() {
+export async function migrateData() {
     const connectionString = process.env.DATABASE_URL || process.env.NEON_DATABASE_URL;
     
     if (!connectionString) {
@@ -497,7 +497,8 @@ async function migrateData() {
     }
 }
 
-migrateData().catch((error) => {
-    console.error('❌ Migration failed:', error);
+// Execute when run via ts-node/npm script
+migrateData().catch((err) => {
+    console.error('❌ Data migration failed:', err);
     process.exit(1);
 });

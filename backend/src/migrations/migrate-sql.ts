@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-async function migrateToLatest() {
+export async function migrateToLatest() {
   const connectionString = process.env.DATABASE_URL || process.env.NEON_DATABASE_URL;
   
   if (!connectionString) {
@@ -120,7 +120,8 @@ async function migrateToLatest() {
   }
 }
 
-migrateToLatest().catch((error) => {
-  console.error('❌ Migration failed:', error);
+// Execute when run via ts-node/npm script
+migrateToLatest().catch((err) => {
+  console.error('❌ Migration failed:', err);
   process.exit(1);
 });

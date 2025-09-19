@@ -58,6 +58,8 @@ export interface CorporateTable {
   agreed_to_commercial_terms: boolean;
   first_approval_confirmation: boolean;
   second_approval_confirmation: boolean;
+  cooling_period_start: string | null;
+  cooling_period_end: string | null;
   created_at: string;
   updated_at: string;
 }

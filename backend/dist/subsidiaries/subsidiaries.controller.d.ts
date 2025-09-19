@@ -5,7 +5,6 @@ export declare class SubsidiariesController {
     constructor(subsidiariesService: SubsidiariesService);
     addSubsidiary(corporateId: string, subsidiaryData: Omit<CreateSubsidiaryDto, 'corporate_id'>): Promise<{
         id: string;
-        corporate_id: string;
         company_name: string;
         reg_number: string;
         office_address1: string;
@@ -18,10 +17,10 @@ export declare class SubsidiariesController {
         account_note: string | null;
         created_at: string;
         updated_at: string;
+        corporate_id: string;
     }>;
     updateSubsidiary(id: string, subsidiaryData: UpdateSubsidiaryDto): Promise<{
         id: string;
-        corporate_id: string;
         company_name: string;
         reg_number: string;
         office_address1: string;
@@ -34,6 +33,7 @@ export declare class SubsidiariesController {
         account_note: string | null;
         created_at: string;
         updated_at: string;
+        corporate_id: string;
     }>;
     deleteSubsidiary(id: string): Promise<{
         success: boolean;

@@ -40,6 +40,8 @@ async function up(db) {
         .addColumn('agreed_to_commercial_terms', 'boolean', (col) => col.notNull().defaultTo(false))
         .addColumn('first_approval_confirmation', 'boolean', (col) => col.notNull().defaultTo(false))
         .addColumn('second_approval_confirmation', 'boolean', (col) => col.notNull().defaultTo(false))
+        .addColumn('cooling_period_start', 'timestamp(0)')
+        .addColumn('cooling_period_end', 'timestamp(0)')
         .addColumn('created_at', 'timestamp(0)', (col) => col.notNull())
         .addColumn('updated_at', 'timestamp(0)', (col) => col.notNull())
         .execute();

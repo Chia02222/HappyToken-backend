@@ -97,7 +97,36 @@ The application uses the following main tables:
 
 ## Migration Commands
 
-- **Run migrations:** `npm run migrate`
+- **Run Kysely migrations (creates Kysely metadata tables):** `npm run migrate`
+- **Drop all tables (also drops Kysely metadata tables):** `npm run reset:tables`
+- **Create business tables via SQL (no Kysely metadata):** `npm run migrate:sql`
+- **Populate sample data into Neon:** `npm run migrate:data`
+
+### Recommended flows
+
+1) Use Kysely-managed migrations (includes metadata tables):
+   - Ensure DB is empty (or previously migrated by Kysely)
+   - Run: `npm run migrate`
+   - Optional seed: `npm run migrate:data`
+
+2) Use SQL-only schema (no Kysely metadata tables):
+   - Reset/destroy all tables: `npm run reset:tables`
+   - Create the four business tables: `npm run migrate:sql`
+   - Populate demo data: `npm run migrate:data`
+
+Note: Do not mix flows in one run. If you choose SQL-only, skip `npm run migrate` to avoid recreating Kysely metadata tables `kysely_migration` and `kysely_migration_lock`.
+
+### Verify in Neon
+
+Run these in your SQL console:
+
+- List tables:
+  - `select table_name from information_schema.tables where table_schema = 'public' order by table_name;`
+- Counts:
+  - `select count(*) from corporates;`
+  - `select count(*) from contacts;`
+  - `select count(*) from subsidiaries;`
+  - `select count(*) from investigation_logs;`
 
 ## Architecture
 

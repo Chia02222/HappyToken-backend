@@ -315,6 +315,18 @@ export class CorporateService {
       }
 
       if (status === 'Cooling Period') {
+        const coolingPeriodStart = new Date();
+        const coolingPeriodEnd = new Date(coolingPeriodStart.getTime() + 30 * 1000); // 30 seconds from now
+
+        await this.db
+          .updateTable('corporates')
+          .set({
+            cooling_period_start: coolingPeriodStart.toISOString(),
+            cooling_period_end: coolingPeriodEnd.toISOString(),
+          })
+          .where('id', '=', id)
+          .execute();
+
         console.log(`[updateStatus] Corporate ${id} entered Cooling Period. Scheduling completion in 30 seconds.`);
         setTimeout(async () => {
           try {

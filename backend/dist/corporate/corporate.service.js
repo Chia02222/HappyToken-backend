@@ -277,6 +277,16 @@ let CorporateService = class CorporateService {
                 await this.resendService.sendCustomEmail('wanjun123@1utar.my', subject, html);
             }
             if (status === 'Cooling Period') {
+                const coolingPeriodStart = new Date();
+                const coolingPeriodEnd = new Date(coolingPeriodStart.getTime() + 30 * 1000);
+                await this.db
+                    .updateTable('corporates')
+                    .set({
+                    cooling_period_start: coolingPeriodStart.toISOString(),
+                    cooling_period_end: coolingPeriodEnd.toISOString(),
+                })
+                    .where('id', '=', id)
+                    .execute();
                 console.log(`[updateStatus] Corporate ${id} entered Cooling Period. Scheduling completion in 30 seconds.`);
                 setTimeout(async () => {
                     try {
