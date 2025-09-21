@@ -183,7 +183,7 @@ const App: React.FC = () => {
       }
 
       await resendRegistrationLink(id);
-      await updateCorporateStatus(id, 'Send', 'Registration link sent.');
+      await updateCorporateStatus(id, 'Sent', 'Registration link sent.');
       await fetchCorporates(); // Refresh the list of corporates
       setSuccessModalContent({
         title: 'Success',
@@ -197,7 +197,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleSaveCorporate = async (formData: CorporateDetails, action: 'submit' | 'send' | 'save') => {
+  const handleSaveCorporate = async (formData: CorporateDetails, action: 'submit' | 'sent' | 'save') => {
     try {
       const updatedFormData = { ...formData };
 
@@ -215,7 +215,7 @@ const App: React.FC = () => {
                         contact_number: secondary_approver.contact_number || updatedContacts[contactToUpdateIndex].contact_number,
                         email: secondary_approver.email || updatedContacts[contactToUpdateIndex].email,
                         company_role: secondary_approver.company_role || updatedContacts[contactToUpdateIndex].company_role,
-                        system_role: secondary_approver.system_role || updatedContacts[contactToUpdateIndex].system_role,
+                        system_role: 'secondary_approver', // Hardcode this
                     };
                     updatedFormData.contacts = updatedContacts;
                 }
@@ -228,7 +228,7 @@ const App: React.FC = () => {
                     contact_number: secondary_approver.contact_number || '',
                     email: secondary_approver.email || '',
                     company_role: secondary_approver.company_role || '',
-                    system_role: secondary_approver.system_role || '',
+                    system_role: 'secondary_approver', // Hardcode this
                 };
                 updatedFormData.contacts = [...updatedFormData.contacts, newSecondaryContact];
                 console.log('updatedFormData.contacts after adding newSecondaryContact:', JSON.stringify(updatedFormData.contacts, null, 2));
@@ -260,8 +260,8 @@ const App: React.FC = () => {
         const newCorporate = await createCorporate(dataToSend);
         console.log('New corporate created:', newCorporate);
         savedCorporateId = newCorporate.id;
-        if (action === 'send') {
-            await updateCorporateStatus(newCorporate.id, 'Send', 'Registration link generated and status updated.');
+        if (action === 'sent') {
+            await updateCorporateStatus(newCorporate.id, 'Sent', 'Registration link generated and status updated.');
             setCorporateToAutoSendLink(newCorporate);
         }
       }
@@ -382,6 +382,7 @@ const App: React.FC = () => {
                 onDeleteCorporate={handleDeleteCorporate}
                 onResendRegistrationLink={handleResendRegistrationLink}
                 onSendRegistrationLink={handleResendRegistrationLink}
+                fetchCorporates={fetchCorporates}
             />
         );
     case 'Approver Corporate':

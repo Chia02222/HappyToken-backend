@@ -77,7 +77,7 @@ The migration script will transfer:
 - Synergy Innovations (Cooling Period) - with subsidiary and 2 contacts
 - Quantum Solutions (Pending 1st Approval)
 - Apex Industries (Pending 2nd Approval)
-- Dynamic Corp (Send)
+- Dynamic Corp (Sent)
 - Innovate LLC (New)
 - Legacy Holdings (Rejected) - with investigation logs
 - Future Enterprises (Resolved)

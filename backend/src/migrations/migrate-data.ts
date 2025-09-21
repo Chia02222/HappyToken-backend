@@ -32,15 +32,14 @@ interface SubsidiaryData {
 // Import the data from the frontend constants
 const CORPORATES_DATA = [
     { id: 1, companyName: 'Global Tech Inc.', regNumber: '202201012345', status: 'Approved', createdAt: '2024-07-28', investigationLog: [] },
-    { id: 2, companyName: 'Synergy Innovations', regNumber: '202301054321', status: 'Cooling Period', createdAt: '2024-07-27', investigationLog: [] },
+    { id: 2, companyName: 'Synergy Innovations', regNumber: '202301054321', status: 'Approved', createdAt: '2024-07-27', investigationLog: [] },
     { id: 3, companyName: 'Quantum Solutions', regNumber: '202105098765', status: 'Pending 1st Approval', createdAt: '2024-07-26', investigationLog: [] },
-    { id: 4, companyName: 'Apex Industries', regNumber: '202003011223', status: 'Pending 2nd Approval', createdAt: '2024-07-25', investigationLog: [] },
-    { id: 5, companyName: 'Dynamic Corp', regNumber: '201908044556', status: 'Send', createdAt: '2024-07-24', investigationLog: [] },
+    { id: 4, companyName: 'Apex Industries', regNumber: '202003011223', status: 'Pending 1st Approval', createdAt: '2024-07-25', investigationLog: [] },
+    { id: 5, companyName: 'Dynamic Corp', regNumber: '201908044556', status: 'Sent', createdAt: '2024-07-24', investigationLog: [] },
     { id: 6, companyName: 'Innovate LLC', regNumber: '202402017890', status: 'New', createdAt: '2024-07-29', investigationLog: [] },
     {
         id: 7, companyName: 'Legacy Holdings', regNumber: '201811116789', status: 'Rejected', createdAt: '2024-07-22',
         investigationLog: [
-            { timestamp: new Date('2024-07-22T14:00:00Z').toLocaleString(), from: 'Cooling Period' as CorporateStatus, to: 'Rejected' as CorporateStatus, note: 'Initial fraud flag raised by system.' },
             { timestamp: new Date('2024-07-23T10:15:00Z').toLocaleString(), note: 'Contacted the company director for clarification. Awaiting response.' }
         ]
     },
@@ -395,6 +394,9 @@ export async function migrateData() {
                 agreed_to_generic_terms: false,
                 agreed_to_commercial_terms: false,
                 first_approval_confirmation: false,
+                second_approval_confirmation: false,
+                cooling_period_start: null,
+                cooling_period_end: null,
                 created_at: corporate.createdAt,
                 updated_at: new Date().toISOString(),
             };
@@ -408,8 +410,8 @@ export async function migrateData() {
                     company_tin, sst_number, agreement_from, agreement_to,
                     credit_limit, credit_terms, transaction_fee, late_payment_interest,
                     white_labeling_fee, custom_feature_fee, agreed_to_generic_terms,
-                    agreed_to_commercial_terms, first_approval_confirmation,
-                    created_at, updated_at
+                    agreed_to_commercial_terms, first_approval_confirmation, second_approval_confirmation,
+                    cooling_period_start, cooling_period_end, created_at, updated_at
                 ) VALUES (
                     ${corporateData.company_name}, ${corporateData.reg_number}, ${corporateData.status},
                     ${corporateData.office_address1}, ${corporateData.office_address2},
@@ -425,7 +427,8 @@ export async function migrateData() {
                     ${corporateData.late_payment_interest}, ${corporateData.white_labeling_fee},
                     ${corporateData.custom_feature_fee}, ${corporateData.agreed_to_generic_terms},
                     ${corporateData.agreed_to_commercial_terms}, ${corporateData.first_approval_confirmation},
-                    ${corporateData.created_at}, ${corporateData.updated_at}
+                    ${corporateData.second_approval_confirmation}, ${corporateData.cooling_period_start},
+                    ${corporateData.cooling_period_end}, ${corporateData.created_at}, ${corporateData.updated_at}
                 ) RETURNING *
             `;
 
@@ -480,7 +483,7 @@ export async function migrateData() {
                             corporate_id, timestamp, note, from_status, to_status, created_at
                         ) VALUES (
                             ${corporateId}, ${log.timestamp}, ${log.note || null},
-                            ${log.from || null}, ${log.to || null}, ${new Date().toISOString()}
+                            ${(log as any).from || null}, ${(log as any).to || null}, ${new Date().toISOString()}
                         )
                     `;
                 }

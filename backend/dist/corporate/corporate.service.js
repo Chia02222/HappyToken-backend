@@ -256,11 +256,12 @@ let CorporateService = class CorporateService {
             throw new Error('Corporate not found');
         }
         const oldStatus = corporate.status;
-        if (note || status !== oldStatus) {
+        const shouldLog = !(!note &&
+            (oldStatus === 'Resolved' && status === 'Approved'));
+        if ((note || status !== oldStatus) && shouldLog) {
             await this.addInvestigationLog(id, {
                 timestamp: new Date().toISOString(),
-                note: note || `Status changed from ${oldStatus} to ${status}`,
-                from_status: oldStatus,
+                note: note === undefined ? `Status changed from ${oldStatus} to ${status}` : note, from_status: oldStatus,
                 to_status: status,
             });
             if (status === 'Rejected' || status === 'Under Fraud Investigation') {
@@ -310,24 +311,19 @@ let CorporateService = class CorporateService {
             throw new Error('Corporate not found');
         }
         console.log(`[handleCoolingPeriodCompletion] Corporate found: ${JSON.stringify(corporate)}`);
-        const secondaryApproverContact = corporate.contacts.find((contact) => contact.system_role === 'secondary_approver');
-        console.log(`[handleCoolingPeriodCompletion] Secondary approver contact: ${JSON.stringify(secondaryApproverContact)}`);
-        const contactNumber = secondaryApproverContact?.contact_number;
-        console.log(`[handleCoolingPeriodCompletion] Contact number: ${contactNumber}`);
-        console.log(`[handleCoolingPeriodCompletion] Condition (contactNumber === '0123456789'): ${contactNumber === '0123456789'}`);
+        const hasSuspiciousContact = corporate.contacts.some((contact) => contact.contact_number === '0123456789');
+        console.log(`[handleCoolingPeriodCompletion] Has suspicious contact (0123456789): ${hasSuspiciousContact}`);
         let newStatus;
         let note;
-        if (contactNumber === '0123456789') {
+        if (hasSuspiciousContact) {
             newStatus = 'Under Fraud Investigation';
-            note = `Corporate flagged for fraud investigation due to secondary approver's contact number.`;
+            note = `Corporate flagged for fraud investigation due to contact number.`;
             console.log(`[handleCoolingPeriodCompletion] Updating status to: ${newStatus}`);
             await this.updateStatus(corporateId, newStatus, note);
         }
         else {
             newStatus = 'Approved';
-            note = 'Corporate auto-approved after cooling period.';
-            console.log(`[handleCoolingPeriodCompletion] Updating status to: ${newStatus}`);
-            await this.updateStatus(corporateId, newStatus, note);
+            await this.updateStatus(corporateId, newStatus);
         }
         const updatedCorporate = await this.findById(corporateId);
         console.log(`[handleCoolingPeriodCompletion] Status updated successfully for corporate ${corporateId}. New status: ${updatedCorporate?.status}`);

@@ -20,6 +20,7 @@ interface CorporatePageProps {
     onDeleteCorporate: (id: string) => Promise<void>;
     onResendRegistrationLink: (id: string) => Promise<void>;
     onSendRegistrationLink: (id: string) => Promise<void>;
+    fetchCorporates: () => Promise<void>;
 }
 
 const CRTCorporatePage: React.FC<CorporatePageProps> = ({
@@ -33,6 +34,7 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
     onDeleteCorporate,
     onResendRegistrationLink,
     onSendRegistrationLink,
+    fetchCorporates,
 }) => {
     const [selectedCorporate, setSelectedCorporate] = useState<Corporate | null>(null);
     const [targetStatus, setTargetStatus] = useState<CorporateStatus | null>(null);
@@ -40,6 +42,14 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
     const [isCopyLinkModalVisible, setIsCopyLinkModalVisible] = useState(false);
     const [isResendModalVisible, setIsResendModalVisible] = useState(false);
     const [remainingTimes, setRemainingTimes] = useState<{ [corporateId: string]: number }>({});
+    const [isRejectingStatus, setIsRejectingStatus] = useState(false); // New state variable
+
+    const handleOpenChangeStatusModal = (corporate: Corporate, status: CorporateStatus) => {
+        setSelectedCorporate(corporate);
+        setTargetStatus(status);
+        setIsRejectingStatus(status === 'Rejected' || status === 'Resolved' || status === 'Closed' || status === 'Reopened');
+        setIsChangeStatusModalVisible(true);
+    };
 
     useEffect(() => {
         if (corporateToAutoSendLink) {
@@ -67,12 +77,7 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
 
                     if (timeLeft <= 0) {
                         clearInterval(intervals.get(`countdown_${corporate.id}`));
-                        // Trigger the fraud investigation logic if needed
-                        getCorporateById(corporate.id).then(details => {
-                            if (details.contacts.some((c: Contact) => c.contact_number === '0123456789')) {
-                                updateStatus(corporate.id, 'Under Fraud Investigation');
-                            }
-                        });
+                        fetchCorporates(); // Refresh data from backend
                     }
                 };
 
@@ -103,7 +108,7 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
         return () => {
             intervals.forEach((interval) => clearInterval(interval));
         };
-    }, [corporates, updateStatus]);
+    }, [corporates, updateStatus, fetchCorporates]);
 
 
 
@@ -119,9 +124,9 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
         setTargetStatus(null);
     };
 
-    const handleSaveStatusChange = async (note?: string) => {
-        if (selectedCorporate && targetStatus) {
-            await updateStatus(selectedCorporate.id, targetStatus, note);
+    const handleSaveStatusChange = async (corporateId: string, status: CorporateStatus, note?: string) => {
+        if (corporateId && status) {
+            await updateStatus(corporateId, status, note);
             handleCloseModals();
         }
     };
@@ -137,6 +142,30 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
                     <span className="text-gray-500 text-xs">
                         Cooling Period (Auto-processing in {remainingTime !== undefined ? remainingTime : '...'}s...)
                     </span>
+                );
+            case 'Under Fraud Investigation':
+                return (
+                    <div className="relative">
+                        <select
+                            defaultValue=""
+                            onChange={(e) => {
+                                const newStatus = e.target.value as CorporateStatus;
+                                if (['Resolved', 'Closed', 'Reopened'].includes(newStatus)) {
+                                    handleOpenChangeStatusModal(corporate, newStatus);
+                                }
+                                e.target.value = '';
+                            }}
+                            className="text-sm border border-gray-300 rounded-md p-2 focus:ring-ht-blue focus:border-ht-blue bg-white"
+                            aria-label="Select action for fraud investigation account"
+                        >
+                            <option value="" disabled>
+                                Select Action...
+                            </option>
+                            <option value="Resolved">Resolve</option>
+                            <option value="Closed">Close</option>
+                            <option value="Reopened">Reopen</option>
+                        </select>
+                    </div>
                 );
             case 'Rejected':
                 return <span className="text-gray-400 text-xs">No actions</span>;
@@ -165,7 +194,7 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
                     </button>
                 </div>
                 <div className="overflow-auto flex-grow">
-                    <table className="min-w-full divide-y divide-gray-200 h-full">
+                    <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -258,6 +287,7 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
                 corporate={selectedCorporate}
                 targetStatus={targetStatus}
                 onSave={handleSaveStatusChange}
+                isRejecting={isRejectingStatus}
             />
 
             <CopyLinkModal

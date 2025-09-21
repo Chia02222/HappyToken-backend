@@ -98,7 +98,7 @@ const ApproverCorporatePage: React.FC<ApproverCorporatePageProps> = ({
                         </select>
                     </div>
                 );
-            case 'Send':
+            case 'Sent':
             case 'Pending 1st Approval':
                 return (
                     <div className="relative">
@@ -154,29 +154,7 @@ const ApproverCorporatePage: React.FC<ApproverCorporatePageProps> = ({
             case 'Rejected':
                 return <span className="text-gray-400 text-xs">No actions</span>;
             case 'Under Fraud Investigation':
-                return (
-                    <div className="relative">
-                        <select
-                            defaultValue=""
-                            onChange={(e) => {
-                                const newStatus = e.target.value as CorporateStatus;
-                                if (['Resolved', 'Closed', 'Reopened'].includes(newStatus)) {
-                                    handleOpenChangeStatusModal(corporate, newStatus);
-                                }
-                                e.target.value = '';
-                            }}
-                            className="text-sm border border-gray-300 rounded-md p-2 focus:ring-ht-blue focus:border-ht-blue bg-white"
-                            aria-label="Select action for fraud investigation account"
-                        >
-                            <option value="" disabled>
-                                Select Action...
-                            </option>
-                            <option value="Resolved">Resolve</option>
-                            <option value="Closed">Close</option>
-                            <option value="Reopened">Reopen</option>
-                        </select>
-                    </div>
-                );
+                return <span className="text-gray-400 text-xs">No actions</span>;
             case 'Closed':
                 return <span className="text-gray-400 text-xs">No actions</span>;
             default:
@@ -202,7 +180,7 @@ const ApproverCorporatePage: React.FC<ApproverCorporatePageProps> = ({
                     </button>
                 </div>
                 <div className="overflow-auto flex-grow">
-                    <table className="min-w-full divide-y divide-gray-200 h-full">
+                    <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">

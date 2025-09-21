@@ -80,6 +80,9 @@ async function migrateToLatest() {
         agreed_to_generic_terms BOOLEAN NOT NULL DEFAULT false,
         agreed_to_commercial_terms BOOLEAN NOT NULL DEFAULT false,
         first_approval_confirmation BOOLEAN NOT NULL DEFAULT false,
+        second_approval_confirmation BOOLEAN DEFAULT false,
+        cooling_period_start TIMESTAMP,
+        cooling_period_end TIMESTAMP,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )

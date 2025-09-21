@@ -72,7 +72,7 @@ let ResendService = class ResendService {
         if (!recipientEmail || recipientEmail === 'N/A' || recipientEmail === '') {
             return { success: false, message: 'Recipient email not found or is invalid for corporate.' };
         }
-        const sanitizedCorporateId = corporate.id.replace(/[^a-zA-Z0-9]/g, '');
+        const sanitizedCorporateId = String(corporate.id).replace(/[^a-zA-Z0-9]/g, '');
         const registrationLink = `https://happietoken.com/register?token=${Buffer.from(`corp_${sanitizedCorporateId}`).toString('base64')}`;
         try {
             const response = await fetch('https://api.resend.com/emails', {
@@ -94,7 +94,7 @@ let ResendService = class ResendService {
                 return { success: false, message: data.message || 'Failed to send email.' };
             }
             console.log(`Email sent to ${recipientEmail} for corporate ID: ${id}`);
-            return { success: true, message: `Registration link resent to ${recipientEmail}.` };
+            return { success: true, message: `Registration link sent to ${recipientEmail}.` };
         }
         catch (error) {
             console.error('Error sending email via Resend:', error);

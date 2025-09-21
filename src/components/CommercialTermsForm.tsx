@@ -10,7 +10,7 @@ interface CommercialTermsFormProps {
     setFormStep: (step: number) => void;
     formData: CorporateDetails;
     setFormData: (dataUpdater: (prevData: CorporateDetails) => CorporateDetails) => void;
-    onSaveCorporate: (formData: CorporateDetails, action: 'submit' | 'send' | 'save') => void;
+    onSaveCorporate: (formData: CorporateDetails, action: 'submit' | 'sent' | 'save') => void;
 }
 
 const CommercialTermsForm: React.FC<CommercialTermsFormProps> = ({ onCloseForm, setFormStep, formData, setFormData, onSaveCorporate }) => {

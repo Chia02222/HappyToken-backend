@@ -7,7 +7,7 @@ export interface NavItem {
   subItems?: string[];
 }
 
-export type CorporateStatus = 'New' | 'Send' | 'Pending 1st Approval' | 'Pending 2nd Approval' | 'Approved' | 'Rejected' | 'Cooling Period' | 'Resolved' | 'Closed' | 'Reopened' | 'Pending Contract Setup' | 'Under Fraud Investigation';
+export type CorporateStatus = 'New' | 'Sent' | 'Pending 1st Approval' | 'Pending 2nd Approval' | 'Approved' | 'Rejected' | 'Cooling Period' | 'Resolved' | 'Closed' | 'Reopened' | 'Pending Contract Setup' | 'Under Fraud Investigation';
 
 export interface LogEntry {
   id?: number;
@@ -82,7 +82,7 @@ export interface CorporateDetails extends Corporate {
     agreed_to_generic_terms: boolean;
     agreed_to_commercial_terms: boolean;
     first_approval_confirmation: boolean;
-    second_approval_confirmation: boolean;
+    second_approval_confirmation: boolean | null;
     secondary_approver?: {
         use_existing_contact?: boolean;
         selected_contact_id?: string;

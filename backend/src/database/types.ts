@@ -11,7 +11,7 @@ export interface Database {
 //Enums
 export type CorporateStatus = 
   | 'New' 
-  | 'Send' 
+  | 'Sent' 
   | 'Pending 1st Approval' 
   | 'Pending 2nd Approval' 
   | 'Approved' 
@@ -57,7 +57,7 @@ export interface CorporateTable {
   agreed_to_generic_terms: boolean;
   agreed_to_commercial_terms: boolean;
   first_approval_confirmation: boolean;
-  second_approval_confirmation: boolean;
+  second_approval_confirmation: boolean | null;
   cooling_period_start: string | null;
   cooling_period_end: string | null;
   created_at: string;

@@ -14,7 +14,7 @@ interface ECommercialTermsFormProps {
     setFormStep: (step: number) => void;
     formData: CorporateDetails;
     setFormData: (dataUpdater: (prevData: CorporateDetails) => CorporateDetails) => void;
-    onSaveCorporate: (formData: CorporateDetails, action: 'submit' | 'send' | 'save') => void;
+    onSaveCorporate: (formData: CorporateDetails, action: 'submit' | 'sent' | 'save') => void;
     formMode: 'new' | 'edit' | 'approve' | 'approve-second';
 }
 
@@ -61,7 +61,7 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                 first_name: selectedContact ? selectedContact.first_name : '',
                 last_name: selectedContact ? selectedContact.last_name : '',
                 company_role: selectedContact ? selectedContact.company_role : '',
-                system_role: selectedContact ? selectedContact.system_role : '',
+                system_role: 'secondary_approver',
                 email: selectedContact ? selectedContact.email : '',
                 contact_number: selectedContact ? selectedContact.contact_number : '',
             }
@@ -76,7 +76,7 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
         first_name: '',
         last_name: '',
         company_role: '',
-        system_role: '',
+        system_role: 'secondary_approver',
         email: '',
         contact_number: '',
     };
@@ -163,7 +163,7 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                         <DisplayField label="Contact Number" value={primaryContact.contact_number ? `+60 ${primaryContact.contact_number}` : ''} />
                     </div>
                     <div className="flex items-start mt-6">
-                        <input type="checkbox" id="first_approval_confirmation" name="first_approval_confirmation" checked={formData.first_approval_confirmation} onChange={handleChange} className="h-4 w-4 mt-0.5 border-gray-300 rounded focus:ring-ht-gray" />
+                        <input type="checkbox" id="first_approval_confirmation" name="first_approval_confirmation" checked={formData.first_approval_confirmation ?? false} onChange={handleChange} className="h-4 w-4 mt-0.5 border-gray-300 rounded focus:ring-ht-gray" />
                         <label htmlFor="first_approval_confirmation" className="ml-3 block text-xs text-gray-800">
                             I hereby confirm that I have read, understood, and agree to the terms and conditions of this Agreement, and I consent to proceed accordingly.
                         </label>
@@ -227,7 +227,7 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                                 <InputField id="first_name" label="First Name" name="first_name" value={secondary_approver.first_name ?? null} onChange={handleSecondaryApproverChange} required />
                                 <InputField id="last_name" label="Last Name" name="last_name" value={secondary_approver.last_name ?? null} onChange={handleSecondaryApproverChange} required />
                                 <InputField id="company_role" label="Company Role" name="company_role" value={secondary_approver.company_role ?? null} onChange={handleSecondaryApproverChange} required />
-                                <InputField id="system_role" label="System Role" name="system_role" value={secondary_approver.system_role ?? null} onChange={handleSecondaryApproverChange} required />
+
                                 <InputField id="email" label="Email Address" name="email" type="email" value={secondary_approver.email ?? null} onChange={handleSecondaryApproverChange} required />
                                 <div>
                                     <label className="block text-xs font-medium text-gray-700 mb-1">*Contact Number</label>
@@ -247,7 +247,7 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                         )}
                     </div>
                     <div className="flex items-start mt-6">
-                        <input type="checkbox" id="second_approval_confirmation" name="second_approval_confirmation" checked={formData.second_approval_confirmation} onChange={handleChange} className="h-4 w-4 mt-0.5 border-gray-300 rounded focus:ring-ht-gray" />
+                        <input type="checkbox" id="second_approval_confirmation" name="second_approval_confirmation" checked={formData.second_approval_confirmation ?? false} onChange={handleChange} className="h-4 w-4 mt-0.5 border-gray-300 rounded focus:ring-ht-gray" />
                         <label htmlFor="second_approval_confirmation" className="ml-3 block text-xs text-gray-800">
                             I hereby confirm that I have read, understood, and agree to the terms and conditions of this Agreement, and I consent to proceed accordingly.
                         </label>
@@ -279,7 +279,7 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                  </button>
                  <button 
                     type="button"
-                    onClick={() => onSaveCorporate(formData, 'send')}
+                    onClick={() => onSaveCorporate(formData, 'sent')}
                     disabled={(formMode === 'approve' && !formData.first_approval_confirmation) || (formMode === 'approve-second' && !formData.second_approval_confirmation)}
                     className="text-sm bg-ht-blue text-white px-4 py-2 rounded-md hover:bg-ht-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue-dark disabled:bg-ht-gray disabled:cursor-not-allowed"
                 >
