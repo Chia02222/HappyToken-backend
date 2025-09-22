@@ -2,6 +2,7 @@
 import React from 'react';
 import InputField from './common/InputField';
 import SelectField from './common/SelectField';
+import DisplayField from './common/DisplayField';
 import FormSection from './common/FormSection';
 import { CorporateDetails, Contact, Subsidiary } from '../types';
 
@@ -19,9 +20,69 @@ const malaysianStates = [
 ];
 
 const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep, formData, setFormData, onSaveCorporate, generateClientSideId }) => {
+    const [errors, setErrors] = React.useState<{ [key: string]: string }>({});
+
+    const validateForm = (): boolean => {
+        const newErrors: { [key: string]: string } = {};
+
+        // Company Information & Official Address
+        if (!formData.company_name) newErrors.company_name = 'Company Name is required.';
+        if (!formData.reg_number) newErrors.reg_number = 'Official Registration Number is required.';
+        if (!formData.office_address1) newErrors.office_address1 = 'Office Address 1 is required.';
+        if (!formData.postcode) newErrors.postcode = 'Postcode is required.';
+        if (!formData.city) newErrors.city = 'City is required.';
+        if (!formData.state) newErrors.state = 'State is required.';
+        if (!formData.country) newErrors.country = 'Country is required.';
+
+        // Subsidiaries
+        formData.subsidiaries.forEach((sub, index) => {
+            if (!sub.company_name) newErrors[`subsidiaries[${index}].company_name`] = 'Company Name is required.';
+            if (!sub.reg_number) newErrors[`subsidiaries[${index}].reg_number`] = 'Official Registration Number is required.';
+            if (!sub.office_address1) newErrors[`subsidiaries[${index}].office_address1`] = 'Office Address 1 is required.';
+            if (!sub.postcode) newErrors[`subsidiaries[${index}].postcode`] = 'Postcode is required.';
+            if (!sub.city) newErrors[`subsidiaries[${index}].city`] = 'City is required.';
+            if (!sub.state) newErrors[`subsidiaries[${index}].state`] = 'State is required.';
+            if (!sub.country) newErrors[`subsidiaries[${index}].country`] = 'Country is required.';
+        });
+
+        // Contact Person
+        formData.contacts.forEach((contact, index) => {
+            if (!contact.first_name) newErrors[`contacts[${index}].first_name`] = 'First Name is required.';
+            if (!contact.last_name) newErrors[`contacts[${index}].last_name`] = 'Last Name is required.';
+            if (!contact.contact_number) newErrors[`contacts[${index}].contact_number`] = 'Contact Number is required.';
+            if (!contact.email) newErrors[`contacts[${index}].email`] = 'Email Address is required.';
+            else if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(contact.email)) newErrors[`contacts[${index}].email`] = 'Invalid email format.';
+            if (!contact.company_role) newErrors[`contacts[${index}].company_role`] = 'Company Role is required.';
+        });
+
+
+
+        // Billing Address (if not same as official)
+        if (!formData.billing_same_as_official) {
+            if (!formData.billing_address1) newErrors.billing_address1 = 'Billing Address 1 is required.';
+            if (!formData.billing_postcode) newErrors.billing_postcode = 'Billing Postcode is required.';
+            if (!formData.billing_city) newErrors.billing_city = 'Billing City is required.';
+            if (!formData.billing_state) newErrors.billing_state = 'Billing State is required.';
+            if (!formData.billing_country) newErrors.billing_country = 'Billing Country is required.';
+        }
+
+        // Tax Information
+        if (!formData.company_tin) newErrors.company_tin = 'Company TIN is required.';
+
+
+
+        setErrors(newErrors);
+        console.log('Validation Errors:', newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target;
+        setErrors(prev => { // Clear error for the field being changed
+            const newErrors = { ...prev };
+            delete newErrors[name];
+            return newErrors;
+        });
         if (type === 'checkbox') {
             const { checked } = e.target as HTMLInputElement;
             setFormData(prev => ({ ...prev, [name]: checked }));
@@ -29,7 +90,7 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
             setFormData(prev => ({ ...prev, [name]: value }));
         }
     };
-    
+
     const handleSubsidiaryChange = (index: number, event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = event.target;
         setFormData(prev => {
@@ -94,7 +155,7 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                     contact_number: '',
                     email: '',
                     company_role: '',
-                    system_role: '',
+                    system_role: 'user',
                 },
             ],
         }));
@@ -115,17 +176,17 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
         <div className="space-y-6">
             <FormSection title="Company Information & Official Address">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                    <InputField id="company_name" label="Company Name" name="company_name" value={formData.company_name} onChange={handleChange} required />
-                    <InputField id="reg_number" label="Official Registration Number" name="reg_number" value={formData.reg_number} onChange={handleChange} required />
-                    <InputField id="office_address1" label="Office Address 1" name="office_address1" value={formData.office_address1} onChange={handleChange} required />
+                    <InputField id="company_name" label="Company Name" name="company_name" value={formData.company_name} onChange={handleChange} required error={errors.company_name} />
+                    <InputField id="reg_number" label="Official Registration Number" name="reg_number" value={formData.reg_number} onChange={handleChange} required error={errors.reg_number} />
+                    <InputField id="office_address1" label="Office Address 1" name="office_address1" value={formData.office_address1} onChange={handleChange} required error={errors.office_address1} />
                     <InputField id="office_address2" label="Office Address 2" name="office_address2" value={formData.office_address2 ??  null} onChange={handleChange} />
-                    <InputField id="postcode" label="Postcode" name="postcode" value={formData.postcode} onChange={handleChange} required />
-                    <InputField id="city" label="City" name="city" value={formData.city} onChange={handleChange} required />
-                    <SelectField id="state" label="State" name="state" value={formData.state} onChange={handleChange} required>
+                    <InputField id="postcode" label="Postcode" name="postcode" value={formData.postcode} onChange={handleChange} required error={errors.postcode} />
+                    <InputField id="city" label="City" name="city" value={formData.city} onChange={handleChange} required error={errors.city} />
+                    <SelectField id="state" label="State" name="state" value={formData.state} onChange={handleChange} required error={errors.state}>
                         <option value="">Select State</option>
                         {malaysianStates.map((state: string) => <option key={state} value={state}>{state}</option>)}
                     </SelectField>
-                    <SelectField id="country" label="Country" name="country" value={formData.country} onChange={handleChange} required>
+                    <SelectField id="country" label="Country" name="country" value={formData.country} onChange={handleChange} required error={errors.country}>
                          <option>Malaysia</option>
                          <option>Singapore</option>
                     </SelectField>
@@ -146,17 +207,17 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                                 <button type="button" onClick={() => removeSubsidiary(index)} className="text-sm text-red-600 hover:text-red-800 font-semibold">Remove</button>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                                <InputField id={`sub-company_name-${sub.id}`} label="Company Name" name="company_name" value={sub.company_name} onChange={(e) => handleSubsidiaryChange(index, e)} required />
-                                <InputField id={`sub-reg_number-${sub.id}`} label="Official Registration Number" name="reg_number" value={sub.reg_number} onChange={(e) => handleSubsidiaryChange(index, e)} required />
-                                <InputField id={`sub-office_address1-${sub.id}`} label="Office Address 1" name="office_address1" value={sub.office_address1} onChange={(e) => handleSubsidiaryChange(index, e)} required />
+                                <InputField id={`sub-company_name-${sub.id}`} label="Company Name" name="company_name" value={sub.company_name} onChange={(e) => handleSubsidiaryChange(index, e)} required error={errors[`subsidiaries[${index}].company_name`]} />
+                                <InputField id={`sub-reg_number-${sub.id}`} label="Official Registration Number" name="reg_number" value={sub.reg_number} onChange={(e) => handleSubsidiaryChange(index, e)} required error={errors[`subsidiaries[${index}].reg_number`]} />
+                                <InputField id={`sub-office_address1-${sub.id}`} label="Office Address 1" name="office_address1" value={sub.office_address1} onChange={(e) => handleSubsidiaryChange(index, e)} required error={errors[`subsidiaries[${index}].office_address1`]} />
                                 <InputField id={`sub-office_address2-${sub.id}`} label="Office Address 2" name="office_address2" value={sub.office_address2 ?? null} onChange={(e) => handleSubsidiaryChange(index, e)} />
-                                <InputField id={`sub-postcode-${sub.id}`} label="Postcode" name="postcode" value={sub.postcode} onChange={(e) => handleSubsidiaryChange(index, e)} required />
-                                <InputField id={`sub-city-${sub.id}`} label="City" name="city" value={sub.city} onChange={(e) => handleSubsidiaryChange(index, e)} required />
-                                <SelectField id={`sub-state-${sub.id}`} label="State" name="state" value={sub.state} onChange={(e) => handleSubsidiaryChange(index, e)} required>
+                                <InputField id={`sub-postcode-${sub.id}`} label="Postcode" name="postcode" value={sub.postcode} onChange={(e) => handleSubsidiaryChange(index, e)} required error={errors[`subsidiaries[${index}].postcode`]} />
+                                <InputField id={`sub-city-${sub.id}`} label="City" name="city" value={sub.city} onChange={(e) => handleSubsidiaryChange(index, e)} required error={errors[`subsidiaries[${index}].city`]} />
+                                <SelectField id={`sub-state-${sub.id}`} label="State" name="state" value={sub.state} onChange={(e) => handleSubsidiaryChange(index, e)} required error={errors[`subsidiaries[${index}].state`]}>
                                     <option value="">Select State</option>
                                     {malaysianStates.map((state: string) => <option key={state} value={state}>{state}</option>)}
                                 </SelectField>
-                                <SelectField id={`sub-country-${sub.id}`} label="Country" name="country" value={sub.country} onChange={(e) => handleSubsidiaryChange(index, e)} required>
+                                <SelectField id={`sub-country-${sub.id}`} label="Country" name="country" value={sub.country} onChange={(e) => handleSubsidiaryChange(index, e)} required error={errors[`subsidiaries[${index}].country`]}>
                                     <option>Malaysia</option>
                                     <option>Singapore</option>
                                 </SelectField>
@@ -194,22 +255,18 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                                 <option>Ms</option>
                             </SelectField>
                             <div></div>
-                            <InputField id={`contact-first_name-${contact.id}`} label="First Name" name="first_name" value={contact.first_name} onChange={e => handleContactChange(index, e)} required />
-                            <InputField id={`contact-last_name-${contact.id}`} label="Last Name" name="last_name" value={contact.last_name} onChange={e => handleContactChange(index, e)} required />
+                            <InputField id={`contact-first_name-${contact.id}`} label="First Name" name="first_name" value={contact.first_name} onChange={e => handleContactChange(index, e)} required error={errors[`contacts[${index}].first_name`]} />
+                            <InputField id={`contact-last_name-${contact.id}`} label="Last Name" name="last_name" value={contact.last_name} onChange={e => handleContactChange(index, e)} required error={errors[`contacts[${index}].last_name`]} />
                              <div>
                                 <label className="block text-xs font-medium text-gray-700 mb-1">*Contact Number</label>
                                 <div className="flex">
-                                    <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">+60</span>
-                                    <input type="text" id={`contact-number-${contact.id}`} name="contact_number" value={contact.contact_number} onChange={e => handleContactChange(index, e)} className="flex-1 block w-full rounded-none rounded-r-md border border-gray-300 p-2 text-sm focus:ring-ht-blue focus:border-ht-blue bg-white dark:bg-white" />
+                                    <input type="text" id={`contact-number-${contact.id}`} name="contact_number" value={contact.contact_number} onChange={e => handleContactChange(index, e)} className={`flex-1 block w-full rounded-none rounded-r-md border p-2 text-sm focus:ring-ht-blue focus:border-ht-blue bg-white dark:bg-white ${errors[`contacts[${index}].contact_number`] ? 'border-red-500' : 'border-gray-300'}`} />
                                 </div>
+                                {errors[`contacts[${index}].contact_number`] && <p className="text-red-500 text-xs mt-1">{errors[`contacts[${index}].contact_number`]}</p>}
                             </div>
-                            <InputField id={`contact-email-${contact.id}`} label="Email Address" name="email" value={contact.email} onChange={e => handleContactChange(index, e)} required type="email" />
-                            <SelectField id={`contact-company_role-${contact.id}`} label="Company Role" name="company_role" value={contact.company_role} onChange={e => handleContactChange(index, e)} required>
-                                <option>Select Role</option>
-                            </SelectField>
-                             <SelectField id={`contact-system_role-${contact.id}`} label="System Role" name="system_role" value={contact.system_role} onChange={e => handleContactChange(index, e)} required>
-                                <option>Select Role</option>
-                            </SelectField>
+                            <InputField id={`contact-email-${contact.id}`} label="Email Address" name="email" value={contact.email} onChange={e => handleContactChange(index, e)} required type="email" error={errors[`contacts[${index}].email`]} />
+                            <InputField id={`contact-company_role-${contact.id}`} label="Company Role" name="company_role" value={contact.company_role} onChange={e => handleContactChange(index, e)} required error={errors[`contacts[${index}].company_role`]} />
+                             <DisplayField label="System Role" value={contact.system_role || 'user'}  />
                         </div>
                     </div>
                 ))}
@@ -227,19 +284,19 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                 </div>
                 {!(formData.billing_same_as_official as boolean) && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                        <InputField id="billing_address1" label="Office Address 1" name="billing_address1" value={formData.billing_address1 as string} onChange={handleChange} required />
+                        <InputField id="billing_address1" label="Office Address 1" name="billing_address1" value={formData.billing_address1 as string} onChange={handleChange} required error={errors.billing_address1} />
                         <InputField id="billing_address2" label="Office Address 2" name="billing_address2" value={formData.billing_address2 as string} onChange={handleChange} />
-                        <InputField id="billing_postcode" label="Postcode" name="billing_postcode" value={formData.billing_postcode as string} onChange={handleChange} required />
-                        <InputField id="billing_city" label="City" name="billing_city" value={formData.billing_city as string} onChange={handleChange} required />
-                        <InputField id="billing_state" label="State" name="billing_state" value={formData.billing_state as string} onChange={handleChange} required />
-                        <InputField id="billing_country" label="Country" name="billing_country" value={formData.billing_country as string} onChange={handleChange} required />
+                        <InputField id="billing_postcode" label="Postcode" name="billing_postcode" value={formData.billing_postcode as string} onChange={handleChange} required error={errors.billing_postcode} />
+                        <InputField id="billing_city" label="City" name="billing_city" value={formData.billing_city as string} onChange={handleChange} required error={errors.billing_city} />
+                        <InputField id="billing_state" label="State" name="billing_state" value={formData.billing_state as string} onChange={handleChange} required error={errors.billing_state} />
+                        <InputField id="billing_country" label="Country" name="billing_country" value={formData.billing_country as string} onChange={handleChange} required error={errors.billing_country} />
                     </div>
                 )}
             </FormSection>
             
             <FormSection title="Tax Information">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                    <InputField id="company_tin" label="Company TIN" name="company_tin" value={formData.company_tin as string} onChange={handleChange} required />
+                    <InputField id="company_tin" label="Company TIN" name="company_tin" value={formData.company_tin as string} onChange={handleChange} required error={errors.company_tin} />
                     <InputField id="sst_number" label="SST Number" name="sst_number" value={formData.sst_number as string} onChange={handleChange} />
                 </div>
             </FormSection>
@@ -259,9 +316,10 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                     <p>The Company shall provide the Services described in the a relevant Commercial Terms Schedule or online order form. The Company reserves the right to improve, modify, or discontinue any part of the Services with reasonable notice.</p>
                 </div>
                  <div className="flex items-center mt-4">
-                    <input type="checkbox" id="agreed_to_generic_terms" name="agreed_to_generic_terms" checked={formData.agreed_to_generic_terms as boolean} onChange={handleChange} className="h-4 w-4 border-gray-300 rounded focus:ring-ht-gray" />
+                    <input type="checkbox" id="agreed_to_generic_terms" name="agreed_to_generic_terms" checked={formData.agreed_to_generic_terms as boolean} onChange={handleChange} className={`h-4 w-4 border rounded focus:ring-ht-gray ${errors.agreed_to_generic_terms ? 'border-red-500' : 'border-gray-300'}`} />
                     <label htmlFor="agreed_to_generic_terms" className="ml-2 block text-sm text-gray-900">I have read and agree to the Generic Terms and Conditions.</label>
                 </div>
+                {errors.agreed_to_generic_terms && <p className="text-red-500 text-xs mt-1">{errors.agreed_to_generic_terms}</p>}
             </FormSection>
 
             <div className="flex justify-end items-center pt-6 border-t mt-6 space-x-4">
@@ -274,7 +332,11 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                  </button>
                  <button 
                     type="button"
-                    onClick={() => onSaveCorporate(formData, 'save')}
+                    onClick={() => {
+                        if (validateForm()) {
+                            onSaveCorporate(formData, 'save');
+                        }
+                    }}
                     className="text-sm text-gray-700 bg-white px-4 py-2 rounded-md border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue"
                  >
                     Save
@@ -282,13 +344,13 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                  <button 
                     type="button"
                     onClick={() => {
-                        // In a real app, form data would be validated here.
-                        setFormStep(2);
+                        if (validateForm()) {
+                            setFormStep(2);
+                        }
                     }}
-                    disabled={!formData.agreed_to_generic_terms}
-                    className="text-sm bg-ht-blue text-white px-4 py-2 rounded-md hover:bg-ht-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue-dark disabled:bg-ht-gray disabled:cursor-not-allowed"
+                    className="text-sm bg-ht-blue text-white px-4 py-2 rounded-md hover:bg-ht-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue-dark"
                 >
-                    Save and Proceed
+                    Next
                 </button>
             </div>
         </div>

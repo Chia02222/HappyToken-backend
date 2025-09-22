@@ -2,7 +2,7 @@
 
 import { getCorporateById } from '../services/api';
 import React, { useState, useEffect } from 'react';
-import { Corporate, CorporateStatus, Contact } from '../types';
+import { Corporate, CorporateStatus } from '../types';
 import StatusBadge from './common/StatusBadge';
 import ChangeStatusModal from './modals/ChangeStatusModal';
 import CopyLinkModal from './modals/CopyLinkModal';

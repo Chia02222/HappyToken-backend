@@ -6,21 +6,16 @@ import Dashboard from '../components/Dashboard';
 import CRTCorporatePage from '../components/CRTCorporatePage';
 import HistoryLogModal from '../components/modals/HistoryLogModal';
 import { Page, Corporate, CorporateDetails, CorporateStatus, Contact} from '../types';
-import { getCorporates, getCorporateById, createCorporate, updateCorporate, updateCorporateStatus, addRemark, deleteCorporate, resendRegistrationLink } from '../services/api';
+import { getCorporates, getCorporateById, updateCorporateStatus, addRemark, deleteCorporate, resendRegistrationLink } from '../services/api';
 import ConfirmationModal from '../components/modals/ConfirmationModal';
 import SuccessModal from '../components/modals/SuccessModal';
 import ErrorMessageModal from '../components/modals/ErrorMessageModal';
 import { useRouter } from 'next/navigation';
 
-let clientSideIdCounter = 0;
-const generateClientSideId = (): string => {
-  clientSideIdCounter -= 1; // Use negative numbers to avoid collision with actual IDs
-  return `client-${clientSideIdCounter}`;
-};
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('CRT Corporate'); // Default to CRT Corporate
-  const [userRole, setUserRole] = useState<'admin' | 'client'>('admin'); // Default to admin
+  const [userRole] = useState<'admin' | 'client'>('admin'); // Default to admin
   const [isHistoryModalVisible, setIsHistoryModalVisible] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [corporates, setCorporates] = useState<Corporate[]>([]);
@@ -123,7 +118,7 @@ const App: React.FC = () => {
       await resendRegistrationLink(id);
       await updateCorporateStatus(id, 'Sent', 'Registration link sent.');
       await fetchCorporates(); // Refresh the list of corporates
-      const corporateFormLink = `${window.location.origin}/corporate/${id}?mode=approve`;
+
       setSuccessModalContent({
         title: 'Success',
         message: `Registration link has been successfully resent for corporate ${id}.`,

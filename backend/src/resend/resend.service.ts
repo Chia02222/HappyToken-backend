@@ -70,8 +70,6 @@ export class ResendService {
       return { success: false, message: 'Recipient email not found or is invalid for corporate.' };
     }
 
-    const sanitizedCorporateId = String(corporate.id).replace(/[^a-zA-Z0-9]/g, '');
-    const registrationLink = `https://happietoken.com/register?token=${Buffer.from(`corp_${sanitizedCorporateId}`).toString('base64')}`;
     const corporateFormLink = `http://localhost:3002/corporate/${corporate.id}?mode=approve`;
 
     try {

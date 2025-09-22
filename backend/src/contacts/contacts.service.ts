@@ -14,17 +14,15 @@ export class ContactsService {
   async addContact(contactData: CreateContactDto) {
     console.log('addContact called with:', contactData);
     // Explicitly remove 'id' from contactData if it exists, before constructing insertData
-    const { id: _id, ...contactDataWithoutId } = contactData as CreateContactDto & { id?: string }; // Cast to allow destructuring 'id'
-
-    const insertData: CreateContactDto = {
-      corporate_id: contactDataWithoutId.corporate_id,
-      salutation: contactDataWithoutId.salutation,
-      first_name: contactDataWithoutId.first_name,
-      last_name: contactDataWithoutId.last_name,
-      contact_number: contactDataWithoutId.contact_number,
-      email: contactDataWithoutId.email,
-      company_role: contactDataWithoutId.company_role,
-      system_role: contactDataWithoutId.system_role,
+    const insertData = {
+      corporate_id: contactData.corporate_id,
+      salutation: contactData.salutation,
+      first_name: contactData.first_name,
+      last_name: contactData.last_name,
+      contact_number: contactData.contact_number,
+      email: contactData.email,
+      company_role: contactData.company_role,
+      system_role: contactData.system_role,
     };
 
     const dataWithDefaults = {
@@ -53,11 +51,11 @@ export class ContactsService {
   async updateContact(id: string, contactData: UpdateContactDto) {
     console.log('updateContact called with:', { id, contactData });
     // Never update primary key
-    const { id: _contactId, ...updateData } = contactData;
+    const { id: _contactId, ...dataToUpdate } = contactData;
     const updated = await this.db
       .updateTable('contacts')
       .set({
-        ...updateData,
+        ...dataToUpdate,
         updated_at: sql`date_trunc('second', now())::timestamp(0)`,
       })
       .where('id', '=', id)

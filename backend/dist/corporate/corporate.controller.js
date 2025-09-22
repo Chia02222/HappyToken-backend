@@ -31,8 +31,7 @@ let CorporateController = class CorporateController {
         return await this.corporateService.findById(id);
     }
     async create(corporateData) {
-        const { investigation_log: _investigation_log, id: _id, ...corporateDataWithoutLogAndId } = corporateData;
-        const dataToPassToService = corporateDataWithoutLogAndId;
+        const dataToPassToService = corporateData;
         return await this.corporateService.create(dataToPassToService);
     }
     async update(id, updateData) {
