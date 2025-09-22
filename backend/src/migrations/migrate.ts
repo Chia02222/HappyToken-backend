@@ -1,6 +1,5 @@
 import { Pool } from 'pg';
 import { Kysely, Migrator, FileMigrationProvider } from 'kysely';
-import { Database } from '../database/types';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
@@ -15,7 +14,7 @@ async function migrateToLatest() {
     throw new Error('Database connection string not found in environment variables');
   }
 
-  const db = new Kysely<Database>({
+  const db = new Kysely<any>({
     dialect: new PostgresDialect({
       pool: new Pool({
         connectionString,

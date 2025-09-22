@@ -4,8 +4,8 @@ import Modal from '../common/Modal';
 interface SuccessModalProps {
   isOpen: boolean;
   onClose: () => void;
-  title?: string;
-  message?: string;
+  title: string;
+  message: string;
 }
 
 const SuccessModal: React.FC<SuccessModalProps> = ({
@@ -15,9 +15,9 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
   message,
 }) => {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={title ?? 'Success'}>
+    <Modal isOpen={isOpen} onClose={onClose} title={title}>
       <div className="p-4">
-        {message && <p className="text-sm text-gray-700 mb-4" dangerouslySetInnerHTML={{ __html: message }}></p>}
+        <p className="text-sm text-gray-700 mb-4" dangerouslySetInnerHTML={{ __html: message }}></p>
         <div className="flex justify-end">
           <button
             onClick={onClose}

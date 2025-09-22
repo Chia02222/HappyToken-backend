@@ -23,15 +23,16 @@ let ContactsService = class ContactsService {
     }
     async addContact(contactData) {
         console.log('addContact called with:', contactData);
+        const { id: _id, ...contactDataWithoutId } = contactData;
         const insertData = {
-            corporate_id: contactData.corporate_id,
-            salutation: contactData.salutation,
-            first_name: contactData.first_name,
-            last_name: contactData.last_name,
-            contact_number: contactData.contact_number,
-            email: contactData.email,
-            company_role: contactData.company_role,
-            system_role: contactData.system_role,
+            corporate_id: contactDataWithoutId.corporate_id,
+            salutation: contactDataWithoutId.salutation,
+            first_name: contactDataWithoutId.first_name,
+            last_name: contactDataWithoutId.last_name,
+            contact_number: contactDataWithoutId.contact_number,
+            email: contactDataWithoutId.email,
+            company_role: contactDataWithoutId.company_role,
+            system_role: contactDataWithoutId.system_role,
         };
         const dataWithDefaults = {
             ...insertData,
@@ -56,11 +57,11 @@ let ContactsService = class ContactsService {
     }
     async updateContact(id, contactData) {
         console.log('updateContact called with:', { id, contactData });
-        const { id: _contactId, ...dataToUpdate } = contactData;
+        const { id: _contactId, ...updateData } = contactData;
         const updated = await this.db
             .updateTable('contacts')
             .set({
-            ...dataToUpdate,
+            ...updateData,
             updated_at: (0, kysely_1.sql) `date_trunc('second', now())::timestamp(0)`,
         })
             .where('id', '=', id)

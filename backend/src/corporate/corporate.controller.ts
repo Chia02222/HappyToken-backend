@@ -23,7 +23,8 @@ export class CorporateController {
 
   @Post()
   async create(@Body() corporateData: CreateCorporateWithRelationsDto & { investigation_log?: InvestigationLogTable; id?: string }) {
-    const dataToPassToService: CreateCorporateWithRelationsDto = corporateData;
+    const { investigation_log: _investigation_log, id: _id, ...corporateDataWithoutLogAndId } = corporateData;
+    const dataToPassToService: CreateCorporateWithRelationsDto = corporateDataWithoutLogAndId;
     return await this.corporateService.create(dataToPassToService);
   }
 

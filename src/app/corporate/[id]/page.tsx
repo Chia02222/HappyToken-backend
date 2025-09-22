@@ -7,18 +7,15 @@ import CorporateForm from '../../../components/CorporateForm';
 import CommercialTermsForm from '../../../components/CommercialTermsForm';
 import ECommercialTermsForm from '../../../components/ECommercialTermsForm';
 import { CorporateDetails, CorporateStatus, Contact } from '../../../types';
-import { getCorporateById, createCorporate, updateCorporate, updateCorporateStatus } from '../../../services/api';
+import { getCorporateById, createCorporate, updateCorporate, updateCorporateStatus, addRemark, deleteCorporate, resendRegistrationLink } from '../../../services/api';
+import ConfirmationModal from '../../../components/modals/ConfirmationModal';
 import SuccessModal from '../../../components/modals/SuccessModal';
 import ErrorMessageModal from '../../../components/modals/ErrorMessageModal';
 
 let clientSideIdCounter = 0;
 const generateClientSideId = (): string => {
   clientSideIdCounter -= 1;
-  return `${clientSideIdCounter}`;
-};
-
-const isUuid = (value: string): boolean => {
-  return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(value);
+  return `client-${clientSideIdCounter}`;
 };
 
 const INITIAL_CORPORATE_FORM_DATA: CorporateDetails = {
@@ -46,7 +43,7 @@ const INITIAL_CORPORATE_FORM_DATA: CorporateDetails = {
             contact_number: '',
             email: '',
             company_role: '',
-            system_role: 'user',
+            system_role: '',
         },
     ],
     billing_same_as_official: true,
@@ -73,8 +70,11 @@ const INITIAL_CORPORATE_FORM_DATA: CorporateDetails = {
     investigation_log: [],
 };
 
+interface CorporateFormPageProps {
+  // params are now accessed via useParams hook, so no longer needed here
+}
 
-const CorporateFormPage: React.FC = () => {
+const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
@@ -84,7 +84,10 @@ const CorporateFormPage: React.FC = () => {
   const [formStep, setFormStep] = useState(1);
   const [formData, setFormData] = useState<CorporateDetails>(INITIAL_CORPORATE_FORM_DATA);
   const [formMode, setFormMode] = useState<'new' | 'edit' | 'approve' | 'approve-second'>(mode || 'new');
+  const [isConfirmDeleteModalVisible, setIsConfirmDeleteModalVisible] = useState(false);
+  const [corporateToDeleteId, setCorporateToDeleteId] = useState<string | null>(null);
   const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
+  const [successModalContent, setSuccessModalContent] = useState({ title: '', message: '' });
   const [isErrorModalVisible, setIsErrorModalVisible] = useState(false);
   const [errorModalContent, setErrorModalContent] = useState('');
 
@@ -93,7 +96,10 @@ const CorporateFormPage: React.FC = () => {
       if (corporateId && corporateId !== 'new') {
         try {
           const fullFormData = await getCorporateById(corporateId);
-          setFormData(fullFormData);
+          setFormData({
+            ...INITIAL_CORPORATE_FORM_DATA,
+            ...fullFormData,
+          });
           // Set formMode based on URL parameter if available, otherwise default to 'edit'
           setFormMode(mode || 'edit');
         } catch (error) {
@@ -151,15 +157,7 @@ const CorporateFormPage: React.FC = () => {
         updatedFormData.first_approval_confirmation = true;
       }
 
-      const processedContacts = updatedFormData.contacts.map(contact => {
-        if (typeof contact.id === 'string' && !isUuid(contact.id)) {
-          const { id: _id, ...rest } = contact;
-          return rest; // Remove client-side ID for new contacts
-        }
-        return contact;
-      });
-
-      const { contacts, subsidiaries, contactIdsToDelete, subsidiaryIdsToDelete, ...corporateData } = { ...updatedFormData, contacts: processedContacts };
+      const { contacts, subsidiaries, contactIdsToDelete, subsidiaryIdsToDelete, ...corporateData } = updatedFormData;
 
       const dataToSend = {
         ...corporateData,
@@ -173,7 +171,7 @@ const CorporateFormPage: React.FC = () => {
       let savedCorporateId = corporateId;
 
       if (corporateId && corporateId !== 'new') {
-        await updateCorporate(corporateId, dataToSend);
+        const updatedCorporate = await updateCorporate(corporateId, dataToSend);
       } else {
         const newCorporate = await createCorporate(dataToSend);
         savedCorporateId = newCorporate.id;
@@ -252,6 +250,8 @@ const CorporateFormPage: React.FC = () => {
         <SuccessModal
             isOpen={isSuccessModalVisible}
             onClose={() => setIsSuccessModalVisible(false)}
+            title={successModalContent.title}
+            message={successModalContent.message}
         />
         <ErrorMessageModal
             isOpen={isErrorModalVisible}

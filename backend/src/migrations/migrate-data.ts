@@ -29,13 +29,6 @@ interface SubsidiaryData {
     accountNote: string;
 }
 
-interface LogEntryData {
-    timestamp: string;
-    note: string | null;
-    from_status?: CorporateStatus | null;
-    to_status?: CorporateStatus | null;
-}
-
 // Import the data from the frontend constants
 const CORPORATES_DATA = [
     { id: 1, companyName: 'Global Tech Inc.', regNumber: '202201012345', status: 'Approved', createdAt: '2024-07-28', investigationLog: [] },
@@ -51,7 +44,7 @@ const CORPORATES_DATA = [
         ]
     },
     { id: 8, companyName: 'Future Enterprises', regNumber: '202309151357', status: 'Resolved', createdAt: '2024-07-21', investigationLog: [] },
-    { id: 9, companyName: 'Pinnacle Group', regNumber: '202207202468', status: 'Closed', createdAt: '2024-07-20', investigationLog: [{ timestamp: new Date().toLocaleString(), from_status: 'Rejected' as CorporateStatus, to_status: 'Closed' as CorporateStatus, note: 'Account closed after investigation.' }] },
+    { id: 9, companyName: 'Pinnacle Group', regNumber: '202207202468', status: 'Closed', createdAt: '2024-07-20', investigationLog: [{ timestamp: new Date().toLocaleString(), from: 'Rejected' as CorporateStatus, to: 'Closed' as CorporateStatus, note: 'Account closed after investigation.' }] },
     { id: 10, companyName: 'Summit Partners', regNumber: '202104109753', status: 'Reopened', createdAt: '2024-07-19', investigationLog: [] },
 ];
 
@@ -80,7 +73,7 @@ const CORPORATE_DETAILS_DATA: Record<number, Record<string, unknown>> = {
             }
         ],
         creditLimit: '100000.00',
-        credit_terms: '45',
+        creditTerms: '45',
         transactionFee: '1.8',
     },
     2: {
@@ -135,7 +128,9 @@ const CORPORATE_DETAILS_DATA: Record<number, Record<string, unknown>> = {
         sstNumber: 'SST-01-23-45678901',
         agreementFrom: '2024-08-01',
         agreementTo: '2025-07-31',
-        credit_terms: '30',
+        creditLimit: '50000.00',
+        creditTerms: '30',
+        transactionFee: '2.5',
         latePaymentInterest: '1.5',
         whiteLabelingFee: '5.0',
         customFeatureFee: '15000.00',
@@ -162,7 +157,9 @@ const CORPORATE_DETAILS_DATA: Record<number, Record<string, unknown>> = {
                 systemRole: 'User',
             }
         ],
-        credit_terms: '30',
+        creditLimit: '75000.00',
+        creditTerms: '30',
+        transactionFee: '3.0',
     },
     4: {
         companyName: 'Apex Industries',
@@ -480,13 +477,13 @@ export async function migrateData() {
 
             // Migrate investigation logs
             if (corporate.investigationLog) {
-                for (const log of corporate.investigationLog as LogEntryData[]) {
+                for (const log of corporate.investigationLog) {
                     await sql`
                         INSERT INTO investigation_logs (
                             corporate_id, timestamp, note, from_status, to_status, created_at
                         ) VALUES (
-                            ${corporateId}, ${log.timestamp}, ${log.note ?? null},
-                            ${log.from_status ?? null}, ${log.to_status ?? null}, ${new Date().toISOString()}
+                            ${corporateId}, ${log.timestamp}, ${log.note || null},
+                            ${(log as any).from || null}, ${(log as any).to || null}, ${new Date().toISOString()}
                         )
                     `;
                 }
