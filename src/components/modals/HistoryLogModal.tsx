@@ -3,12 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import StatusBadge from '../common/StatusBadge';
-import { Corporate } from '../../types';
+import { CorporateDetails } from '../../types';
 
 interface HistoryLogModalProps {
     isOpen: boolean;
     onClose: () => void;
-    corporate: Corporate | null;
+    corporate: CorporateDetails | null;
     onSave: (corporateId: string, note: string) => void;
 }
 

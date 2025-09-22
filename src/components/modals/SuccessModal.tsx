@@ -17,7 +17,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title}>
       <div className="p-4">
-        <p className="text-sm text-gray-700 mb-4">{message}</p>
+        <p className="text-sm text-gray-700 mb-4" dangerouslySetInnerHTML={{ __html: message }}></p>
         <div className="flex justify-end">
           <button
             onClick={onClose}

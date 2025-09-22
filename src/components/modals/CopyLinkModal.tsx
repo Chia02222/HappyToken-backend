@@ -16,10 +16,10 @@ const CopyLinkModal: React.FC<CopyLinkModalProps> = ({ isOpen, onClose, corporat
 
     if (!corporate) return null;
 
-    const registrationLink = `https://happietoken.com/register?token=${btoa(`corp_${corporate.id}`)}`;
+    const approvalLink = `localhost:3002/?role=client&page=Approver%20Corporate&corporateId=${corporate.id}&formMode=approve`;
 
     const handleCopy = () => {
-        navigator.clipboard.writeText(registrationLink).then(() => {
+        navigator.clipboard.writeText(approvalLink).then(() => {
             setIsCopied(true);
             setTimeout(() => setIsCopied(false), 2000); // Reset after 2 seconds
         });
@@ -28,15 +28,15 @@ const CopyLinkModal: React.FC<CopyLinkModalProps> = ({ isOpen, onClose, corporat
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Copy Registration Link">
             <div>
-                <p className="text-sm text-gray-600 mb-4">A unique registration link for <span className="font-medium">{corporate.company_name}</span> has been generated. Copy this link and share it with the corporate client to proceed with their account setup.</p>
+                <p className="text-sm text-gray-600 mb-4">An approval link for <span className="font-medium">{corporate.company_name}</span> has been generated. Copy this link and share it with the approver to review and approve the corporate account.</p>
                 
                 <div className="flex items-center space-x-2">
                     <input
                         type="text"
                         readOnly
-                        value={registrationLink}
+                        value={approvalLink}
                         className="w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm bg-gray-100 focus:outline-none"
-                        aria-label="Registration Link"
+                        aria-label="Approval Link"
                     />
                     <button 
                         onClick={handleCopy}

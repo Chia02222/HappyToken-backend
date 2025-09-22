@@ -1,5 +1,5 @@
 
-export type Page = 'Dashboard' | 'RFQ' | 'Merchant' | 'CRT Corporate' | 'Approver Corporate' | 'API' | 'Configuration' | 'Management' | 'Reports';
+export type Page = 'Dashboard' | 'RFQ' | 'Merchant' | 'CRT Corporate' | 'API' | 'Configuration' | 'Management' | 'Reports';
 
 export interface NavItem {
   name: Page;
@@ -10,11 +10,11 @@ export interface NavItem {
 export type CorporateStatus = 'New' | 'Sent' | 'Pending 1st Approval' | 'Pending 2nd Approval' | 'Approved' | 'Rejected' | 'Cooling Period' | 'Resolved' | 'Closed' | 'Reopened' | 'Pending Contract Setup' | 'Under Fraud Investigation';
 
 export interface LogEntry {
-  id?: number;
+  id: string;
   timestamp: string;
-  note?: string;
-  from_status?: CorporateStatus;
-  to_status?: CorporateStatus;
+  note: string | null;
+  from_status: CorporateStatus | null;
+  to_status: CorporateStatus | null;
 }
 
 export interface Contact {
@@ -48,6 +48,7 @@ export interface Corporate {
   reg_number: string;
   status: CorporateStatus;
   created_at: string;
+  updated_at: string;
   cooling_period_start?: string | null;
   cooling_period_end?: string | null;
   
@@ -98,4 +99,5 @@ export interface CorporateDetails extends Corporate {
     subsidiaries: Subsidiary[];
     contactIdsToDelete?: string[];
     subsidiaryIdsToDelete?: string[];
+    investigation_log: LogEntry[];
 }

@@ -53,9 +53,6 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, isCollap
   };
 
   const filteredNavItems = NAV_ITEMS.filter(item => {
-    if (userRole === 'admin' && item.name === 'Approver Corporate') {
-        return false;
-    }
     if (userRole === 'client' && item.name === 'CRT Corporate') {
         return false;
     }

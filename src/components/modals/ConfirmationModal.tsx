@@ -1,5 +1,5 @@
 import React from 'react';
-import Modal from '../common/Modal'; // Assuming you have a base Modal component
+import Modal from '../common/Modal'; 
 
 interface ConfirmationModalProps {
   isOpen: boolean;

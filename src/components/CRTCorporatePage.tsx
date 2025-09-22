@@ -135,8 +135,17 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
         const remainingTime = remainingTimes[corporate.id];
 
         switch (corporate.status) {
-
-
+            case 'Pending Contract Setup':
+                return (
+                    <button
+                        onClick={() => onSendRegistrationLink(corporate.id)}
+                        className="text-sm text-ht-blue hover:text-ht-blue-dark font-semibold"
+                    >
+                        Send to Approval
+                    </button>
+                );
+            case 'Sent':
+                return <span className="text-gray-400 text-xs">No actions</span>;
             case 'Cooling Period':
                 return (
                     <span className="text-gray-500 text-xs">
@@ -204,7 +213,7 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
                                     Reg. Number
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Created At
+                                    Updated At
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Status
@@ -234,7 +243,7 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
                                         {corporate.reg_number}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {formatTimestamp(corporate.created_at)}
+                                        {formatTimestamp(corporate.updated_at)}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         <StatusBadge status={corporate.status} />
@@ -263,10 +272,10 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
                                                     label: 'Copy Link',
                                                     onClick: () => handleOpenCopyLinkModal(corporate),
                                                 },
-                                                {
+                                                ...(corporate.status !== 'Pending Contract Setup' ? [{
                                                     label: 'Send to Approval',
                                                     onClick: () => onSendRegistrationLink(corporate.id),
-                                                },
+                                                }] : []),
                                                 {
                                                     label: 'Delete',
                                                     onClick: () => onDeleteCorporate(corporate.id),

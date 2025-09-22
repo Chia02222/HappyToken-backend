@@ -72,6 +72,7 @@ export class ResendService {
 
     const sanitizedCorporateId = String(corporate.id).replace(/[^a-zA-Z0-9]/g, '');
     const registrationLink = `https://happietoken.com/register?token=${Buffer.from(`corp_${sanitizedCorporateId}`).toString('base64')}`;
+    const corporateFormLink = `http://localhost:3002/corporate/${corporate.id}?mode=approve`;
 
     try {
       const response = await fetch('https://api.resend.com/emails', {
@@ -84,7 +85,7 @@ export class ResendService {
           from: SENDER_EMAIL,
           to: recipientEmail,
           subject: 'Your Registration Link',
-          html: `<p>Click <a href="${registrationLink}">here</a> to register</p>`,
+          html: `<p>Click <a href="${corporateFormLink}">here</a> to view the corporate form for approval.</p>`,
         }),
       });
 

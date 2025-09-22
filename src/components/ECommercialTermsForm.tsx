@@ -6,8 +6,9 @@ import InputField from './common/InputField';
 import SelectField from './common/SelectField';
 import ContentSection from './common/ContentSection';
 import ErrorMessageModal from './modals/ErrorMessageModal';
+import ChangeStatusModal from './modals/ChangeStatusModal';
 
-import { CorporateDetails, Contact } from '../types';
+import { CorporateDetails, Contact, CorporateStatus } from '../types';
 
 interface ECommercialTermsFormProps {
     onCloseForm: () => void;
@@ -16,11 +17,13 @@ interface ECommercialTermsFormProps {
     setFormData: (dataUpdater: (prevData: CorporateDetails) => CorporateDetails) => void;
     onSaveCorporate: (formData: CorporateDetails, action: 'submit' | 'sent' | 'save') => void;
     formMode: 'new' | 'edit' | 'approve' | 'approve-second';
+    updateStatus: (id: string, status: CorporateStatus, note?: string) => Promise<void>;
 }
 
-const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm, setFormStep, formData, setFormData, onSaveCorporate, formMode }) => {
+const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm, setFormStep, formData, setFormData, onSaveCorporate, formMode, updateStatus }) => {
     const [showValidationError, setShowValidationError] = React.useState(false);
     const [validationErrorMessage, setValidationErrorMessage] = React.useState('');
+    const [isRejectModalOpen, setIsRejectModalOpen] = React.useState(false);
 
     const primaryContact = formData.contacts?.[0] || {};
     const otherContacts = formData.contacts?.slice(1) || [];
@@ -116,6 +119,17 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                 isOpen={showValidationError}
                 onClose={() => setShowValidationError(false)}
                 message={validationErrorMessage}
+            />
+            <ChangeStatusModal
+                isOpen={isRejectModalOpen}
+                onClose={() => setIsRejectModalOpen(false)}
+                corporate={formData}
+                targetStatus={'Rejected'}
+                onSave={async (corporateId, status, note) => {
+                    await updateStatus(corporateId, status, note);
+                    onCloseForm();
+                }}
+                isRejecting={true}
             />
             <div className="bg-white p-8 md:p-12 rounded-lg shadow-sm max-w-5xl mx-auto border border-gray-200">
                 <h1 className="text-center text-xl font-bold text-ht-gray-dark mb-4">e-Commercial Agreement</h1>
@@ -279,12 +293,12 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                  </button>
                  <button 
                     type="button"
-                    onClick={() => onSaveCorporate(formData, 'sent')}
-                    disabled={(formMode === 'approve' && !formData.first_approval_confirmation) || (formMode === 'approve-second' && !formData.second_approval_confirmation)}
-                    className="text-sm bg-ht-blue text-white px-4 py-2 rounded-md hover:bg-ht-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue-dark disabled:bg-ht-gray disabled:cursor-not-allowed"
-                >
-                    Send Link
-                </button>
+                    onClick={() => setIsRejectModalOpen(true)}
+                    disabled={formMode === 'new'} // Disable reject for new forms
+                    className="text-sm bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                 >
+                    Reject
+                 </button>
                  <button 
                     type="button"
                     onClick={() => {
@@ -301,7 +315,7 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                     disabled={(formMode === 'approve' && !formData.first_approval_confirmation) || (formMode === 'approve-second' && !formData.second_approval_confirmation)}
                     className="text-sm bg-ht-blue text-white px-4 py-2 rounded-md hover:bg-ht-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue-dark disabled:bg-ht-gray disabled:cursor-not-allowed"
                 >
-                    Submit
+                    Approve
                 </button>
             </div>
         </div>
