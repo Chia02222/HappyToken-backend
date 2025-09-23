@@ -2,7 +2,7 @@ import { PartialType } from '@nestjs/mapped-types';
 
 // Base DTO that explicitly defines properties from the `contacts` table
 export class BaseContactDto {
-    corporate_id:string;
+    corporate_id: number;
     salutation: string;
     first_name: string;
     last_name: string;

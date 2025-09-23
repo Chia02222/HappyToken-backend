@@ -7,7 +7,7 @@ export declare class CorporateController {
     private readonly resendService;
     constructor(corporateService: CorporateService, resendService: ResendService);
     findAll(): Promise<{
-        id: string;
+        id: number;
         company_name: string;
         reg_number: string;
         status: import("../database/types").CorporateStatus;
@@ -42,15 +42,16 @@ export declare class CorporateController {
         second_approval_confirmation: boolean | null;
         cooling_period_start: string | null;
         cooling_period_end: string | null;
+        secondary_approver_id: number | null | undefined;
         created_at: string;
         updated_at: string;
     }[]>;
     findById(id: string): Promise<{
         contacts: {
-            id: string;
+            id: number;
             created_at: string;
             updated_at: string;
-            corporate_id: string;
+            corporate_id: number;
             salutation: string;
             first_name: string;
             last_name: string;
@@ -60,7 +61,7 @@ export declare class CorporateController {
             system_role: string;
         }[];
         subsidiaries: {
-            id: string;
+            id: number;
             company_name: string;
             reg_number: string;
             office_address1: string;
@@ -73,18 +74,18 @@ export declare class CorporateController {
             account_note: string | null;
             created_at: string;
             updated_at: string;
-            corporate_id: string;
+            corporate_id: number;
         }[];
         investigation_log: {
-            id: string;
+            id: number;
             created_at: string;
-            corporate_id: string;
+            corporate_id: number;
             timestamp: string;
             note: string | null;
             from_status: import("../database/types").CorporateStatus | null;
             to_status: import("../database/types").CorporateStatus | null;
         }[];
-        id: string;
+        id: number;
         company_name: string;
         reg_number: string;
         status: import("../database/types").CorporateStatus;
@@ -119,6 +120,7 @@ export declare class CorporateController {
         second_approval_confirmation: boolean | null;
         cooling_period_start: string | null;
         cooling_period_end: string | null;
+        secondary_approver_id: number | null | undefined;
         created_at: string;
         updated_at: string;
     } | null>;
@@ -126,7 +128,7 @@ export declare class CorporateController {
         investigation_log?: InvestigationLogTable;
         id?: string;
     }): Promise<{
-        id: string;
+        id: number;
         company_name: string;
         reg_number: string;
         status: import("../database/types").CorporateStatus;
@@ -161,15 +163,16 @@ export declare class CorporateController {
         second_approval_confirmation: boolean | null;
         cooling_period_start: string | null;
         cooling_period_end: string | null;
+        secondary_approver_id: number | null | undefined;
         created_at: string;
         updated_at: string;
     }>;
     update(id: string, updateData: UpdateCorporateDto): Promise<{
         contacts: {
-            id: string;
+            id: number;
             created_at: string;
             updated_at: string;
-            corporate_id: string;
+            corporate_id: number;
             salutation: string;
             first_name: string;
             last_name: string;
@@ -179,7 +182,7 @@ export declare class CorporateController {
             system_role: string;
         }[];
         subsidiaries: {
-            id: string;
+            id: number;
             company_name: string;
             reg_number: string;
             office_address1: string;
@@ -192,18 +195,18 @@ export declare class CorporateController {
             account_note: string | null;
             created_at: string;
             updated_at: string;
-            corporate_id: string;
+            corporate_id: number;
         }[];
         investigation_log: {
-            id: string;
+            id: number;
             created_at: string;
-            corporate_id: string;
+            corporate_id: number;
             timestamp: string;
             note: string | null;
             from_status: import("../database/types").CorporateStatus | null;
             to_status: import("../database/types").CorporateStatus | null;
         }[];
-        id: string;
+        id: number;
         company_name: string;
         reg_number: string;
         status: import("../database/types").CorporateStatus;
@@ -238,6 +241,7 @@ export declare class CorporateController {
         second_approval_confirmation: boolean | null;
         cooling_period_start: string | null;
         cooling_period_end: string | null;
+        secondary_approver_id: number | null | undefined;
         created_at: string;
         updated_at: string;
     } | null>;
@@ -245,9 +249,9 @@ export declare class CorporateController {
         success: boolean;
     }>;
     addInvestigationLog(corporateId: string, logData: Omit<InvestigationLogTable, 'id' | 'corporate_id' | 'created_at'>): Promise<{
-        id: string;
+        id: number;
         created_at: string;
-        corporate_id: string;
+        corporate_id: number;
         timestamp: string;
         note: string | null;
         from_status: import("../database/types").CorporateStatus | null;
@@ -258,10 +262,10 @@ export declare class CorporateController {
         note?: string;
     }): Promise<{
         contacts: {
-            id: string;
+            id: number;
             created_at: string;
             updated_at: string;
-            corporate_id: string;
+            corporate_id: number;
             salutation: string;
             first_name: string;
             last_name: string;
@@ -271,7 +275,7 @@ export declare class CorporateController {
             system_role: string;
         }[];
         subsidiaries: {
-            id: string;
+            id: number;
             company_name: string;
             reg_number: string;
             office_address1: string;
@@ -284,18 +288,18 @@ export declare class CorporateController {
             account_note: string | null;
             created_at: string;
             updated_at: string;
-            corporate_id: string;
+            corporate_id: number;
         }[];
         investigation_log: {
-            id: string;
+            id: number;
             created_at: string;
-            corporate_id: string;
+            corporate_id: number;
             timestamp: string;
             note: string | null;
             from_status: import("../database/types").CorporateStatus | null;
             to_status: import("../database/types").CorporateStatus | null;
         }[];
-        id: string;
+        id: number;
         company_name: string;
         reg_number: string;
         status: import("../database/types").CorporateStatus;
@@ -330,6 +334,7 @@ export declare class CorporateController {
         second_approval_confirmation: boolean | null;
         cooling_period_start: string | null;
         cooling_period_end: string | null;
+        secondary_approver_id: number | null | undefined;
         created_at: string;
         updated_at: string;
     } | null>;
@@ -339,10 +344,10 @@ export declare class CorporateController {
     }>;
     completeCoolingPeriod(id: string): Promise<{
         contacts: {
-            id: string;
+            id: number;
             created_at: string;
             updated_at: string;
-            corporate_id: string;
+            corporate_id: number;
             salutation: string;
             first_name: string;
             last_name: string;
@@ -352,7 +357,7 @@ export declare class CorporateController {
             system_role: string;
         }[];
         subsidiaries: {
-            id: string;
+            id: number;
             company_name: string;
             reg_number: string;
             office_address1: string;
@@ -365,18 +370,18 @@ export declare class CorporateController {
             account_note: string | null;
             created_at: string;
             updated_at: string;
-            corporate_id: string;
+            corporate_id: number;
         }[];
         investigation_log: {
-            id: string;
+            id: number;
             created_at: string;
-            corporate_id: string;
+            corporate_id: number;
             timestamp: string;
             note: string | null;
             from_status: import("../database/types").CorporateStatus | null;
             to_status: import("../database/types").CorporateStatus | null;
         }[];
-        id: string;
+        id: number;
         company_name: string;
         reg_number: string;
         status: import("../database/types").CorporateStatus;
@@ -411,6 +416,7 @@ export declare class CorporateController {
         second_approval_confirmation: boolean | null;
         cooling_period_start: string | null;
         cooling_period_end: string | null;
+        secondary_approver_id: number | null | undefined;
         created_at: string;
         updated_at: string;
     } | null>;

@@ -5,10 +5,10 @@ export declare class ContactsService {
     constructor(dbService: DatabaseService);
     private get db();
     addContact(contactData: CreateContactDto): Promise<{
-        id: string;
+        id: number;
         created_at: string;
         updated_at: string;
-        corporate_id: string;
+        corporate_id: number;
         salutation: string;
         first_name: string;
         last_name: string;
@@ -17,11 +17,11 @@ export declare class ContactsService {
         company_role: string;
         system_role: string;
     }>;
-    updateContact(id: string, contactData: UpdateContactDto): Promise<{
-        id: string;
+    updateContact(id: number, contactData: UpdateContactDto): Promise<{
+        id: number;
         created_at: string;
         updated_at: string;
-        corporate_id: string;
+        corporate_id: number;
         salutation: string;
         first_name: string;
         last_name: string;
@@ -30,7 +30,7 @@ export declare class ContactsService {
         company_role: string;
         system_role: string;
     }>;
-    deleteContact(id: string): Promise<{
+    deleteContact(id: number): Promise<{
         success: boolean;
     }>;
 }

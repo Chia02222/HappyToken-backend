@@ -162,7 +162,7 @@ let SeedService = class SeedService {
                             website: 'https://globaltechsolutions.com',
                             account_note: 'Subsidiary for software development',
                         });
-                        await this.corporateService.addInvestigationLog(corporate.id, {
+                        await this.corporateService.addInvestigationLog(String(corporate.id), {
                             timestamp: new Date().toISOString(),
                             note: 'Initial review completed. No issues found.',
                             from_status: 'New',

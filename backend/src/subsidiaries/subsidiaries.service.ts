@@ -13,7 +13,7 @@ export class SubsidiariesService {
 
   async addSubsidiary(subsidiaryData: CreateSubsidiaryDto) {
     console.log('addSubsidiary called with:', subsidiaryData);
-    const { id: _id, ...insertData } = subsidiaryData as CreateSubsidiaryDto & { id?: string }; // Explicitly omit 'id'
+    const { id: _id, ...insertData } = subsidiaryData as CreateSubsidiaryDto & { id?: number }; // Explicitly omit 'id'
     const inserted = await this.db
       .insertInto('subsidiaries')
       .values({
@@ -26,7 +26,7 @@ export class SubsidiariesService {
     return inserted!;
   }
 
-  async updateSubsidiary(id: string, subsidiaryData: UpdateSubsidiaryDto) {
+  async updateSubsidiary(id: number, subsidiaryData: UpdateSubsidiaryDto) {
     console.log('updateSubsidiary called with:', { id, subsidiaryData });
     const { id: _subsidiaryId, ...updateData } = subsidiaryData;
     const updated = await this.db
@@ -41,7 +41,7 @@ export class SubsidiariesService {
     return updated!;
   }
 
-  async deleteSubsidiary(id: string) {
+  async deleteSubsidiary(id: number) {
     console.log('deleteSubsidiary called with id:', id);
     await this.db.deleteFrom('subsidiaries').where('id', '=', id).execute();
     return { success: true };

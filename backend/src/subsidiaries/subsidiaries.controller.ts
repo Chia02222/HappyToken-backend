@@ -8,7 +8,7 @@ export class SubsidiariesController {
 
   @Post(':corporateId')
   async addSubsidiary(
-    @Param('corporateId') corporateId: string,
+    @Param('corporateId') corporateId: number,
     @Body() subsidiaryData: Omit<CreateSubsidiaryDto, 'corporate_id'>
   ) {
     return await this.subsidiariesService.addSubsidiary({ ...subsidiaryData, corporate_id: corporateId });
@@ -19,11 +19,11 @@ export class SubsidiariesController {
     @Param('id') id: string,
     @Body() subsidiaryData: UpdateSubsidiaryDto
   ) {
-    return await this.subsidiariesService.updateSubsidiary(id, subsidiaryData);
+    return await this.subsidiariesService.updateSubsidiary(Number(id), subsidiaryData);
   }
 
   @Delete(':id')
   async deleteSubsidiary(@Param('id') id: string) {
-    return await this.subsidiariesService.deleteSubsidiary(id);
+    return await this.subsidiariesService.deleteSubsidiary(Number(id));
   }
 }

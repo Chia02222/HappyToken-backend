@@ -3,8 +3,8 @@ import { Kysely, sql } from 'kysely';
 export async function up(db: Kysely<unknown>): Promise<void> {
   await db.schema
     .createTable('subsidiaries')
-    .addColumn('id', 'uuid', (col) => col.primaryKey().defaultTo(sql`gen_random_uuid()`))
-    .addColumn('corporate_id', 'uuid', (col) => col.notNull().references('corporates.id').onDelete('cascade'))
+    .addColumn('id', 'serial', (col) => col.primaryKey())
+    .addColumn('corporate_id', 'integer', (col) => col.notNull().references('corporates.id').onDelete('cascade'))
     .addColumn('company_name', 'varchar(255)', (col) => col.notNull())
     .addColumn('reg_number', 'varchar(50)', (col) => col.notNull())
     .addColumn('office_address1', 'varchar(255)', (col) => col.notNull())

@@ -11,7 +11,8 @@ export class ContactsController {
     @Param('corporateId') corporateId: string,
     @Body() contactData: Omit<CreateContactDto, 'corporate_id'>
   ) {
-    return await this.contactsService.addContact({ ...contactData, corporate_id: corporateId });
+    const corporateIdNum = Number(corporateId);
+    return await this.contactsService.addContact({ ...contactData, corporate_id: corporateIdNum });
   }
 
   @Put(':id')
@@ -19,11 +20,11 @@ export class ContactsController {
     @Param('id') id: string,
     @Body() contactData: UpdateContactDto
   ) {
-    return await this.contactsService.updateContact(id, contactData);
+    return await this.contactsService.updateContact(Number(id), contactData);
   }
 
   @Delete(':id')
   async deleteContact(@Param('id') id: string) {
-    return await this.contactsService.deleteContact(id);
+    return await this.contactsService.deleteContact(Number(id));
   }
 }

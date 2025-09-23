@@ -22,13 +22,14 @@ let ContactsController = class ContactsController {
         this.contactsService = contactsService;
     }
     async addContact(corporateId, contactData) {
-        return await this.contactsService.addContact({ ...contactData, corporate_id: corporateId });
+        const corporateIdNum = Number(corporateId);
+        return await this.contactsService.addContact({ ...contactData, corporate_id: corporateIdNum });
     }
     async updateContact(id, contactData) {
-        return await this.contactsService.updateContact(id, contactData);
+        return await this.contactsService.updateContact(Number(id), contactData);
     }
     async deleteContact(id) {
-        return await this.contactsService.deleteContact(id);
+        return await this.contactsService.deleteContact(Number(id));
     }
 };
 exports.ContactsController = ContactsController;

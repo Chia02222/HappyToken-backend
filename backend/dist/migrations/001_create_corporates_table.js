@@ -2,12 +2,10 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.up = up;
 exports.down = down;
-const kysely_1 = require("kysely");
 async function up(db) {
-    await (0, kysely_1.sql) `create extension if not exists "pgcrypto"`.execute(db);
     await db.schema
         .createTable('corporates')
-        .addColumn('id', 'uuid', (col) => col.primaryKey().defaultTo((0, kysely_1.sql) `gen_random_uuid()`))
+        .addColumn('id', 'serial', (col) => col.primaryKey())
         .addColumn('company_name', 'varchar(255)', (col) => col.notNull())
         .addColumn('reg_number', 'varchar(50)', (col) => col.notNull().unique())
         .addColumn('status', 'varchar(50)', (col) => col.notNull())

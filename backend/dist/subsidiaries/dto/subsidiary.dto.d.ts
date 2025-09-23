@@ -1,5 +1,5 @@
 export declare class BaseSubsidiaryDto {
-    corporate_id: string;
+    corporate_id: number;
     company_name: string;
     reg_number: string;
     office_address1: string;
@@ -15,6 +15,6 @@ export declare class CreateSubsidiaryDto extends BaseSubsidiaryDto {
 }
 declare const UpdateSubsidiaryDto_base: import("@nestjs/mapped-types").MappedType<Partial<BaseSubsidiaryDto>>;
 export declare class UpdateSubsidiaryDto extends UpdateSubsidiaryDto_base {
-    id?: string;
+    id?: number;
 }
 export {};

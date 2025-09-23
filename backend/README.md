@@ -53,31 +53,473 @@ A NestJS backend API for the Corporate Account System, built with Kysely and Neo
 
 ## API Endpoints
 
+## API Endpoints
+
+This section details the available API endpoints, including their HTTP methods, paths, descriptions, and expected request/response bodies.
+
 ### Health Check
-- `GET /health` - Check application and database health
+
+-   **`GET /health`**
+    -   **Description**: Checks the application and database health.
+    -   **Response**:
+        ```json
+        {
+            "status": "healthy" | "unhealthy",
+            "database": "connected" | "disconnected",
+            "error": "string" (optional),
+            "timestamp": "string" (ISO 8601 format)
+        }
+        ```
 
 ### Corporate Accounts
-- `GET /corporates` - Get all corporate accounts
-- `GET /corporates/:id` - Get corporate account by ID
-- `POST /corporates` - Create new corporate account
-- `PUT /corporates/:id` - Update corporate account
-- `DELETE /corporates/:id` - Delete corporate account
+
+-   **`GET /corporates`**
+    -   **Description**: Retrieves a list of all corporate accounts.
+    -   **Response**: `Corporate[]` (array of Corporate objects)
+        ```json
+        [
+            {
+                "id": "string",
+                "company_name": "string",
+                "reg_number": "string",
+                "status": "CorporateStatus",
+                "office_address1": "string",
+                "office_address2": "string | null",
+                "postcode": "string",
+                "city": "string",
+                "state": "string",
+                "country": "string",
+                "website": "string | null",
+                "account_note": "string | null",
+                "billing_same_as_official": "boolean",
+                "billing_address1": "string",
+                "billing_address2": "string",
+                "billing_postcode": "string",
+                "billing_city": "string",
+                "billing_state": "string",
+                "billing_country": "string",
+                "company_tin": "string",
+                "sst_number": "string",
+                "agreement_from": "string | null",
+                "agreement_to": "string | null",
+                "credit_limit": "string",
+                "credit_terms": "string",
+                "transaction_fee": "string",
+                "late_payment_interest": "string",
+                "white_labeling_fee": "string",
+                "custom_feature_fee": "string",
+                "agreed_to_generic_terms": "boolean",
+                "agreed_to_commercial_terms": "boolean",
+                "first_approval_confirmation": "boolean",
+                "second_approval_confirmation": "boolean | null",
+                "cooling_period_start": "string | null",
+                "cooling_period_end": "string | null",
+                "created_at": "string",
+                "updated_at": "string"
+            }
+        ]
+        ```
+
+-   **`GET /corporates/:id`**
+    -   **Description**: Retrieves a single corporate account by its ID, including related contacts, subsidiaries, and investigation logs.
+    -   **Parameters**:
+        -   `id`: `string` (Corporate ID)
+    -   **Response**: `Corporate` object with nested `contacts`, `subsidiaries`, and `investigation_log`.
+        ```json
+        {
+            "id": "string",
+            "company_name": "string",
+            "reg_number": "string",
+            "status": "CorporateStatus",
+            "office_address1": "string",
+            "office_address2": "string | null",
+            "postcode": "string",
+            "city": "string",
+            "state": "string",
+            "country": "string",
+            "website": "string | null",
+            "account_note": "string | null",
+            "billing_same_as_official": "boolean",
+            "billing_address1": "string",
+            "billing_address2": "string",
+            "billing_postcode": "string",
+            "billing_city": "string",
+            "billing_state": "string",
+            "billing_country": "string",
+            "company_tin": "string",
+            "sst_number": "string",
+            "agreement_from": "string | null",
+            "agreement_to": "string | null",
+            "credit_limit": "string",
+            "credit_terms": "string",
+            "transaction_fee": "string",
+            "late_payment_interest": "string",
+            "white_labeling_fee": "string",
+            "custom_feature_fee": "string",
+            "agreed_to_generic_terms": "boolean",
+            "agreed_to_commercial_terms": "boolean",
+            "first_approval_confirmation": "boolean",
+            "second_approval_confirmation": "boolean | null",
+            "cooling_period_start": "string | null",
+            "cooling_period_end": "string | null",
+            "created_at": "string",
+            "updated_at": "string",
+            "contacts": [
+                {
+                    "id": "string",
+                    "corporate_id": "string",
+                    "salutation": "string",
+                    "first_name": "string",
+                    "last_name": "string",
+                    "contact_number": "string",
+                    "email": "string",
+                    "company_role": "string",
+                    "system_role": "string",
+                    "created_at": "string",
+                    "updated_at": "string"
+                }
+            ],
+            "subsidiaries": [
+                {
+                    "id": "string",
+                    "corporate_id": "string",
+                    "company_name": "string",
+                    "reg_number": "string",
+                    "office_address1": "string",
+                    "office_address2": "string | null",
+                    "postcode": "string",
+                    "city": "string",
+                    "state": "string",
+                    "country": "string",
+                    "website": "string | null",
+                    "account_note": "string | null",
+                    "created_at": "string",
+                    "updated_at": "string"
+                }
+            ],
+            "investigation_log": [
+                {
+                    "id": "string",
+                    "corporate_id": "string",
+                    "timestamp": "string",
+                    "note": "string | null",
+                    "from_status": "CorporateStatus | null",
+                    "to_status": "CorporateStatus | null",
+                    "created_at": "string"
+                }
+            ]
+        }
+        ```
+
+-   **`POST /corporates`**
+    -   **Description**: Creates a new corporate account with optional related contacts and subsidiaries.
+    -   **Request Body**: `CreateCorporateWithRelationsDto`
+        ```json
+        {
+            "company_name": "string",
+            "reg_number": "string",
+            "status": "CorporateStatus",
+            "office_address1": "string",
+            "office_address2": "string | null",
+            "postcode": "string",
+            "city": "string",
+            "state": "string",
+            "country": "string",
+            "website": "string | null",
+            "account_note": "string | null",
+            "billing_same_as_official": "boolean",
+            "billing_address1": "string",
+            "billing_address2": "string",
+            "billing_postcode": "string",
+            "billing_city": "string",
+            "billing_state": "string",
+            "billing_country": "string",
+            "company_tin": "string",
+            "sst_number": "string",
+            "agreement_from": "string | null",
+            "agreement_to": "string | null",
+            "credit_limit": "string",
+            "credit_terms": "string",
+            "transaction_fee": "string",
+            "late_payment_interest": "string",
+            "white_labeling_fee": "string",
+            "custom_feature_fee": "string",
+            "agreed_to_generic_terms": "boolean",
+            "agreed_to_commercial_terms": "boolean",
+            "first_approval_confirmation": "boolean",
+            "second_approval_confirmation": "boolean",
+            "contacts": [
+                {
+                    "corporate_id": "string",
+                    "salutation": "string",
+                    "first_name": "string",
+                    "last_name": "string",
+                    "contact_number": "string",
+                    "email": "string",
+                    "company_role": "string",
+                    "system_role": "string"
+                }
+            ],
+            "subsidiaries": [
+                {
+                    "corporate_id": "string",
+                    "company_name": "string",
+                    "reg_number": "string",
+                    "office_address1": "string",
+                    "office_address2": "string | null",
+                    "postcode": "string",
+                    "city": "string",
+                    "state": "string",
+                    "country": "string",
+                    "website": "string | null",
+                    "account_note": "string | null"
+                }
+            ],
+            "secondary_approver": {
+                "use_existing_contact": "boolean",
+                "selected_contact_id": "string",
+                "salutation": "string",
+                "first_name": "string",
+                "last_name": "string",
+                "company_role": "string",
+                "system_role": "string",
+                "email": "string",
+                "contact_number": "string"
+            }
+        }
+        ```
+    -   **Response**: The newly created `Corporate` object.
+
+-   **`PUT /corporates/:id`**
+    -   **Description**: Updates an existing corporate account.
+    -   **Parameters**:
+        -   `id`: `string` (Corporate ID)
+    -   **Request Body**: `UpdateCorporateDto` (Partial `Corporate` object with optional nested updates for contacts and subsidiaries)
+        ```json
+        {
+            "company_name": "string" (optional),
+            "reg_number": "string" (optional),
+            "status": "CorporateStatus" (optional),
+            // ... other corporate fields (optional)
+            "contacts": [
+                {
+                    "id": "string" (optional, for existing contact),
+                    "corporate_id": "string",
+                    "salutation": "string",
+                    "first_name": "string",
+                    "last_name": "string",
+                    "contact_number": "string",
+                    "email": "string",
+                    "company_role": "string",
+                    "system_role": "string"
+                }
+            ],
+            "subsidiaries": [
+                {
+                    "id": "string" (optional, for existing subsidiary),
+                    "corporate_id": "string",
+                    "company_name": "string",
+                    "reg_number": "string",
+                    "office_address1": "string",
+                    "office_address2": "string | null",
+                    "postcode": "string",
+                    "city": "string",
+                    "state": "string",
+                    "country": "string",
+                    "website": "string | null",
+                    "account_note": "string | null"
+                }
+            ],
+            "contactIdsToDelete": ["string"],
+            "subsidiaryIdsToDelete": ["string"],
+            "secondary_approver": {
+                "use_existing_contact": "boolean",
+                "selected_contact_id": "string",
+                "salutation": "string",
+                "first_name": "string",
+                "last_name": "string",
+                "company_role": "string",
+                "system_role": "string",
+                "email": "string",
+                "contact_number": "string"
+            }
+        }
+        ```
+    -   **Response**: The updated `Corporate` object.
+
+-   **`DELETE /corporates/:id`**
+    -   **Description**: Deletes a corporate account by ID, including all related contacts, subsidiaries, and investigation logs.
+    -   **Parameters**:
+        -   `id`: `string` (Corporate ID)
+    -   **Response**:
+        ```json
+        {
+            "success": "boolean"
+        }
+        ```
+
+-   **`POST /corporates/:id/investigation-logs`**
+    -   **Description**: Adds an investigation log entry to a corporate account.
+    -   **Parameters**:
+        -   `id`: `string` (Corporate ID)
+    -   **Request Body**: `Omit<InvestigationLogTable, 'id' | 'corporate_id' | 'created_at'>`
+        ```json
+        {
+            "timestamp": "string" (ISO 8601 format),
+            "note": "string | null",
+            "from_status": "CorporateStatus | null",
+            "to_status": "CorporateStatus | null"
+        }
+        ```
+    -   **Response**: The newly created `InvestigationLogTable` object.
+
+-   **`PUT /corporates/:id/status`**
+    -   **Description**: Updates the status of a corporate account and optionally adds an investigation log entry.
+    -   **Parameters**:
+        -   `id`: `string` (Corporate ID)
+    -   **Request Body**:
+        ```json
+        {
+            "status": "CorporateStatus",
+            "note": "string" (optional)
+        }
+        ```
+    -   **Response**: The updated `Corporate` object.
+
+-   **`POST /corporates/:id/resend-link`**
+    -   **Description**: Resends the registration link for a corporate account and updates its status to 'Pending 1st Approval'.
+    -   **Parameters**:
+        -   `id`: `string` (Corporate ID)
+    -   **Response**:
+        ```json
+        {
+            "success": "boolean",
+            "message": "string"
+        }
+        ```
+
+-   **`POST /corporates/:id/complete-cooling-period`**
+    -   **Description**: Manually completes the cooling period for a corporate account, potentially updating its status based on internal logic (e.g., fraud check).
+    -   **Parameters**:
+        -   `id`: `string` (Corporate ID)
+    -   **Response**: The updated `Corporate` object.
 
 ### Corporate Contacts
-- `POST /corporates/:id/contacts` - Add contact to corporate account
+
+-   **`POST /contacts/:corporateId`**
+    -   **Description**: Adds a new contact to a specific corporate account.
+    -   **Parameters**:
+        -   `corporateId`: `string` (Corporate ID)
+    -   **Request Body**: `Omit<CreateContactDto, 'corporate_id'>`
+        ```json
+        {
+            "salutation": "string",
+            "first_name": "string",
+            "last_name": "string",
+            "contact_number": "string",
+            "email": "string",
+            "company_role": "string",
+            "system_role": "string"
+        }
+        ```
+    -   **Response**: The newly created `Contact` object.
+
+-   **`PUT /contacts/:id`**
+    -   **Description**: Updates an existing contact by ID.
+    -   **Parameters**:
+        -   `id`: `string` (Contact ID)
+    -   **Request Body**: `UpdateContactDto` (Partial `Contact` object)
+        ```json
+        {
+            "id": "string" (optional),
+            "salutation": "string" (optional),
+            "first_name": "string" (optional),
+            "last_name": "string" (optional),
+            "contact_number": "string" (optional),
+            "email": "string" (optional),
+            "company_role": "string" (optional),
+            "system_role": "string" (optional)
+        }
+        ```
+    -   **Response**: The updated `Contact` object.
+
+-   **`DELETE /contacts/:id`**
+    -   **Description**: Deletes a contact by ID.
+    -   **Parameters**:
+        -   `id`: `string` (Contact ID)
+    -   **Response**:
+        ```json
+        {
+            "success": "boolean"
+        }
+        ```
 
 ### Corporate Subsidiaries
-- `POST /corporates/:id/subsidiaries` - Add subsidiary to corporate account
 
-### Investigation Logs
-- `POST /corporates/:id/investigation-logs` - Add investigation log entry
+-   **`POST /subsidiaries/:corporateId`**
+    -   **Description**: Adds a new subsidiary to a specific corporate account.
+    -   **Parameters**:
+        -   `corporateId`: `string` (Corporate ID)
+    -   **Request Body**: `Omit<CreateSubsidiaryDto, 'corporate_id'>`
+        ```json
+        {
+            "company_name": "string",
+            "reg_number": "string",
+            "office_address1": "string",
+            "office_address2": "string | null",
+            "postcode": "string",
+            "city": "string",
+            "state": "string",
+            "country": "string",
+            "website": "string | null",
+            "account_note": "string | null"
+        }
+        ```
+    -   **Response**: The newly created `Subsidiary` object.
 
-### Status Management
-- `PUT /corporates/:id/status` - Update corporate account status
+-   **`PUT /subsidiaries/:id`**
+    -   **Description**: Updates an existing subsidiary by ID.
+    -   **Parameters**:
+        -   `id`: `string` (Subsidiary ID)
+    -   **Request Body**: `UpdateSubsidiaryDto` (Partial `Subsidiary` object)
+        ```json
+        {
+            "id": "string" (optional),
+            "company_name": "string" (optional),
+            "reg_number": "string" (optional),
+            "office_address1": "string" (optional),
+            "office_address2": "string | null" (optional),
+            "postcode": "string" (optional),
+            "city": "string" (optional),
+            "state": "string" (optional),
+            "country": "string" (optional),
+            "website": "string | null" (optional),
+            "account_note": "string | null" (optional)
+        }
+        ```
+    -   **Response**: The updated `Subsidiary` object.
+
+-   **`DELETE /subsidiaries/:id`**
+    -   **Description**: Deletes a subsidiary by ID.
+    -   **Parameters**:
+        -   `id`: `string` (Subsidiary ID)
+    -   **Response**:
+        ```json
+        {
+            "success": "boolean"
+        }
+        ```
 
 ### Database Seeding
-- `POST /seed` - Seed database with mock data
 
+-   **`POST /seed`**
+    -   **Description**: Seeds the database with mock data.
+    -   **Response**:
+        ```json
+        {
+            "message": "Database seeded successfully"
+        }
+        ```
 ## Database Schema
 
 The application uses the following main tables:

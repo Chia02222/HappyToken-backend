@@ -1,12 +1,9 @@
 import { Kysely, sql } from 'kysely';
 
 export async function up(db: Kysely<unknown>): Promise<void> {
-  // Ensure pgcrypto for gen_random_uuid()
-  await sql`create extension if not exists "pgcrypto"`.execute(db);
-
   await db.schema
     .createTable('corporates')
-    .addColumn('id', 'uuid', (col) => col.primaryKey().defaultTo(sql`gen_random_uuid()`))
+    .addColumn('id', 'serial', (col) => col.primaryKey())
     .addColumn('company_name', 'varchar(255)', (col) => col.notNull())
     .addColumn('reg_number', 'varchar(50)', (col) => col.notNull().unique())
     .addColumn('status', 'varchar(50)', (col) => col.notNull())

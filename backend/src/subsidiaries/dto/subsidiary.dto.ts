@@ -2,7 +2,7 @@ import { PartialType } from '@nestjs/mapped-types';
 
 // Base DTO that explicitly defines properties from the `subsidiaries` table
 export class BaseSubsidiaryDto {
-    corporate_id: string;
+    corporate_id: number;
     company_name: string;
     reg_number: string;
     office_address1: string;
@@ -20,5 +20,5 @@ export class CreateSubsidiaryDto extends BaseSubsidiaryDto {}
 
 // DTO for updating a subsidiary, including an optional ID
 export class UpdateSubsidiaryDto extends PartialType(BaseSubsidiaryDto) {
-    id?: string;
+    id?: number;
 }

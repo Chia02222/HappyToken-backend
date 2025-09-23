@@ -57,6 +57,7 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
         
         setFormData(prev => ({
             ...prev,
+            secondary_approver_id: contactId || null,
             secondary_approver: {
                 ...prev.secondary_approver,
                 selected_contact_id: contactId,
@@ -72,7 +73,24 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
     };
     
     const { secondary_approver: secondaryApproverFromData } = formData;
-    const secondary_approver = secondaryApproverFromData || {
+    const derivedFromId = React.useMemo(() => {
+        if (!formData.secondary_approver_id) return undefined;
+        const c = formData.contacts?.find(c => c.id === formData.secondary_approver_id);
+        if (!c) return undefined;
+        return {
+            use_existing_contact: true,
+            selected_contact_id: c.id!,
+            salutation: c.salutation,
+            first_name: c.first_name,
+            last_name: c.last_name,
+            company_role: c.company_role,
+            system_role: c.system_role || 'secondary_approver',
+            email: c.email,
+            contact_number: c.contact_number,
+        };
+    }, [formData.secondary_approver_id, formData.contacts]);
+
+    const secondary_approver = secondaryApproverFromData || derivedFromId || {
         use_existing_contact: false,
         selected_contact_id: '',
         salutation: 'Mr',

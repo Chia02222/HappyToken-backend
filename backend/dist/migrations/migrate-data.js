@@ -428,9 +428,10 @@ async function migrateData() {
             `;
             const corporateId = insertedCorporate[0].id;
             console.log(`✅ Migrated corporate: ${corporate.companyName} (ID: ${corporateId})`);
+            let insertedContactIds = [];
             if (details.contacts && Array.isArray(details.contacts)) {
                 for (const contact of details.contacts) {
-                    await sql `
+                    const insertedContact = await sql `
                         INSERT INTO contacts (
                             corporate_id, salutation, first_name, last_name,
                             contact_number, email, company_role, system_role,
@@ -440,10 +441,25 @@ async function migrateData() {
                             ${contact.lastName}, ${contact.contactNumber}, ${contact.email},
                             ${contact.companyRole}, ${contact.systemRole},
                             ${new Date().toISOString()}, ${new Date().toISOString()}
-                        )
+                        ) RETURNING id
                     `;
+                    insertedContactIds.push(insertedContact[0].id);
                 }
                 console.log(`  📞 Migrated ${details.contacts.length} contacts`);
+            }
+            const chosenSecondaryApproverId = insertedContactIds[1] ?? insertedContactIds[0] ?? null;
+            if (chosenSecondaryApproverId) {
+                await sql `
+                    UPDATE contacts
+                    SET system_role = 'secondary_approver', updated_at = ${new Date().toISOString()}
+                    WHERE id = ${chosenSecondaryApproverId}
+                `;
+                await sql `
+                    UPDATE corporates
+                    SET secondary_approver_id = ${chosenSecondaryApproverId}, updated_at = ${new Date().toISOString()}
+                    WHERE id = ${corporateId}
+                `;
+                console.log(`  ✅ Set secondary_approver_id=${chosenSecondaryApproverId} for corporate ${corporateId}`);
             }
             if (details.subsidiaries && Array.isArray(details.subsidiaries)) {
                 for (const subsidiary of details.subsidiaries) {

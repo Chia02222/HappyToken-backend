@@ -2,12 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.up = up;
 exports.down = down;
-const kysely_1 = require("kysely");
 async function up(db) {
     await db.schema
         .createTable('investigation_logs')
-        .addColumn('id', 'uuid', (col) => col.primaryKey().defaultTo((0, kysely_1.sql) `gen_random_uuid()`))
-        .addColumn('corporate_id', 'uuid', (col) => col.notNull().references('corporates.id').onDelete('cascade'))
+        .addColumn('id', 'serial', (col) => col.primaryKey())
+        .addColumn('corporate_id', 'integer', (col) => col.notNull().references('corporates.id').onDelete('cascade'))
         .addColumn('timestamp', 'timestamp', (col) => col.notNull())
         .addColumn('note', 'text')
         .addColumn('from_status', 'varchar(50)')

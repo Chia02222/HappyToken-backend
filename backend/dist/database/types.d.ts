@@ -8,7 +8,7 @@ export interface Database {
 export type CorporateStatus = 'New' | 'Sent' | 'Pending 1st Approval' | 'Pending 2nd Approval' | 'Approved' | 'Rejected' | 'Cooling Period' | 'Resolved' | 'Closed' | 'Reopened' | 'Under Fraud Investigation';
 export type CorporateSystemRole = 'admin' | 'user';
 export interface CorporateTable {
-    id: GeneratedAlways<string>;
+    id: GeneratedAlways<number>;
     company_name: string;
     reg_number: string;
     status: CorporateStatus;
@@ -43,12 +43,13 @@ export interface CorporateTable {
     second_approval_confirmation: boolean | null;
     cooling_period_start: string | null;
     cooling_period_end: string | null;
+    secondary_approver_id?: number | null;
     created_at: string;
     updated_at: string;
 }
 export interface ContactTable {
-    id: GeneratedAlways<string>;
-    corporate_id: string;
+    id: GeneratedAlways<number>;
+    corporate_id: number;
     salutation: string;
     first_name: string;
     last_name: string;
@@ -60,8 +61,8 @@ export interface ContactTable {
     updated_at: string;
 }
 export interface SubsidiaryTable {
-    id: GeneratedAlways<string>;
-    corporate_id: string;
+    id: GeneratedAlways<number>;
+    corporate_id: number;
     company_name: string;
     reg_number: string;
     office_address1: string;
@@ -76,8 +77,8 @@ export interface SubsidiaryTable {
     updated_at: string;
 }
 export interface InvestigationLogTable {
-    id: GeneratedAlways<string>;
-    corporate_id: string;
+    id: GeneratedAlways<number>;
+    corporate_id: number;
     timestamp: string;
     note: string | null;
     from_status: CorporateStatus | null;

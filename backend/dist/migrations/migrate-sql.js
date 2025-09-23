@@ -105,6 +105,26 @@ async function migrateToLatest() {
       )
     `;
         console.log('✅ Contacts table created successfully');
+        console.log('🔄 Adding secondary_approver_id to corporates...');
+        await sql `
+      ALTER TABLE corporates
+      ADD COLUMN IF NOT EXISTS secondary_approver_id INTEGER REFERENCES contacts(id) ON DELETE SET NULL
+    `;
+        console.log('✅ Column secondary_approver_id added to corporates');
+        console.log('🔄 Backfilling secondary_approver_id from contacts...');
+        await sql `
+      UPDATE corporates c
+      SET secondary_approver_id = sub.id
+      FROM (
+        SELECT DISTINCT ON (corporate_id) id, corporate_id
+        FROM contacts
+        WHERE system_role = 'secondary_approver'
+        ORDER BY corporate_id, created_at DESC
+      ) sub
+      WHERE c.secondary_approver_id IS NULL
+        AND c.id = sub.corporate_id
+    `;
+        console.log('✅ Backfill completed');
         console.log('🔄 Creating subsidiaries table...');
         await sql `
       CREATE TABLE IF NOT EXISTS subsidiaries (

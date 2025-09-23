@@ -435,10 +435,11 @@ export async function migrateData() {
             const corporateId = insertedCorporate[0].id;
             console.log(`✅ Migrated corporate: ${corporate.companyName} (ID: ${corporateId})`);
 
-            // Migrate contacts
+            // Migrate contacts and capture IDs
+            let insertedContactIds: number[] = [];
             if (details.contacts && Array.isArray(details.contacts)) {
                 for (const contact of details.contacts as ContactData[]) {
-                    await sql`
+                    const insertedContact = await sql`
                         INSERT INTO contacts (
                             corporate_id, salutation, first_name, last_name,
                             contact_number, email, company_role, system_role,
@@ -448,10 +449,30 @@ export async function migrateData() {
                             ${contact.lastName}, ${contact.contactNumber}, ${contact.email},
                             ${contact.companyRole}, ${contact.systemRole},
                             ${new Date().toISOString()}, ${new Date().toISOString()}
-                        )
+                        ) RETURNING id
                     `;
+                    insertedContactIds.push((insertedContact as any)[0].id as number);
                 }
                 console.log(`  📞 Migrated ${details.contacts.length} contacts`);
+            }
+
+            // Example: set a secondary approver for demo data
+            // Prefer the second contact if available; otherwise use the first
+            const chosenSecondaryApproverId = insertedContactIds[1] ?? insertedContactIds[0] ?? null;
+            if (chosenSecondaryApproverId) {
+                // Mark the chosen contact as secondary approver
+                await sql`
+                    UPDATE contacts
+                    SET system_role = 'secondary_approver', updated_at = ${new Date().toISOString()}
+                    WHERE id = ${chosenSecondaryApproverId}
+                `;
+                // Link it on the corporate
+                await sql`
+                    UPDATE corporates
+                    SET secondary_approver_id = ${chosenSecondaryApproverId}, updated_at = ${new Date().toISOString()}
+                    WHERE id = ${corporateId}
+                `;
+                console.log(`  ✅ Set secondary_approver_id=${chosenSecondaryApproverId} for corporate ${corporateId}`);
             }
 
             // Migrate subsidiaries

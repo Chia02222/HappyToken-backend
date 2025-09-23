@@ -32,9 +32,9 @@ const CommercialTermsForm: React.FC<CommercialTermsFormProps> = ({ onCloseForm, 
                     <div className="md:col-span-2">
                         <label className="block text-xs font-medium text-gray-700 mb-1">Agreement Duration</label>
                         <div className="flex items-center space-x-2">
-                           <InputField id="agreementFrom" label="" name="agreementFrom" value={formData.agreement_from ?? null} onChange={handleChange} type="date" required />
+                           <InputField id="agreementFrom" label="" name="agreement_from" value={formData.agreement_from ?? null} onChange={handleChange} type="date" required />
                            <span className="text-gray-500">to</span>
-                           <InputField id="agreementTo" label="" name="agreementTo" value={formData.agreement_to ?? null} onChange={handleChange} type="date" required />
+                           <InputField id="agreementTo" label="" name="agreement_to" value={formData.agreement_to ?? null} onChange={handleChange} type="date" required />
                         </div>
                     </div>
                     
@@ -42,22 +42,22 @@ const CommercialTermsForm: React.FC<CommercialTermsFormProps> = ({ onCloseForm, 
                         <label className="block text-xs font-medium text-gray-700 mb-1">Credit Limit</label>
                         <div className="flex items-center">
                              <span className="inline-flex items-center px-3 h-[38px] rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">MYR</span>
-                            <InputField id="creditLimit" label="" name="creditLimit" value={formData.credit_limit ?? null} onChange={handleChange} />
+                            <InputField id="creditLimit" label="" name="credit_limit" value={formData.credit_limit ?? null} onChange={handleChange} />
                         </div>
                     </div>
 
                     <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">Credit Terms</label>
                         <div className="flex items-center">
-                           <InputField id="creditTerms" label="" name="creditTerms" value={formData.credit_terms ?? null} onChange={handleChange} />
+                           <InputField id="creditTerms" label="" name="credit_terms" value={formData.credit_terms ?? null} onChange={handleChange} />
                            <span className="ml-2 text-gray-500">days from invoice date</span>
                         </div>
                     </div>
                     
-                    <InputField id="transactionFee" label="Transaction Fees Rate (% based on total purchased amount)" name="transactionFee" value={formData.transaction_fee ?? null} onChange={handleChange} />
-                    <InputField id="latePaymentInterest" label="Late Payment Interest (% per 14 days)" name="latePaymentInterest" value={formData.late_payment_interest ?? null} onChange={handleChange} />
+                    <InputField id="transactionFee" label="Transaction Fees Rate (% based on total purchased amount)" name="transaction_fee" value={formData.transaction_fee ?? null} onChange={handleChange} />
+                    <InputField id="latePaymentInterest" label="Late Payment Interest (% per 14 days)" name="late_payment_interest" value={formData.late_payment_interest ?? null} onChange={handleChange} />
                     
-                    <InputField id="whiteLabelingFee" label="White Labeling Fee (*only when request) (% based on total purchased amount)" name="whiteLabelingFee" value={formData.white_labeling_fee ?? null} onChange={handleChange} />
+                    <InputField id="whiteLabelingFee" label="White Labeling Fee (*only when request) (% based on total purchased amount)" name="white_labeling_fee" value={formData.white_labeling_fee ?? null} onChange={handleChange} />
                      <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">Custom Feature Request Fee (*only when request)</label>
                         <div className="flex items-center">

@@ -41,21 +41,22 @@ let CorporateService = class CorporateService {
             .execute();
     }
     async findById(id) {
+        const idNum = Number(id);
         const corporate = await this.db
             .selectFrom('corporates')
             .selectAll()
-            .where('id', '=', id)
+            .where('id', '=', idNum)
             .executeTakeFirst();
         if (!corporate) {
             return null;
         }
         const [contacts, subsidiaries, investigationLogs] = await Promise.all([
-            this.db.selectFrom('contacts').selectAll().where('corporate_id', '=', id).orderBy('created_at', 'asc').execute(),
-            this.db.selectFrom('subsidiaries').selectAll().where('corporate_id', '=', id).execute(),
+            this.db.selectFrom('contacts').selectAll().where('corporate_id', '=', idNum).orderBy('created_at', 'asc').execute(),
+            this.db.selectFrom('subsidiaries').selectAll().where('corporate_id', '=', idNum).execute(),
             this.db
                 .selectFrom('investigation_logs')
                 .selectAll()
-                .where('corporate_id', '=', id)
+                .where('corporate_id', '=', idNum)
                 .orderBy('timestamp', 'desc')
                 .execute(),
         ]);
@@ -94,8 +95,9 @@ let CorporateService = class CorporateService {
             }
         }
         if (secondary_approver) {
+            let secondaryApproverId;
             if (secondary_approver.use_existing_contact && secondary_approver.selected_contact_id) {
-                await this.contactsService.updateContact(secondary_approver.selected_contact_id, {
+                await this.contactsService.updateContact(Number(secondary_approver.selected_contact_id), {
                     salutation: secondary_approver.salutation ?? '',
                     first_name: secondary_approver.first_name ?? '',
                     last_name: secondary_approver.last_name ?? '',
@@ -104,9 +106,10 @@ let CorporateService = class CorporateService {
                     email: secondary_approver.email ?? '',
                     contact_number: secondary_approver.contact_number ?? '',
                 });
+                secondaryApproverId = Number(secondary_approver.selected_contact_id);
             }
             else if (!secondary_approver.use_existing_contact) {
-                await this.contactsService.addContact({
+                const insertedContact = await this.contactsService.addContact({
                     corporate_id: inserted.id,
                     salutation: secondary_approver.salutation ?? '',
                     first_name: secondary_approver.first_name ?? '',
@@ -116,6 +119,17 @@ let CorporateService = class CorporateService {
                     email: secondary_approver.email ?? '',
                     contact_number: secondary_approver.contact_number ?? '',
                 });
+                secondaryApproverId = insertedContact.id;
+            }
+            if (secondaryApproverId !== undefined) {
+                await this.db
+                    .updateTable('corporates')
+                    .set({
+                    secondary_approver_id: secondaryApproverId,
+                    updated_at: (0, kysely_1.sql) `date_trunc('second', now())::timestamp(0)`,
+                })
+                    .where('id', '=', inserted.id)
+                    .execute();
             }
         }
         return inserted;
@@ -128,13 +142,15 @@ let CorporateService = class CorporateService {
         catch { }
         const { investigation_log: _investigation_log, ...restOfUpdateData } = updateData;
         const { id: _updateDtoId, contacts, subsidiaries, contactIdsToDelete, subsidiaryIdsToDelete, secondary_approver: _secondary_approver, ...corporateUpdateData } = restOfUpdateData;
+        const idNum = Number(id);
         const secondaryApproverData = updateData.secondary_approver;
         console.log('Derived corporateUpdateData keys:', Object.keys(corporateUpdateData));
         console.log('contactIdsToDelete:', contactIdsToDelete);
         console.log('subsidiaryIdsToDelete:', subsidiaryIdsToDelete);
         if (secondaryApproverData) {
+            let secondaryApproverId;
             if (secondaryApproverData.use_existing_contact && secondaryApproverData.selected_contact_id) {
-                await this.contactsService.updateContact(secondaryApproverData.selected_contact_id, {
+                await this.contactsService.updateContact(Number(secondaryApproverData.selected_contact_id), {
                     salutation: secondaryApproverData.salutation ?? '',
                     first_name: secondaryApproverData.first_name ?? '',
                     last_name: secondaryApproverData.last_name ?? '',
@@ -143,10 +159,11 @@ let CorporateService = class CorporateService {
                     email: secondaryApproverData.email ?? '',
                     contact_number: secondaryApproverData.contact_number ?? '',
                 });
+                secondaryApproverId = Number(secondaryApproverData.selected_contact_id);
             }
             else if (!secondaryApproverData.use_existing_contact) {
-                await this.contactsService.addContact({
-                    corporate_id: id,
+                const insertedContact = await this.contactsService.addContact({
+                    corporate_id: idNum,
                     salutation: secondaryApproverData.salutation ?? '',
                     first_name: secondaryApproverData.first_name ?? '',
                     last_name: secondaryApproverData.last_name ?? '',
@@ -155,6 +172,17 @@ let CorporateService = class CorporateService {
                     email: secondaryApproverData.email ?? '',
                     contact_number: secondaryApproverData.contact_number ?? '',
                 });
+                secondaryApproverId = insertedContact.id;
+            }
+            if (secondaryApproverId !== undefined) {
+                await this.db
+                    .updateTable('corporates')
+                    .set({
+                    secondary_approver_id: secondaryApproverId,
+                    updated_at: (0, kysely_1.sql) `date_trunc('second', now())::timestamp(0)`,
+                })
+                    .where('id', '=', idNum)
+                    .execute();
             }
         }
         const corporateFieldsToUpdate = {
@@ -166,21 +194,28 @@ let CorporateService = class CorporateService {
         const updatedCorporate = await this.db
             .updateTable('corporates')
             .set(corporateFieldsToUpdate)
-            .where('id', '=', id)
+            .where('id', '=', idNum)
             .returningAll()
             .executeTakeFirst();
         if (!updatedCorporate) {
             return null;
         }
         const isUuid = (value) => typeof value === 'string' && /^[0-9a-fA-F-]{36}$/.test(value);
+        const isNumericString = (value) => typeof value === 'string' && /^\d+$/.test(value);
+        const isClientTempId = (value) => typeof value === 'string' && value.startsWith('client-');
+        const isPersistedId = (value) => isUuid(value) || isNumericString(value) || typeof value === 'number';
         if (contacts) {
             for (const contact of contacts) {
                 console.log('Processing contact:', contact);
-                if (isUuid(contact.id)) {
-                    await this.contactsService.updateContact(contact.id, contact);
+                const cid = contact.id;
+                if (isPersistedId(cid)) {
+                    await this.contactsService.updateContact(Number(cid), contact);
+                }
+                else if (!cid || isClientTempId(cid)) {
+                    await this.contactsService.addContact({ ...contact, corporate_id: idNum });
                 }
                 else {
-                    await this.contactsService.addContact({ ...contact, corporate_id: id });
+                    await this.contactsService.updateContact(Number(cid), contact);
                 }
             }
         }
@@ -191,16 +226,20 @@ let CorporateService = class CorporateService {
                     console.warn('Skipping empty contactId');
                     continue;
                 }
-                await this.contactsService.deleteContact(contactId);
+                await this.contactsService.deleteContact(Number(contactId));
             }
         }
         if (subsidiaries) {
             for (const subsidiary of subsidiaries) {
-                if (isUuid(subsidiary.id)) {
-                    await this.subsidiariesService.updateSubsidiary(subsidiary.id, subsidiary);
+                const sid = subsidiary.id;
+                if (isPersistedId(sid)) {
+                    await this.subsidiariesService.updateSubsidiary(Number(sid), subsidiary);
+                }
+                else if (!sid || isClientTempId(sid)) {
+                    await this.subsidiariesService.addSubsidiary({ ...subsidiary, corporate_id: idNum });
                 }
                 else {
-                    await this.subsidiariesService.addSubsidiary({ ...subsidiary, corporate_id: id });
+                    await this.subsidiariesService.updateSubsidiary(Number(sid), subsidiary);
                 }
             }
         }
@@ -211,19 +250,20 @@ let CorporateService = class CorporateService {
                     console.warn('Skipping empty subsidiaryId');
                     continue;
                 }
-                await this.subsidiariesService.deleteSubsidiary(subsidiaryId);
+                await this.subsidiariesService.deleteSubsidiary(Number(subsidiaryId));
             }
         }
-        const result = await this.findById(id);
+        const result = await this.findById(String(id));
         console.log('CorporateService.update returning:', JSON.stringify(result));
         return result;
     }
     async delete(id) {
+        const idNum = Number(id);
         await this.db.transaction().execute(async (trx) => {
-            await trx.deleteFrom('investigation_logs').where('corporate_id', '=', id).execute();
-            await trx.deleteFrom('contacts').where('corporate_id', '=', id).execute();
-            await trx.deleteFrom('subsidiaries').where('corporate_id', '=', id).execute();
-            await trx.deleteFrom('corporates').where('id', '=', id).execute();
+            await trx.deleteFrom('investigation_logs').where('corporate_id', '=', idNum).execute();
+            await trx.deleteFrom('contacts').where('corporate_id', '=', idNum).execute();
+            await trx.deleteFrom('subsidiaries').where('corporate_id', '=', idNum).execute();
+            await trx.deleteFrom('corporates').where('id', '=', idNum).execute();
         });
         return { success: true };
     }
@@ -233,7 +273,7 @@ let CorporateService = class CorporateService {
             const inserted = await this.db
                 .insertInto('investigation_logs')
                 .values({
-                corporate_id: corporateId,
+                corporate_id: Number(corporateId),
                 timestamp: logData.timestamp,
                 note: logData.note ?? null,
                 from_status: logData.from_status ?? null,
@@ -251,7 +291,8 @@ let CorporateService = class CorporateService {
         }
     }
     async updateStatus(id, status, note) {
-        const corporate = await this.findById(id);
+        const idNum = Number(id);
+        const corporate = await this.findById(String(id));
         if (!corporate) {
             throw new Error('Corporate not found');
         }
@@ -286,7 +327,7 @@ let CorporateService = class CorporateService {
                     cooling_period_start: coolingPeriodStart.toISOString(),
                     cooling_period_end: coolingPeriodEnd.toISOString(),
                 })
-                    .where('id', '=', id)
+                    .where('id', '=', Number(id))
                     .execute();
                 console.log(`[updateStatus] Corporate ${id} entered Cooling Period. Scheduling completion in 30 seconds.`);
                 setTimeout(async () => {
@@ -301,7 +342,7 @@ let CorporateService = class CorporateService {
                 }, 30000);
             }
         }
-        return await this.update(id, { status: status });
+        return await this.update(String(id), { status: status });
     }
     async handleCoolingPeriodCompletion(corporateId) {
         console.log(`[handleCoolingPeriodCompletion] called for corporateId: ${corporateId}`);

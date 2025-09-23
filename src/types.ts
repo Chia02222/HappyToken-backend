@@ -51,6 +51,7 @@ export interface Corporate {
   updated_at: string;
   cooling_period_start?: string | null;
   cooling_period_end?: string | null;
+  secondary_approver_id?: string | null;
   
 }
 

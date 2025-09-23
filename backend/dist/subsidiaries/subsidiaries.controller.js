@@ -25,10 +25,10 @@ let SubsidiariesController = class SubsidiariesController {
         return await this.subsidiariesService.addSubsidiary({ ...subsidiaryData, corporate_id: corporateId });
     }
     async updateSubsidiary(id, subsidiaryData) {
-        return await this.subsidiariesService.updateSubsidiary(id, subsidiaryData);
+        return await this.subsidiariesService.updateSubsidiary(Number(id), subsidiaryData);
     }
     async deleteSubsidiary(id) {
-        return await this.subsidiariesService.deleteSubsidiary(id);
+        return await this.subsidiariesService.deleteSubsidiary(Number(id));
     }
 };
 exports.SubsidiariesController = SubsidiariesController;
@@ -37,7 +37,7 @@ __decorate([
     __param(0, (0, common_1.Param)('corporateId')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], SubsidiariesController.prototype, "addSubsidiary", null);
 __decorate([
