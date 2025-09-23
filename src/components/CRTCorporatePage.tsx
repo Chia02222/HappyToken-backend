@@ -42,6 +42,7 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
     const [isCopyLinkModalVisible, setIsCopyLinkModalVisible] = useState(false);
     const [isResendModalVisible, setIsResendModalVisible] = useState(false);
     const [remainingTimes, setRemainingTimes] = useState<{ [corporateId: string]: number }>({});
+    const [featuredCorporateIds, setFeaturedCorporateIds] = useState<Set<string>>(new Set());
     const [isRejectingStatus, setIsRejectingStatus] = useState(false); // New state variable
 
     const handleOpenChangeStatusModal = (corporate: Corporate, status: CorporateStatus) => {
@@ -190,6 +191,17 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
         return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
     };
 
+    // Compute ordered list with featured corporate (if any) at top
+    const orderedCorporates = React.useMemo(() => {
+        if (!featuredCorporateIds.size) return corporates;
+        const featured: typeof corporates = [];
+        const rest: typeof corporates = [];
+        for (const c of corporates) {
+            if (featuredCorporateIds.has(c.id)) featured.push(c); else rest.push(c);
+        }
+        return [...featured, ...rest];
+    }, [corporates, featuredCorporateIds]);
+
     return (
         <>
             <div className="bg-white p-6 rounded-lg shadow-sm h-full flex flex-col">
@@ -222,7 +234,7 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
                                     Actions
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Remark
+                                    Log
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     
@@ -230,10 +242,10 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {corporates.map((corporate) => (
+                            {orderedCorporates.map((corporate) => (
                                 <tr
                                     key={corporate.id}
-                                    className="hover:bg-gray-50 cursor-pointer"
+                                    className={`${featuredCorporateIds.has(corporate.id) ? 'bg-ht-blue-light hover:bg-ht-blue-light' : 'hover:bg-gray-50'} cursor-pointer`}
                                     onClick={() => onView(corporate)}
                                 >
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
@@ -276,6 +288,14 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
                                                     label: 'Send to Approval',
                                                     onClick: () => onSendRegistrationLink(corporate.id),
                                                 }] : []),
+                                                {
+                                                    label: featuredCorporateIds.has(corporate.id) ? 'Unfeature' : 'Feature',
+                                                    onClick: () => setFeaturedCorporateIds(prev => {
+                                                        const next = new Set(prev);
+                                                        if (next.has(corporate.id)) next.delete(corporate.id); else next.add(corporate.id);
+                                                        return next;
+                                                    }),
+                                                },
                                                 {
                                                     label: 'Delete',
                                                     onClick: () => onDeleteCorporate(corporate.id),
