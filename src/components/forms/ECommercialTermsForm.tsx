@@ -1,14 +1,14 @@
 "use client";
 
 import React from 'react';
-import DisplayField from './common/DisplayField';
-import InputField from './common/InputField';
-import SelectField from './common/SelectField';
-import ContentSection from './common/ContentSection';
-import ErrorMessageModal from './modals/ErrorMessageModal';
-import ChangeStatusModal from './modals/ChangeStatusModal';
+import DisplayField from '../common/DisplayField';
+import InputField from '../common/InputField';
+import SelectField from '../common/SelectField';
+import ContentSection from '../common/ContentSection';
+import ErrorMessageModal from '../modals/ErrorMessageModal';
+import ChangeStatusModal from '../modals/ChangeStatusModal';
 
-import { CorporateDetails, Contact, CorporateStatus } from '../types';
+import { CorporateDetails, Contact, CorporateStatus } from '../../types';
 
 interface ECommercialTermsFormProps {
     onCloseForm: () => void;

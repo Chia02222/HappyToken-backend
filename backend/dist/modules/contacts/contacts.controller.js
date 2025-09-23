@@ -36,18 +36,16 @@ let ContactsController = class ContactsController {
 exports.ContactsController = ContactsController;
 __decorate([
     (0, common_1.Post)(':corporateId'),
-    (0, common_1.UsePipes)(new zod_validation_pipe_1.ZodValidationPipe(contact_dto_1.createContactSchema.omit({ corporate_id: true }))),
     __param(0, (0, common_1.Param)('corporateId')),
-    __param(1, (0, common_1.Body)()),
+    __param(1, (0, common_1.Body)(new zod_validation_pipe_1.ZodValidationPipe(contact_dto_1.createContactSchema.omit({ corporate_id: true })))),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], ContactsController.prototype, "addContact", null);
 __decorate([
     (0, common_1.Put)(':id'),
-    (0, common_1.UsePipes)(new zod_validation_pipe_1.ZodValidationPipe(contact_dto_1.updateContactSchema)),
     __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)()),
+    __param(1, (0, common_1.Body)(new zod_validation_pipe_1.ZodValidationPipe(contact_dto_1.updateContactSchema))),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, contact_dto_1.UpdateContactDto]),
     __metadata("design:returntype", Promise)

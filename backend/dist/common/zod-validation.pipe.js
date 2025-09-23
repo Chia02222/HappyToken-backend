@@ -22,6 +22,11 @@ let ZodValidationPipe = class ZodValidationPipe {
         if (!result.success) {
             const zerr = result.error;
             const message = zerr.issues.map(e => `${e.path.join('.')}: ${e.message}`).join('; ');
+            try {
+                const preview = typeof value === 'object' ? Object.keys(value || {}) : String(value).slice(0, 200);
+                console.error('[ZodValidationPipe] Validation failed. Keys/preview:', preview, 'Issues:', message);
+            }
+            catch { }
             throw new common_1.BadRequestException(message);
         }
         return result.data;

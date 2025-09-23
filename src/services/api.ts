@@ -5,8 +5,21 @@ const API_BASE_URL = 'http://localhost:3001';
 
 const handleResponse = async (response: Response) => {
     if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Something went wrong');
+        let msg = 'Something went wrong';
+        try {
+            const error = await response.json();
+            const raw = (error && (error.message ?? error.error ?? error.errors)) ?? error;
+            if (Array.isArray(raw)) {
+                msg = raw.join('; ');
+            } else if (typeof raw === 'string') {
+                msg = raw;
+            } else {
+                msg = JSON.stringify(raw);
+            }
+        } catch {
+            // keep default msg
+        }
+        throw new Error(msg);
     }
     return response.json();
 };

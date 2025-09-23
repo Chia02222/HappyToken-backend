@@ -1,9 +1,9 @@
 
 import React from 'react';
-import InputField from './common/InputField';
-import SelectField from './common/SelectField';
-import FormSection from './common/FormSection';
-import { CorporateDetails, Contact, Subsidiary } from '../types';
+import InputField from '../common/InputField';
+import SelectField from '../common/SelectField';
+import FormSection from '../common/FormSection';
+import { CorporateDetails, Contact, Subsidiary } from '../../types';
 
 interface CorporateFormProps {
     onCloseForm: () => void;

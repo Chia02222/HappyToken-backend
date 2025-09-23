@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const corporate_service_1 = require("./corporate.service");
 const resend_service_1 = require("../resend/resend.service");
 const corporate_dto_1 = require("./dto/corporate.dto");
+const zod_validation_pipe_1 = require("../../common/zod-validation.pipe");
 let CorporateController = class CorporateController {
     corporateService;
     resendService;
@@ -74,7 +75,7 @@ __decorate([
 ], CorporateController.prototype, "findById", null);
 __decorate([
     (0, common_1.Post)(),
-    __param(0, (0, common_1.Body)()),
+    __param(0, (0, common_1.Body)(new zod_validation_pipe_1.ZodValidationPipe(corporate_dto_1.createCorporateSchema))),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
@@ -82,7 +83,7 @@ __decorate([
 __decorate([
     (0, common_1.Put)(':id'),
     __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)()),
+    __param(1, (0, common_1.Body)(new zod_validation_pipe_1.ZodValidationPipe(corporate_dto_1.updateCorporateSchema))),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, corporate_dto_1.UpdateCorporateDto]),
     __metadata("design:returntype", Promise)
@@ -97,7 +98,7 @@ __decorate([
 __decorate([
     (0, common_1.Post)(':id/investigation-logs'),
     __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)()),
+    __param(1, (0, common_1.Body)(new zod_validation_pipe_1.ZodValidationPipe(corporate_dto_1.investigationLogSchema))),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
@@ -105,7 +106,7 @@ __decorate([
 __decorate([
     (0, common_1.Put)(':id/status'),
     __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)()),
+    __param(1, (0, common_1.Body)(new zod_validation_pipe_1.ZodValidationPipe(corporate_dto_1.updateStatusSchema))),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)

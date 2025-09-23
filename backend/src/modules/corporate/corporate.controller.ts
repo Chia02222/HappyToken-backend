@@ -2,7 +2,8 @@ import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common'
 import { CorporateService } from './corporate.service';
 import { ResendService } from '../resend/resend.service';
 import { InvestigationLogTable } from '../../database/types';
-import { CreateCorporateWithRelationsDto, UpdateCorporateDto } from './dto/corporate.dto';
+import { CreateCorporateWithRelationsDto, UpdateCorporateDto, createCorporateSchema, updateCorporateSchema, updateStatusSchema, investigationLogSchema } from './dto/corporate.dto';
+import { ZodValidationPipe } from '../../common/zod-validation.pipe';
 
 @Controller('corporates')
 export class CorporateController {
@@ -22,7 +23,7 @@ export class CorporateController {
   }
 
   @Post()
-  async create(@Body() corporateData: CreateCorporateWithRelationsDto & { investigation_log?: InvestigationLogTable; id?: string }) {
+  async create(@Body(new ZodValidationPipe(createCorporateSchema)) corporateData: CreateCorporateWithRelationsDto & { investigation_log?: InvestigationLogTable; id?: string }) {
     const { investigation_log: _investigation_log, id: _id, ...corporateDataWithoutLogAndId } = corporateData;
     const dataToPassToService: CreateCorporateWithRelationsDto = corporateDataWithoutLogAndId;
     return await this.corporateService.create(dataToPassToService);
@@ -31,7 +32,7 @@ export class CorporateController {
   @Put(':id')
   async update(
     @Param('id') id: string,
-    @Body() updateData: UpdateCorporateDto
+    @Body(new ZodValidationPipe(updateCorporateSchema)) updateData: UpdateCorporateDto
   ) {
     return await this.corporateService.update(id, updateData);
   }
@@ -44,7 +45,7 @@ export class CorporateController {
   @Post(':id/investigation-logs')
   async addInvestigationLog(
     @Param('id') corporateId: string,
-    @Body() logData: Omit<InvestigationLogTable, 'id' | 'corporate_id' | 'created_at'>
+    @Body(new ZodValidationPipe(investigationLogSchema)) logData: Omit<InvestigationLogTable, 'id' | 'corporate_id' | 'created_at'>
   ) {
     return await this.corporateService.addInvestigationLog(corporateId, logData);
   }
@@ -52,7 +53,7 @@ export class CorporateController {
   @Put(':id/status')
   async updateStatus(
     @Param('id') id: string,
-    @Body() body: { status: string; note?: string }
+    @Body(new ZodValidationPipe(updateStatusSchema)) body: { status: string; note?: string }
   ) {
     return await this.corporateService.updateStatus(id, body.status, body.note);
   }

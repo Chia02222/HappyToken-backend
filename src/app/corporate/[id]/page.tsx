@@ -7,10 +7,10 @@ import CorporateForm from '../../../components/forms/CorporateForm';
 import CommercialTermsForm from '../../../components/forms/CommercialTermsForm';
 import ECommercialTermsForm from '../../../components/forms/ECommercialTermsForm';
 import { CorporateDetails, CorporateStatus, Contact } from '../../../types';
-import { getCorporateById, createCorporate, updateCorporate, updateCorporateStatus, addRemark, deleteCorporate, resendRegistrationLink } from '../../../services/api';
-import ConfirmationModal from '../../../components/modals/ConfirmationModal';
+import { getCorporateById, createCorporate, updateCorporate, updateCorporateStatus } from '../../../services/api';
 import SuccessModal from '../../../components/modals/SuccessModal';
 import ErrorMessageModal from '../../../components/modals/ErrorMessageModal';
+import { isRequired, isValidEmail, isValidPhone, isValidDateRange, isPositiveNumberString } from '../../../utils/validators';
 
 let clientSideIdCounter = 0;
 const generateClientSideId = (): string => {
@@ -91,6 +91,18 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
   const [isErrorModalVisible, setIsErrorModalVisible] = useState(false);
   const [errorModalContent, setErrorModalContent] = useState('');
 
+  const scrollToField = (fieldId: string) => {
+    if (typeof window === 'undefined') return;
+    const el = document.getElementById(fieldId);
+    if (el && 'scrollIntoView' in el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Focus if possible
+      if ('focus' in el) {
+        try { (el as HTMLElement).focus(); } catch {}
+      }
+    }
+  };
+
   useEffect(() => {
     const fetchCorporateData = async () => {
       if (corporateId && corporateId !== 'new') {
@@ -120,6 +132,47 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
 
   const handleSaveCorporate = async (formData: CorporateDetails, action: 'submit' | 'sent' | 'save') => {
     try {
+      // Basic client-side validation
+      const primary = formData.contacts?.[0];
+      if (!isRequired(formData.company_name) || !isRequired(formData.reg_number)) {
+        setErrorModalContent('Company name and registration number are required.');
+        setIsErrorModalVisible(true);
+        scrollToField(!isRequired(formData.company_name) ? 'company_name' : 'reg_number');
+        return;
+      }
+      if (!primary || !isRequired(primary.first_name) || !isRequired(primary.last_name)) {
+        setErrorModalContent('Primary contact first and last name are required.');
+        setIsErrorModalVisible(true);
+        scrollToField(!primary || !isRequired(primary.first_name) ? 'first_name' : 'last_name');
+        return;
+      }
+      if (!isValidEmail(primary.email)) {
+        setErrorModalContent('Primary contact email is invalid.');
+        setIsErrorModalVisible(true);
+        scrollToField('email');
+        return;
+      }
+      if (!isValidPhone(primary.contact_number)) {
+        setErrorModalContent('Primary contact phone is invalid.');
+        setIsErrorModalVisible(true);
+        scrollToField('contact_number');
+        return;
+      }
+      if (formStep >= 2) {
+        if (!isValidDateRange(formData.agreement_from, formData.agreement_to)) {
+          setErrorModalContent('Agreement date range is invalid.');
+          setIsErrorModalVisible(true);
+          scrollToField('agreementFrom');
+          return;
+        }
+        if (!isPositiveNumberString(formData.credit_limit) || !isPositiveNumberString(formData.custom_feature_fee)) {
+          setErrorModalContent('Amounts must be valid non-negative numbers.');
+          setIsErrorModalVisible(true);
+          scrollToField(!isPositiveNumberString(formData.credit_limit) ? 'credit_limit' : 'custom_feature_fee');
+          return;
+        }
+      }
+
       const updatedFormData = { ...formData };
 
       if (formMode === 'approve-second' && action === 'submit') {
@@ -150,6 +203,18 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
                     company_role: secondary_approver.company_role || '',
                     system_role: 'secondary_approver',
                 };
+                if (!isRequired(newSecondaryContact.first_name) || !isRequired(newSecondaryContact.last_name) || !isValidEmail(newSecondaryContact.email) || !isValidPhone(newSecondaryContact.contact_number)) {
+                  setErrorModalContent('Secondary approver details are invalid or incomplete.');
+                  setIsErrorModalVisible(true);
+                  scrollToField(!isRequired(newSecondaryContact.first_name)
+                    ? 'first_name'
+                    : !isRequired(newSecondaryContact.last_name)
+                      ? 'last_name'
+                      : !isValidEmail(newSecondaryContact.email)
+                        ? 'email'
+                        : 'contact_number');
+                  return;
+                }
                 updatedFormData.contacts = [...updatedFormData.contacts, newSecondaryContact];
             }
         }
@@ -167,6 +232,13 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
         subsidiaryIdsToDelete,
         secondary_approver: updatedFormData.secondary_approver,
       };
+
+      // Debug: inspect outgoing payload
+      try {
+        // Avoid logging huge blobs if any
+        console.debug('[SaveCorporate] mode:', formMode, 'action:', action);
+        console.debug('[SaveCorporate] payload:', JSON.stringify(dataToSend));
+      } catch {}
 
       let savedCorporateId = corporateId;
 
@@ -188,8 +260,10 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
 
       handleCloseCorporateForm();
     } catch (error) {
-      console.error("Failed to save corporate:", error);
-      setErrorModalContent(`Failed to save corporate: ${error instanceof Error ? error.message : String(error)}`);
+      console.error('[SaveCorporate] Failed to save corporate:', error);
+      const msg = error instanceof Error ? error.message : String(error);
+      // Show backend message plus a short hint to open devtools for payload
+      setErrorModalContent(`Failed to save corporate: ${msg}`);
       setIsErrorModalVisible(true);
     }
   };

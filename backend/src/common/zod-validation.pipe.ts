@@ -15,6 +15,12 @@ export class ZodValidationPipe implements PipeTransform {
     if (!result.success) {
       const zerr = result.error as ZodError;
       const message = zerr.issues.map(e => `${e.path.join('.')}: ${e.message}`).join('; ');
+      try {
+        // Debug log to help identify offending payloads
+        const preview = typeof value === 'object' ? Object.keys(value || {}) : String(value).slice(0, 200);
+        // eslint-disable-next-line no-console
+        console.error('[ZodValidationPipe] Validation failed. Keys/preview:', preview, 'Issues:', message);
+      } catch {}
       throw new BadRequestException(message);
     }
     return result.data;
