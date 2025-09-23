@@ -67,6 +67,13 @@ export const updateCorporateStatus = async (id: string, status: string, note?: s
     return handleResponse(response);
 };
 
+export const submitCorporateForFirstApproval = async (id: string) => {
+    const response = await fetch(`${API_BASE_URL}/corporates/${id}/submit`, {
+        method: 'PUT',
+    });
+    return handleResponse(response);
+};
+
 export const addRemark = async (corporateId: string, note: string, fromStatus?: string, toStatus?: string) => {
     const response = await fetch(`${API_BASE_URL}/corporates/${corporateId}/investigation-logs`, {
         method: 'POST',

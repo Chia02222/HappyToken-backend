@@ -6,7 +6,7 @@ import Dashboard from '../components/Dashboard';
 import CRTCorporatePage from '../components/CRTCorporatePage';
 import HistoryLogModal from '../components/modals/HistoryLogModal';
 import { Page, Corporate, CorporateDetails, CorporateStatus, Contact} from '../types';
-import { getCorporates, getCorporateById, createCorporate, updateCorporate, updateCorporateStatus, addRemark, deleteCorporate, resendRegistrationLink } from '../services/api';
+import { getCorporates, getCorporateById, createCorporate, updateCorporate, updateCorporateStatus, addRemark, deleteCorporate, resendRegistrationLink, submitCorporateForFirstApproval } from '../services/api';
 import ConfirmationModal from '../components/modals/ConfirmationModal';
 import SuccessModal from '../components/modals/SuccessModal';
 import ErrorMessageModal from '../components/modals/ErrorMessageModal';
@@ -121,7 +121,7 @@ const App: React.FC = () => {
       }
 
       await resendRegistrationLink(id);
-      await updateCorporateStatus(id, 'Sent', 'Registration link sent.');
+      await submitCorporateForFirstApproval(id);
       await fetchCorporates(); // Refresh the list of corporates
       const corporateFormLink = `${window.location.origin}/corporate/${id}?mode=approve`;
       setSuccessModalContent({

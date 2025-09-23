@@ -35,17 +35,17 @@ const CORPORATES_DATA = [
     { id: 2, companyName: 'Synergy Innovations', regNumber: '202301054321', status: 'Approved', createdAt: '2024-07-27', investigationLog: [] },
     { id: 3, companyName: 'Quantum Solutions', regNumber: '202105098765', status: 'Pending 1st Approval', createdAt: '2024-07-26', investigationLog: [] },
     { id: 4, companyName: 'Apex Industries', regNumber: '202003011223', status: 'Pending 1st Approval', createdAt: '2024-07-25', investigationLog: [] },
-    { id: 5, companyName: 'Dynamic Corp', regNumber: '201908044556', status: 'Sent', createdAt: '2024-07-24', investigationLog: [] },
-    { id: 6, companyName: 'Innovate LLC', regNumber: '202402017890', status: 'New', createdAt: '2024-07-29', investigationLog: [] },
+    { id: 5, companyName: 'Dynamic Corp', regNumber: '201908044556', status: 'Pending 1st Approval', createdAt: '2024-07-24', investigationLog: [] },
+    { id: 6, companyName: 'Innovate LLC', regNumber: '202402017890', status: 'Draft', createdAt: '2024-07-29', investigationLog: [] },
     {
         id: 7, companyName: 'Legacy Holdings', regNumber: '201811116789', status: 'Rejected', createdAt: '2024-07-22',
         investigationLog: [
             { timestamp: new Date('2024-07-23T10:15:00Z').toLocaleString(), note: 'Contacted the company director for clarification. Awaiting response.' }
         ]
     },
-    { id: 8, companyName: 'Future Enterprises', regNumber: '202309151357', status: 'Resolved', createdAt: '2024-07-21', investigationLog: [] },
-    { id: 9, companyName: 'Pinnacle Group', regNumber: '202207202468', status: 'Closed', createdAt: '2024-07-20', investigationLog: [{ timestamp: new Date().toLocaleString(), from: 'Rejected' as CorporateStatus, to: 'Closed' as CorporateStatus, note: 'Account closed after investigation.' }] },
-    { id: 10, companyName: 'Summit Partners', regNumber: '202104109753', status: 'Reopened', createdAt: '2024-07-19', investigationLog: [] },
+    { id: 8, companyName: 'Future Enterprises', regNumber: '202309151357', status: 'Approved', createdAt: '2024-07-21', investigationLog: [] },
+    { id: 9, companyName: 'Pinnacle Group', regNumber: '202207202468', status: 'Rejected', createdAt: '2024-07-20', investigationLog: [{ timestamp: new Date().toLocaleString(), from: 'Pending 2nd Approval' as CorporateStatus, to: 'Rejected' as CorporateStatus, note: 'Rejected after review.' }] },
+    { id: 10, companyName: 'Summit Partners', regNumber: '202104109753', status: 'Draft', createdAt: '2024-07-19', investigationLog: [] },
 ];
 
 // Detailed corporate data from constants
@@ -362,35 +362,63 @@ export async function migrateData() {
         for (const corporate of CORPORATES_DATA) {
             const details = CORPORATE_DETAILS_DATA[corporate.id] || {};
             
+            // Derive billing address from office by default
+            const office_address1 = (details as any).officeAddress1 || 'Address Line 1';
+            const office_address2 = (details as any).officeAddress2 || '';
+            const postcode = (details as any).postcode || '50000';
+            const city = (details as any).city || 'Kuala Lumpur';
+            const state = (details as any).state || 'W.P. Kuala Lumpur';
+            const country = (details as any).country || 'Malaysia';
+            const website = (details as any).website || null;
+            const account_note = (details as any).accountNote || '';
+            const company_tin = (details as any).companyTIN || 'N/A';
+            const sst_number = (details as any).sstNumber || '';
+            const agreement_from = (details as any).agreementFrom || null;
+            const agreement_to = (details as any).agreementTo || null;
+            const credit_limit = (details as any).creditLimit || '0.00';
+            const credit_terms = (details as any).creditTerms || '30';
+            const transaction_fee = (details as any).transactionFee || '2.0';
+            const late_payment_interest = (details as any).latePaymentInterest || '1.5';
+            const white_labeling_fee = (details as any).whiteLabelingFee || '0.00';
+            const custom_feature_fee = (details as any).customFeatureFee || '0.00';
+            
+            const billing_same_as_official = true;
+            const billing_address1 = office_address1;
+            const billing_address2 = office_address2;
+            const billing_postcode = postcode;
+            const billing_city = city;
+            const billing_state = state;
+            const billing_country = country;
+            
             const corporateData = {
                 company_name: corporate.companyName,
                 reg_number: corporate.regNumber,
                 status: corporate.status as CorporateStatus,
-                office_address1: details.officeAddress1 || '',
-                office_address2: details.officeAddress2 || '',
-                postcode: details.postcode || '',
-                city: details.city || '',
-                state: details.state || '',
-                country: details.country || 'Malaysia',
-                website: details.website || '',
-                account_note: details.accountNote || '',
-                billing_same_as_official: true,
-                billing_address1: '',
-                billing_address2: '',
-                billing_postcode: '',
-                billing_city: '',
-                billing_state: '',
-                billing_country: 'Malaysia',
-                company_tin: details.companyTIN || '',
-                sst_number: details.sstNumber || '',
-                agreement_from: details.agreementFrom || null,
-                agreement_to: details.agreementTo || null,
-                credit_limit: details.creditLimit || '0.00',
-                credit_terms: details.creditTerms || '',
-                transaction_fee: details.transactionFee || '',
-                late_payment_interest: details.latePaymentInterest || '',
-                white_labeling_fee: details.whiteLabelingFee || '',
-                custom_feature_fee: details.customFeatureFee || '0.00',
+                office_address1,
+                office_address2,
+                postcode,
+                city,
+                state,
+                country,
+                website,
+                account_note,
+                billing_same_as_official,
+                billing_address1,
+                billing_address2,
+                billing_postcode,
+                billing_city,
+                billing_state,
+                billing_country,
+                company_tin,
+                sst_number,
+                agreement_from,
+                agreement_to,
+                credit_limit,
+                credit_terms,
+                transaction_fee,
+                late_payment_interest,
+                white_labeling_fee,
+                custom_feature_fee,
                 agreed_to_generic_terms: false,
                 agreed_to_commercial_terms: false,
                 first_approval_confirmation: false,

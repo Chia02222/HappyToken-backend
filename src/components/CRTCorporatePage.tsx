@@ -43,12 +43,12 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
     const [isResendModalVisible, setIsResendModalVisible] = useState(false);
     const [remainingTimes, setRemainingTimes] = useState<{ [corporateId: string]: number }>({});
     const [featuredCorporateIds, setFeaturedCorporateIds] = useState<Set<string>>(new Set());
-    const [isRejectingStatus, setIsRejectingStatus] = useState(false); // New state variable
+    const [isRejectingStatus, setIsRejectingStatus] = useState(false);
 
     const handleOpenChangeStatusModal = (corporate: Corporate, status: CorporateStatus) => {
         setSelectedCorporate(corporate);
         setTargetStatus(status);
-        setIsRejectingStatus(status === 'Rejected' || status === 'Resolved' || status === 'Closed' || status === 'Reopened');
+        setIsRejectingStatus(status === 'Rejected');
         setIsChangeStatusModalVisible(true);
     };
 
@@ -78,18 +78,14 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
 
                     if (timeLeft <= 0) {
                         clearInterval(intervals.get(`countdown_${corporate.id}`));
-                        fetchCorporates(); // Refresh data from backend
+                        fetchCorporates();
                     }
                 };
 
-                // Initial call
                 updateRemainingTime();
-
-                // Set up countdown interval
                 const countdownInterval = setInterval(updateRemainingTime, 1000);
                 intervals.set(`countdown_${corporate.id}`, countdownInterval);
 
-                // Set up polling interval to check for status changes
                 const pollingInterval = setInterval(async () => {
                     try {
                         const updatedCorporate = await getCorporateById(corporate.id);
@@ -111,12 +107,6 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
         };
     }, [corporates, updateStatus, fetchCorporates]);
 
-
-
-
-
-    
-
     const handleCloseModals = () => {
         setIsChangeStatusModalVisible(false);
         setIsCopyLinkModalVisible(false);
@@ -136,50 +126,13 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
         const remainingTime = remainingTimes[corporate.id];
 
         switch (corporate.status) {
-            case 'Pending Contract Setup':
-                return (
-                    <button
-                        onClick={() => onSendRegistrationLink(corporate.id)}
-                        className="text-sm text-ht-blue hover:text-ht-blue-dark font-semibold"
-                    >
-                        Send to Approval
-                    </button>
-                );
-            case 'Sent':
-                return <span className="text-gray-400 text-xs">No actions</span>;
             case 'Cooling Period':
                 return (
                     <span className="text-gray-500 text-xs">
                         Cooling Period (Auto-processing in {remainingTime !== undefined ? remainingTime : '...'}s...)
                     </span>
                 );
-            case 'Under Fraud Investigation':
-                return (
-                    <div className="relative">
-                        <select
-                            defaultValue=""
-                            onChange={(e) => {
-                                const newStatus = e.target.value as CorporateStatus;
-                                if (['Resolved', 'Closed', 'Reopened'].includes(newStatus)) {
-                                    handleOpenChangeStatusModal(corporate, newStatus);
-                                }
-                                e.target.value = '';
-                            }}
-                            className="text-sm border border-gray-300 rounded-md p-2 focus:ring-ht-blue focus:border-ht-blue bg-white"
-                            aria-label="Select action for fraud investigation account"
-                        >
-                            <option value="" disabled>
-                                Select Action...
-                            </option>
-                            <option value="Resolved">Resolve</option>
-                            <option value="Closed">Close</option>
-                            <option value="Reopened">Reopen</option>
-                        </select>
-                    </div>
-                );
             case 'Rejected':
-                return <span className="text-gray-400 text-xs">No actions</span>;
-            case 'Closed':
                 return <span className="text-gray-400 text-xs">No actions</span>;
             default:
                 return <span className="text-gray-400 text-xs">No actions</span>;
@@ -191,7 +144,6 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
         return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
     };
 
-    // Compute ordered list with featured corporate (if any) at top
     const orderedCorporates = React.useMemo(() => {
         if (!featuredCorporateIds.size) return corporates;
         const featured: typeof corporates = [];
@@ -284,10 +236,10 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
                                                     label: 'Copy Link',
                                                     onClick: () => handleOpenCopyLinkModal(corporate),
                                                 },
-                                                ...(corporate.status !== 'Pending Contract Setup' ? [{
-                                                    label: 'Send to Approval',
+                                                {
+                                                    label: 'Send to 1st Approver',
                                                     onClick: () => onSendRegistrationLink(corporate.id),
-                                                }] : []),
+                                                },
                                                 {
                                                     label: featuredCorporateIds.has(corporate.id) ? 'Unfeature' : 'Feature',
                                                     onClick: () => setFeaturedCorporateIds(prev => {

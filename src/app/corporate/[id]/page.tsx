@@ -22,7 +22,7 @@ const INITIAL_CORPORATE_FORM_DATA: CorporateDetails = {
     id: '',
     company_name: '',
     reg_number: '',
-    status: 'New',
+    status: 'Draft',
     created_at: '',
     updated_at: '',
     office_address1: '',
@@ -248,7 +248,7 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
         const newCorporate = await createCorporate(dataToSend);
         savedCorporateId = newCorporate.id;
         if (action === 'sent') {
-            await updateCorporateStatus(newCorporate.id, 'Sent', 'Registration link generated and status updated.');
+            await updateCorporateStatus(newCorporate.id, 'Pending 1st Approval', 'Submitted to 1st approver.');
         }
       }
 

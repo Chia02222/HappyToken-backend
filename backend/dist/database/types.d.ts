@@ -5,7 +5,7 @@ export interface Database {
     subsidiaries: SubsidiaryTable;
     investigation_logs: InvestigationLogTable;
 }
-export type CorporateStatus = 'New' | 'Sent' | 'Pending 1st Approval' | 'Pending 2nd Approval' | 'Approved' | 'Rejected' | 'Cooling Period' | 'Resolved' | 'Closed' | 'Reopened' | 'Under Fraud Investigation';
+export type CorporateStatus = 'Draft' | 'Pending 1st Approval' | 'Pending 2nd Approval' | 'Approved' | 'Rejected' | 'Cooling Period' | 'Expired';
 export type CorporateSystemRole = 'admin' | 'user';
 export interface CorporateTable {
     id: GeneratedAlways<number>;

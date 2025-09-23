@@ -58,6 +58,13 @@ export class CorporateController {
     return await this.corporateService.updateStatus(id, body.status, body.note);
   }
 
+  @Put(':id/submit')
+  async submitForFirstApproval(
+    @Param('id') id: string,
+  ) {
+    return await this.corporateService.updateStatus(id, 'Pending 1st Approval', 'Submitted to 1st approver.');
+  }
+
   @Post(':id/resend-link')
   async resendRegistrationLink(@Param('id') id: string) {
     const result = await this.resendService.resendRegistrationLink(id);

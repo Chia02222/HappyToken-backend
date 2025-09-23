@@ -48,6 +48,9 @@ let CorporateController = class CorporateController {
     async updateStatus(id, body) {
         return await this.corporateService.updateStatus(id, body.status, body.note);
     }
+    async submitForFirstApproval(id) {
+        return await this.corporateService.updateStatus(id, 'Pending 1st Approval', 'Submitted to 1st approver.');
+    }
     async resendRegistrationLink(id) {
         const result = await this.resendService.resendRegistrationLink(id);
         if (result.success) {
@@ -111,6 +114,13 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], CorporateController.prototype, "updateStatus", null);
+__decorate([
+    (0, common_1.Put)(':id/submit'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], CorporateController.prototype, "submitForFirstApproval", null);
 __decorate([
     (0, common_1.Post)(':id/resend-link'),
     __param(0, (0, common_1.Param)('id')),

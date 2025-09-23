@@ -19,6 +19,7 @@ const kysely_1 = require("kysely");
 const contacts_service_1 = require("../contacts/contacts.service");
 const subsidiaries_service_1 = require("../subsidiaries/subsidiaries.service");
 const resend_service_1 = require("../resend/resend.service");
+const schedule_1 = require("@nestjs/schedule");
 let CorporateService = class CorporateService {
     dbService;
     contactsService;
@@ -71,6 +72,7 @@ let CorporateService = class CorporateService {
         const { contacts, subsidiaries, secondary_approver, ...corporateBaseData } = corporateData;
         const corporateInsertData = {
             ...corporateBaseData,
+            status: 'Draft',
             agreement_from: corporateBaseData.agreement_from === '' ? null : corporateBaseData.agreement_from,
             agreement_to: corporateBaseData.agreement_to === '' ? null : corporateBaseData.agreement_to,
             created_at: (0, kysely_1.sql) `date_trunc('second', now())::timestamp(0)`,
@@ -297,15 +299,15 @@ let CorporateService = class CorporateService {
             throw new Error('Corporate not found');
         }
         const oldStatus = corporate.status;
-        const shouldLog = !(!note &&
-            (oldStatus === 'Resolved' && status === 'Approved'));
+        const shouldLog = !(!note);
         if ((note || status !== oldStatus) && shouldLog) {
             await this.addInvestigationLog(id, {
                 timestamp: new Date().toISOString(),
-                note: note === undefined ? `Status changed from ${oldStatus} to ${status}` : note, from_status: oldStatus,
+                note: note === undefined ? `Status changed from ${oldStatus} to ${status}` : note,
+                from_status: oldStatus,
                 to_status: status,
             });
-            if (status === 'Rejected' || status === 'Under Fraud Investigation') {
+            if (status === 'Rejected') {
                 const subject = `Corporate ${status} Notification: ${corporate.company_name}`;
                 const html = `
           <p>Dear CRT Member,</p>
@@ -357,8 +359,8 @@ let CorporateService = class CorporateService {
         let newStatus;
         let note;
         if (hasSuspiciousContact) {
-            newStatus = 'Under Fraud Investigation';
-            note = `Corporate flagged for fraud investigation due to contact number.`;
+            newStatus = 'Rejected';
+            note = `Rejected automatically due to suspicious contact number.`;
             console.log(`[handleCoolingPeriodCompletion] Updating status to: ${newStatus}`);
             await this.updateStatus(corporateId, newStatus, note);
         }
@@ -371,8 +373,26 @@ let CorporateService = class CorporateService {
         console.log(`[handleCoolingPeriodCompletion] Returning corporate: ${JSON.stringify(updatedCorporate)}`);
         return updatedCorporate;
     }
+    async expireStaleCorporatesDaily() {
+        const thirtyDaysAgoIso = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        const stale = await this.db
+            .selectFrom('corporates')
+            .selectAll()
+            .where('updated_at', '<', thirtyDaysAgoIso)
+            .where('status', 'in', ['Draft', 'Pending 1st Approval', 'Pending 2nd Approval', 'Cooling Period'])
+            .execute();
+        for (const corp of stale) {
+            await this.updateStatus(String(corp.id), 'Expired', `Auto-expired due to inactivity since ${corp.updated_at}`);
+        }
+    }
 };
 exports.CorporateService = CorporateService;
+__decorate([
+    (0, schedule_1.Cron)(schedule_1.CronExpression.EVERY_DAY_AT_1AM),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], CorporateService.prototype, "expireStaleCorporatesDaily", null);
 exports.CorporateService = CorporateService = __decorate([
     (0, common_1.Injectable)(),
     __param(3, (0, common_1.Inject)((0, common_1.forwardRef)(() => resend_service_1.ResendService))),

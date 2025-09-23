@@ -165,7 +165,7 @@ let SeedService = class SeedService {
                         await this.corporateService.addInvestigationLog(String(corporate.id), {
                             timestamp: new Date().toISOString(),
                             note: 'Initial review completed. No issues found.',
-                            from_status: 'New',
+                            from_status: 'Draft',
                             to_status: 'Approved',
                         });
                     }

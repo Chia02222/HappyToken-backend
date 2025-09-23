@@ -36,7 +36,7 @@ const ChangeStatusModal: React.FC<ChangeStatusModalProps> = ({ isOpen, onClose, 
         <Modal isOpen={isOpen} onClose={onClose} title={isRejecting ? "Reject Corporate" : "Add Investigation Note"}>
             <div>
                 <p className="text-sm text-gray-600 mb-1">Company: <span className="font-medium">{corporate.company_name}</span></p>
-                <p className="text-sm text-gray-600 mb-4">Action: <span className="font-medium">{corporate.status} → {targetStatus === 'Reopened' ? 'Sent' : targetStatus}</span></p>
+                <p className="text-sm text-gray-600 mb-4">Action: <span className="font-medium">{corporate.status} → {targetStatus}</span></p>
                 
                 <textarea
                     value={logNote}

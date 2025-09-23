@@ -7,7 +7,7 @@ export interface NavItem {
   subItems?: string[];
 }
 
-export type CorporateStatus = 'New' | 'Sent' | 'Pending 1st Approval' | 'Pending 2nd Approval' | 'Approved' | 'Rejected' | 'Cooling Period' | 'Resolved' | 'Closed' | 'Reopened' | 'Pending Contract Setup' | 'Under Fraud Investigation';
+export type CorporateStatus = 'Draft' | 'Pending 1st Approval' | 'Pending 2nd Approval' | 'Approved' | 'Rejected' | 'Cooling Period' | 'Expired';
 
 export interface LogEntry {
   id: string;

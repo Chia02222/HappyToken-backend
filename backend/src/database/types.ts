@@ -10,17 +10,13 @@ export interface Database {
 
 //Enums
 export type CorporateStatus = 
-  | 'New' 
-  | 'Sent' 
+  | 'Draft' 
   | 'Pending 1st Approval' 
   | 'Pending 2nd Approval' 
   | 'Approved' 
   | 'Rejected' 
   | 'Cooling Period' 
-  | 'Resolved' 
-  | 'Closed' 
-  | 'Reopened'
-  | 'Under Fraud Investigation';
+  | 'Expired';
 
 export type CorporateSystemRole = 'admin' | 'user';
 

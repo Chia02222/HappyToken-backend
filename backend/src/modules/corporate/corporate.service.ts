@@ -13,6 +13,7 @@ import { CreateSubsidiaryDto } from '../subsidiaries/dto/subsidiary.dto';
 import { ContactsService } from '../contacts/contacts.service';
 import { SubsidiariesService } from '../subsidiaries/subsidiaries.service';
 import { ResendService } from '../resend/resend.service';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 // Define a type for CorporateTable without the 'id' property
 type UpdatableCorporateTable = Omit<CorporateTable, 'id'>;
@@ -75,6 +76,7 @@ export class CorporateService {
 
     const corporateInsertData: NewCorporate = {
       ...corporateBaseData,
+      status: 'Draft',
       agreement_from: corporateBaseData.agreement_from === '' ? null : corporateBaseData.agreement_from,
       agreement_to: corporateBaseData.agreement_to === '' ? null : corporateBaseData.agreement_to,
       created_at: sql`date_trunc('second', now())::timestamp(0)` as unknown as string,
@@ -107,7 +109,6 @@ export class CorporateService {
       let secondaryApproverId: number | undefined;
 
       if (secondary_approver.use_existing_contact && secondary_approver.selected_contact_id) {
-        // Update existing contact
         await this.contactsService.updateContact(Number(secondary_approver.selected_contact_id), {
           salutation: secondary_approver.salutation ?? '',
           first_name: secondary_approver.first_name ?? '',
@@ -119,7 +120,6 @@ export class CorporateService {
         });
         secondaryApproverId = Number(secondary_approver.selected_contact_id);
       } else if (!secondary_approver.use_existing_contact) {
-        // Create new contact
         const insertedContact = await this.contactsService.addContact({
           corporate_id: inserted.id,
           salutation: secondary_approver.salutation ?? '',
@@ -154,7 +154,6 @@ export class CorporateService {
       console.log('Raw updateData:', JSON.stringify(updateData));
     } catch {}
 
-    // Explicitly remove investigation_log from updateData if it exists
     const { investigation_log: _investigation_log, ...restOfUpdateData } = updateData as UpdateCorporateDto & { investigation_log?: InvestigationLogTable };
 
     const {
@@ -164,7 +163,7 @@ export class CorporateService {
       contactIdsToDelete,
       subsidiaryIdsToDelete,
       secondary_approver: _secondary_approver,
-      ...corporateUpdateData // This should now be free of 'id' and 'investigation_log'
+      ...corporateUpdateData
     } = restOfUpdateData;
 
     const idNum = Number(id);
@@ -178,7 +177,6 @@ export class CorporateService {
       let secondaryApproverId: number | undefined;
 
       if (secondaryApproverData.use_existing_contact && secondaryApproverData.selected_contact_id) {
-        // Update existing contact
         await this.contactsService.updateContact(Number(secondaryApproverData.selected_contact_id), {
           salutation: secondaryApproverData.salutation ?? '',
           first_name: secondaryApproverData.first_name ?? '',
@@ -190,7 +188,6 @@ export class CorporateService {
         });
         secondaryApproverId = Number(secondaryApproverData.selected_contact_id);
       } else if (!secondaryApproverData.use_existing_contact) {
-        // Create new contact
         const insertedContact = await this.contactsService.addContact({
           corporate_id: idNum,
           salutation: secondaryApproverData.salutation ?? '',
@@ -216,18 +213,16 @@ export class CorporateService {
       }
     }
 
-    // Explicitly construct the update object to ensure 'id' is not included
     const corporateFieldsToUpdate: Partial<UpdatableCorporateTable> = {
-      ...corporateUpdateData, // This should not contain 'id'
+      ...corporateUpdateData,
       agreement_from: corporateUpdateData.agreement_from === '' ? null : corporateUpdateData.agreement_from,
       agreement_to: corporateUpdateData.agreement_to === '' ? null : corporateUpdateData.agreement_to,
       updated_at: sql`date_trunc('second', now())::timestamp(0)` as unknown as string,
     };
 
-    // idNum declared above
     const updatedCorporate = await this.db
       .updateTable('corporates')
-      .set(corporateFieldsToUpdate) // Pass the explicitly constructed object
+      .set(corporateFieldsToUpdate)
       .where('id', '=', idNum)
       .returningAll()
       .executeTakeFirst();
@@ -250,7 +245,6 @@ export class CorporateService {
         } else if (!cid || isClientTempId(cid)) {
           await this.contactsService.addContact({ ...(contact as CreateContactDto), corporate_id: idNum });
         } else {
-          // Fallback: try update when id is truthy but not recognized as temp
           await this.contactsService.updateContact(Number(cid), contact);
         }
       }
@@ -293,13 +287,9 @@ export class CorporateService {
   async delete(id: string) {
     const idNum = Number(id);
     await this.db.transaction().execute(async (trx) => {
-      // Delete related investigation logs
       await trx.deleteFrom('investigation_logs').where('corporate_id', '=', idNum).execute();
-      // Delete related contacts
       await trx.deleteFrom('contacts').where('corporate_id', '=', idNum).execute();
-      // Delete related subsidiaries
       await trx.deleteFrom('subsidiaries').where('corporate_id', '=', idNum).execute();
-      // Finally, delete the corporate record
       await trx.deleteFrom('corporates').where('id', '=', idNum).execute();
     });
     return { success: true };
@@ -337,19 +327,17 @@ export class CorporateService {
 
     const oldStatus = corporate.status;
 
-    const shouldLog = !(
-      !note &&
-      (oldStatus === 'Resolved' && status === 'Approved')
-    );
+    const shouldLog = !( !note );
 
     if ((note || status !== oldStatus) && shouldLog) {
       await this.addInvestigationLog(id, {
         timestamp: new Date().toISOString(),
-                note: note === undefined ? `Status changed from ${oldStatus} to ${status}` : note,        from_status: oldStatus as CorporateStatus,
+        note: note === undefined ? `Status changed from ${oldStatus} to ${status}` : note,
+        from_status: oldStatus as CorporateStatus,
         to_status: status as CorporateStatus,
       });
 
-      if (status === 'Rejected' || status === 'Under Fraud Investigation') {
+      if (status === 'Rejected') {
         const subject = `Corporate ${status} Notification: ${corporate.company_name}`;
         const html = `
           <p>Dear CRT Member,</p>
@@ -365,7 +353,7 @@ export class CorporateService {
 
       if (status === 'Cooling Period') {
         const coolingPeriodStart = new Date();
-        const coolingPeriodEnd = new Date(coolingPeriodStart.getTime() + 30 * 1000); // 30 seconds from now
+        const coolingPeriodEnd = new Date(coolingPeriodStart.getTime() + 30 * 1000);
 
         await this.db
           .updateTable('corporates')
@@ -385,7 +373,7 @@ export class CorporateService {
           } catch (error) {
             console.error(`[setTimeout] Error completing cooling period for corporate ${id}:`, error);
           }
-        }, 30000); // 30 seconds
+        }, 30000);
       }
     }
 
@@ -401,19 +389,17 @@ export class CorporateService {
     }
     console.log(`[handleCoolingPeriodCompletion] Corporate found: ${JSON.stringify(corporate)}`);
 
-    // Check if any contact has the suspicious number
     const hasSuspiciousContact = corporate.contacts.some(
       (contact) => contact.contact_number === '0123456789'
     );
     console.log(`[handleCoolingPeriodCompletion] Has suspicious contact (0123456789): ${hasSuspiciousContact}`);
 
-
     let newStatus: CorporateStatus;
     let note: string;
 
     if (hasSuspiciousContact) {
-      newStatus = 'Under Fraud Investigation';
-      note = `Corporate flagged for fraud investigation due to contact number.`;
+      newStatus = 'Rejected';
+      note = `Rejected automatically due to suspicious contact number.`;
       console.log(`[handleCoolingPeriodCompletion] Updating status to: ${newStatus}`);
       await this.updateStatus(corporateId, newStatus, note);
     } else {
@@ -425,5 +411,20 @@ export class CorporateService {
     console.log(`[handleCoolingPeriodCompletion] Status updated successfully for corporate ${corporateId}. New status: ${updatedCorporate?.status}`);
     console.log(`[handleCoolingPeriodCompletion] Returning corporate: ${JSON.stringify(updatedCorporate)}`);
     return updatedCorporate;
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_1AM)
+  async expireStaleCorporatesDaily() {
+    const thirtyDaysAgoIso = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const stale = await this.db
+      .selectFrom('corporates')
+      .selectAll()
+      .where('updated_at', '<', thirtyDaysAgoIso)
+      .where('status', 'in', ['Draft', 'Pending 1st Approval', 'Pending 2nd Approval', 'Cooling Period'])
+      .execute();
+
+    for (const corp of stale) {
+      await this.updateStatus(String(corp.id), 'Expired', `Auto-expired due to inactivity since ${corp.updated_at}`);
+    }
   }
 }
