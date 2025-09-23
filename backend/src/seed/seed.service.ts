@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { CorporateService } from '../corporate/corporate.service';
+import { CorporateService } from '../modules/corporate/corporate.service';
 import { CorporateStatus } from '../database/types';
 import { DatabaseService } from '../database/database.service';
-import { ContactsService } from '../contacts/contacts.service';
-import { SubsidiariesService } from '../subsidiaries/subsidiaries.service';
+import { ContactsService } from '../modules/contacts/contacts.service';
+import { SubsidiariesService } from '../modules/subsidiaries/subsidiaries.service';
 
 @Injectable()
 export class SeedService {

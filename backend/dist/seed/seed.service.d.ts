@@ -1,7 +1,7 @@
-import { CorporateService } from '../corporate/corporate.service';
+import { CorporateService } from '../modules/corporate/corporate.service';
 import { DatabaseService } from '../database/database.service';
-import { ContactsService } from '../contacts/contacts.service';
-import { SubsidiariesService } from '../subsidiaries/subsidiaries.service';
+import { ContactsService } from '../modules/contacts/contacts.service';
+import { SubsidiariesService } from '../modules/subsidiaries/subsidiaries.service';
 export declare class SeedService {
     private readonly corporateService;
     private readonly dbService;

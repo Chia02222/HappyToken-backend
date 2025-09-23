@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { SeedController } from './seed.controller';
 import { SeedService } from './seed.service';
-import { CorporateModule } from '../corporate/corporate.module';
-import { ContactsModule } from '../contacts/contacts.module';
-import { SubsidiariesModule } from '../subsidiaries/subsidiaries.module';
+import { CorporateModule } from '../modules/corporate/corporate.module';
+import { ContactsModule } from '../modules/contacts/contacts.module';
+import { SubsidiariesModule } from '../modules/subsidiaries/subsidiaries.module';
 
 @Module({
   imports: [CorporateModule, ContactsModule, SubsidiariesModule],

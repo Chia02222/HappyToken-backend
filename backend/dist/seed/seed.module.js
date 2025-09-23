@@ -10,9 +10,9 @@ exports.SeedModule = void 0;
 const common_1 = require("@nestjs/common");
 const seed_controller_1 = require("./seed.controller");
 const seed_service_1 = require("./seed.service");
-const corporate_module_1 = require("../corporate/corporate.module");
-const contacts_module_1 = require("../contacts/contacts.module");
-const subsidiaries_module_1 = require("../subsidiaries/subsidiaries.module");
+const corporate_module_1 = require("../modules/corporate/corporate.module");
+const contacts_module_1 = require("../modules/contacts/contacts.module");
+const subsidiaries_module_1 = require("../modules/subsidiaries/subsidiaries.module");
 let SeedModule = class SeedModule {
 };
 exports.SeedModule = SeedModule;

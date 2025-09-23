@@ -11,10 +11,10 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SeedService = void 0;
 const common_1 = require("@nestjs/common");
-const corporate_service_1 = require("../corporate/corporate.service");
+const corporate_service_1 = require("../modules/corporate/corporate.service");
 const database_service_1 = require("../database/database.service");
-const contacts_service_1 = require("../contacts/contacts.service");
-const subsidiaries_service_1 = require("../subsidiaries/subsidiaries.service");
+const contacts_service_1 = require("../modules/contacts/contacts.service");
+const subsidiaries_service_1 = require("../modules/subsidiaries/subsidiaries.service");
 let SeedService = class SeedService {
     corporateService;
     dbService;

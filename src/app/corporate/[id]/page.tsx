@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import FormLayout from '../../../components/layout/FormLayout';
-import CorporateForm from '../../../components/CorporateForm';
-import CommercialTermsForm from '../../../components/CommercialTermsForm';
-import ECommercialTermsForm from '../../../components/ECommercialTermsForm';
+import CorporateForm from '../../../components/forms/CorporateForm';
+import CommercialTermsForm from '../../../components/forms/CommercialTermsForm';
+import ECommercialTermsForm from '../../../components/forms/ECommercialTermsForm';
 import { CorporateDetails, CorporateStatus, Contact } from '../../../types';
 import { getCorporateById, createCorporate, updateCorporate, updateCorporateStatus, addRemark, deleteCorporate, resendRegistrationLink } from '../../../services/api';
 import ConfirmationModal from '../../../components/modals/ConfirmationModal';
