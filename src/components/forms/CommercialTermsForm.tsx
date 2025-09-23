@@ -124,7 +124,7 @@ const CommercialTermsForm: React.FC<CommercialTermsFormProps> = ({ onCloseForm, 
                     disabled={!formData.agreed_to_commercial_terms}
                     className="text-sm bg-ht-blue text-white px-4 py-2 rounded-md hover:bg-ht-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue-dark disabled:bg-ht-gray disabled:cursor-not-allowed"
                 >
-                    Save and Proceed
+                    Next
                 </button>
             </div>
         </div>

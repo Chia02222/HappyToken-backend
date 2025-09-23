@@ -302,39 +302,60 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                  >
                     Cancel
                  </button>
-                 <button 
-                    type="button"
-                    onClick={() => onSaveCorporate(formData, 'save')}
-                    className="text-sm text-gray-700 bg-white px-4 py-2 rounded-md border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue"
-                 >
-                    Save
-                 </button>
-                 <button 
-                    type="button"
-                    onClick={() => setIsRejectModalOpen(true)}
-                    disabled={formMode === 'new'} // Disable reject for new forms
-                    className="text-sm bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                 >
-                    Reject
-                 </button>
-                 <button 
-                    type="button"
-                    onClick={() => {
-                        console.log('Submitting form data:', JSON.stringify(formData, null, 2));
-                        if (formMode === 'approve-second') {
-                            if (!validateSecondaryApprover()) {
-                                setShowValidationError(true);
-                                return;
-                            }
-                        }
-                        setShowValidationError(false);
-                        onSaveCorporate(formData, 'submit');
-                    }}
-                    disabled={(formMode === 'approve' && !formData.first_approval_confirmation) || (formMode === 'approve-second' && !formData.second_approval_confirmation)}
-                    className="text-sm bg-ht-blue text-white px-4 py-2 rounded-md hover:bg-ht-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue-dark disabled:bg-ht-gray disabled:cursor-not-allowed"
-                >
-                    Approve
-                </button>
+                 {formMode !== 'approve' && formMode !== 'approve-second' && (
+                    <button 
+                        type="button"
+                        onClick={() => onSaveCorporate(formData, 'save')}
+                        className="text-sm text-gray-700 bg-white px-4 py-2 rounded-md border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue"
+                    >
+                        Save
+                    </button>
+                )}
+                 {formMode === 'approve' || formMode === 'approve-second' ? (
+                    <>
+                        <button 
+                            type="button"
+                            onClick={() => setIsRejectModalOpen(true)}
+                            className="text-sm bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-700"
+                        >
+                            Reject
+                        </button>
+                        <button 
+                            type="button"
+                            onClick={() => {
+                                console.log('Submitting form data:', JSON.stringify(formData, null, 2));
+                                if (formMode === 'approve-second') {
+                                    if (!validateSecondaryApprover()) {
+                                        setShowValidationError(true);
+                                        return;
+                                    }
+                                }
+                                setShowValidationError(false);
+                                onSaveCorporate(formData, 'submit');
+                            }}
+                            disabled={(formMode === 'approve' && !formData.first_approval_confirmation) || (formMode === 'approve-second' && !formData.second_approval_confirmation)}
+                            className="text-sm bg-ht-blue text-white px-4 py-2 rounded-md hover:bg-ht-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue-dark disabled:bg-ht-gray disabled:cursor-not-allowed"
+                        >
+                            Approve
+                        </button>
+                    </>
+                 ) : (
+                    <>
+                        {formMode === 'new' && (
+                            <button 
+                                type="button"
+                                onClick={() => {
+                                    console.log('Submitting form data:', JSON.stringify(formData, null, 2));
+                                    setShowValidationError(false);
+                                    onSaveCorporate(formData, 'submit');
+                                }}
+                                className="text-sm bg-ht-blue text-white px-4 py-2 rounded-md hover:bg-ht-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue-dark"
+                            >
+                                Next
+                            </button>
+                        )}
+                    </>
+                 )}
             </div>
         </div>
     );
