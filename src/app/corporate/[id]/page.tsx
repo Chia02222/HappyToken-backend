@@ -107,6 +107,32 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
       if (corporateId && corporateId !== 'new') {
         try {
           const fullFormData = await getCorporateById(corporateId);
+          // Pre-populate secondary approver in approve-second mode so user doesn't need to reselect
+          let prefilledSecondary: Partial<CorporateDetails> = {};
+          if (mode === 'approve-second') {
+            const contacts = fullFormData.contacts || [];
+            const secId = (fullFormData as any).secondary_approver_id as string | number | undefined;
+            const byId = contacts.find((c: any) => String(c.id) === String(secId));
+            const byRole = contacts.find((c: any) => c.system_role === 'secondary_approver');
+            const chosen = byId || byRole;
+            if (chosen) {
+              prefilledSecondary = {
+                secondary_approver_id: chosen.id as any,
+                secondary_approver: {
+                  use_existing_contact: true,
+                  selected_contact_id: chosen.id,
+                  salutation: chosen.salutation,
+                  first_name: chosen.first_name,
+                  last_name: chosen.last_name,
+                  company_role: chosen.company_role,
+                  system_role: 'secondary_approver',
+                  email: chosen.email,
+                  contact_number: chosen.contact_number,
+                } as any,
+              } as Partial<CorporateDetails>;
+            }
+          }
+
           const adjusted = {
             ...INITIAL_CORPORATE_FORM_DATA,
             ...fullFormData,
@@ -114,6 +140,7 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
               agreed_to_generic_terms: false,
               agreed_to_commercial_terms: false,
             } : {}),
+            ...prefilledSecondary,
           } as CorporateDetails;
           setFormData(adjusted);
           // Set formMode based on URL parameter if available, otherwise default to 'edit'
@@ -224,6 +251,30 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
         }
       } else if (formMode === 'approve' && action === 'submit') {
         updatedFormData.first_approval_confirmation = true;
+        // Ensure secondary approver is persisted to contacts table and linked on corporate
+        const sa = updatedFormData.secondary_approver as (Contact & { use_existing_contact?: boolean; selected_contact_id?: string | number }) | undefined;
+        if (sa) {
+          // Always enforce system_role for secondary approver when saving
+          (updatedFormData as any).secondary_approver = { ...sa, system_role: 'secondary_approver' } as any;
+
+          if (sa.use_existing_contact && sa.selected_contact_id) {
+            const selected = updatedFormData.contacts?.find(c => String(c.id) === String(sa.selected_contact_id));
+            if (selected) {
+              // Populate fields to avoid overwriting existing contact with empty strings in backend
+              (updatedFormData as any).secondary_approver = {
+                ...sa,
+                selected_contact_id: selected.id,
+                salutation: selected.salutation,
+                first_name: selected.first_name,
+                last_name: selected.last_name,
+                company_role: selected.company_role,
+                system_role: 'secondary_approver',
+                email: selected.email,
+                contact_number: selected.contact_number,
+              };
+            }
+          }
+        }
       }
 
       const { contacts, subsidiaries, contactIdsToDelete, subsidiaryIdsToDelete, ...corporateData } = updatedFormData;
@@ -346,12 +397,148 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
     ? 'E-Commercial Terms & Signature'
     : baseTitle;
 
+  const latestRejectedLog = React.useMemo(() => {
+    try {
+      const logs = (formData as any).investigation_log as Array<{ to_status?: string; note?: string; timestamp?: string }>|undefined;
+      if (!Array.isArray(logs)) return null;
+      const rej = logs.find(l => l.to_status === 'Rejected') || logs.find(l => (l.note || '').toLowerCase().includes('reject')) || null;
+      return rej;
+    } catch { return null; }
+  }, [formData]);
+
+  const latestAmendLog = React.useMemo(() => {
+    try {
+      const logs = (formData as any).investigation_log as Array<{ to_status?: string; from_status?: string; note?: string; timestamp?: string }>|undefined;
+      if (!Array.isArray(logs)) return null;
+      const amend = logs.find(l => l.to_status === 'Amendment Requested') || logs.find(l => (l.note || '').includes('Amendment Request Submitted')) || null;
+      return amend;
+    } catch { return null; }
+  }, [formData]);
+
+  const resolvePrevStatusForAmendment = (): CorporateStatus => {
+    const from = (latestAmendLog as any)?.from_status as CorporateStatus | undefined;
+    if (from) return from;
+    const hasSecondary = Boolean((formData as any).secondary_approver_id);
+    return (hasSecondary ? 'Pending 2nd Approval' : 'Pending 1st Approval') as CorporateStatus;
+  };
+
+  const resolveApproverForStatus = (status: CorporateStatus): 'first' | 'second' => {
+    return status === 'Pending 2nd Approval' ? 'second' : 'first';
+  };
+
+  const [isAmendRejecting, setIsAmendRejecting] = React.useState(false);
+  const [amendRejectReason, setAmendRejectReason] = React.useState('');
+
+  const formatAmendNote = (note?: string) => {
+    if (!note) return 'An amendment has been requested.';
+    return note
+      .replace(/Amendment Request Submitted<br>?/i, '')
+      .replace(/<br>/g, '\n')
+      .trim();
+  };
+
   return (
     <FormLayout 
       title={formTitle}
       showAmendRequestButton={formStep === 2 && (formMode === 'approve' || formMode === 'approve-second')}
       onAmendRequest={handleAmendRequest}
     >
+        {(formData.status === 'Amendment Requested') && (
+          <div className="w-full mb-4 p-4 border border-orange-300 bg-orange-50 text-orange-800 rounded">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="font-semibold mb-1">Amendment Requested</div>
+                <div className="text-sm whitespace-pre-wrap">{formatAmendNote(latestAmendLog?.note)}</div>
+              </div>
+              {(formMode !== 'approve' && formMode !== 'approve-second') && (
+              <div className="flex items-center gap-2">
+                <button
+                  className="text-sm bg-ht-blue text-white px-3 py-2 rounded-md hover:bg-ht-blue-dark"
+                  onClick={async () => {
+                    try {
+                      const prev = resolvePrevStatusForAmendment();
+                      await updateCorporateStatus(corporateId, prev, `Amendment approved by CRT; reverting to ${prev}.`);
+                      const approver = resolveApproverForStatus(prev);
+                      await sendEcommericialTermlink(corporateId, approver);
+                      setSuccessModalContent({
+                        title: 'Amendment Approved',
+                        message: `Reverted to ${prev}. Email sent to ${approver === 'second' ? 'second' : 'first'} approver.`,
+                      });
+                      setIsSuccessModalVisible(true);
+                    } catch (e) {
+                      setErrorModalContent(`Failed to confirm amendment: ${e instanceof Error ? e.message : String(e)}`);
+                      setIsErrorModalVisible(true);
+                    }
+                  }}
+                >
+                  Confirm
+                </button>
+                <button
+                  className="text-sm bg-red-600 text-white px-3 py-2 rounded-md hover:bg-red-700"
+                  onClick={() => {
+                    setIsAmendRejecting(true);
+                  }}
+                >
+                  Reject
+                </button>
+              </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {isAmendRejecting && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/30" onClick={() => setIsAmendRejecting(false)}></div>
+            <div className="relative bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-base font-semibold">Reject Amendment</h3>
+                <button className="text-gray-500 text-xl" onClick={() => setIsAmendRejecting(false)}>×</button>
+              </div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Reason</label>
+              <textarea
+                className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-ht-blue focus:border-ht-blue"
+                rows={4}
+                value={amendRejectReason}
+                onChange={(e) => setAmendRejectReason(e.target.value)}
+                placeholder="Enter reason for rejecting the amendment..."
+              />
+              <div className="flex justify-end gap-2 mt-4">
+                <button className="text-sm px-3 py-2 rounded-md border" onClick={() => setIsAmendRejecting(false)}>Cancel</button>
+                <button
+                  className="text-sm bg-red-600 text-white px-3 py-2 rounded-md hover:bg-red-700 disabled:bg-red-300"
+                  disabled={!amendRejectReason.trim()}
+                  onClick={async () => {
+                    try {
+                      const prev = resolvePrevStatusForAmendment();
+                      await updateCorporateStatus(corporateId, prev, `Amendment rejected by CRT: ${amendRejectReason}`);
+                      const approver = resolveApproverForStatus(prev);
+                      await sendEcommericialTermlink(corporateId, approver);
+                      setIsAmendRejecting(false);
+                      setAmendRejectReason('');
+                      setSuccessModalContent({
+                        title: 'Amendment Rejected',
+                        message: `Reverted to ${prev}. Email sent to ${approver === 'second' ? 'second' : 'first'} approver.`,
+                      });
+                      setIsSuccessModalVisible(true);
+                    } catch (e) {
+                      setErrorModalContent(`Failed to reject amendment: ${e instanceof Error ? e.message : String(e)}`);
+                      setIsErrorModalVisible(true);
+                    }
+                  }}
+                >
+                  Reject Amendment
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {(formData.status === 'Rejected') && (
+          <div className="w-full mb-4 p-4 border border-red-300 bg-red-50 text-red-800 rounded">
+            <div className="font-semibold mb-1">Rejected</div>
+            <div className="text-sm whitespace-pre-wrap">{latestRejectedLog?.note || 'This corporate was rejected.'}</div>
+          </div>
+        )}
         {(formMode === 'approve' || formMode === 'approve-second' || formStep === 2) ? (
             <ECommercialTermsForm
                 onCloseForm={handleCloseCorporateForm}

@@ -24,18 +24,19 @@ const AmendRequestModal: React.FC<AmendRequestModalProps> = ({ isOpen, onClose, 
   const secondaryContact = corporate.contacts?.[1] || {};
 
   return (
-    <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-5xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="p-8 md:p-12">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-center text-xl font-bold text-ht-gray-dark">Amendment Request</h1>
+    <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50" aria-modal="true">
+      <div className="bg-white rounded-lg shadow-xl max-w-5xl w-full mx-4 max-h-[90vh] flex flex-col" role="dialog" aria-labelledby="amendment-request-title">
+        <div className="flex flex-col min-h-0">
+          <div className="flex justify-between items-center px-6 py-4 bg-ht-blue text-white rounded-t-lg">
+            <h1 id="amendment-request-title" className="text-center text-lg font-bold">Amendment Request</h1>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 text-2xl"
+              className="text-white hover:text-gray-200 text-2xl"
             >
               ×
             </button>
           </div>
+          <div className="flex-1 overflow-y-auto p-8 md:p-12">
 
           <p className="text-xs text-gray-600 mb-6 p-4 bg-gray-50 border rounded-md">
             Current corporate account details for <strong>{corporate.company_name || '[Company Name]'}</strong> (Registration Number: {corporate.reg_number || 'XXXXXXXX-X'}). 
@@ -150,6 +151,7 @@ const AmendRequestModal: React.FC<AmendRequestModalProps> = ({ isOpen, onClose, 
             >
               {isSubmitting ? 'Submitting...' : 'Submit Amendment Request'}
             </button>
+          </div>
           </div>
         </div>
       </div>

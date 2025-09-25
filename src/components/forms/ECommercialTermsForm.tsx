@@ -173,8 +173,11 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
     };
 
 
+    
+
     return (
         <div className="space-y-6">
+            
             <ErrorMessageModal
                 isOpen={showValidationError}
                 onClose={() => setShowValidationError(false)}
@@ -408,7 +411,7 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                         Save
                     </button>
                 )}
-                {formMode === 'approve' || formMode === 'approve-second' ? (
+                 {(formMode === 'approve' || formMode === 'approve-second') && formData.status !== 'Rejected' ? (
                     <>
                         <button 
                             type="button"
@@ -439,8 +442,8 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                         >
                             Approve
                         </button>
-                    </>
-                 ) : (
+                     </>
+                  ) : (
                     <>
                         {(formMode === 'new' || formMode === 'edit') && (
                             <button 

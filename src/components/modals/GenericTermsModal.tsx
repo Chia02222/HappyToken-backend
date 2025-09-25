@@ -90,6 +90,7 @@ const GenericTermsModal: React.FC<GenericTermsModalProps> = ({ isOpen, onClose, 
                 type="checkbox" 
                 id="generic_terms_agreement" 
                 checked={agreed}
+                disabled={!hasScrolledToBottom || agreed}
                 onChange={handleCheckboxChange}
                 className="h-4 w-4 border-gray-300 rounded focus:ring-ht-gray disabled:opacity-50" 
               />

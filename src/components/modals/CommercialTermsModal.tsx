@@ -82,6 +82,7 @@ const CommercialTermsModal: React.FC<CommercialTermsModalProps> = ({ isOpen, onC
                 type="checkbox" 
                 id="commercial_terms_agreement" 
                 checked={agreed}
+                disabled={!hasScrolledToBottom || agreed}
                 onChange={handleCheckboxChange}
                 className="h-4 w-4 border-gray-300 rounded focus:ring-ht-gray disabled:opacity-50" 
               />

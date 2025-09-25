@@ -369,20 +369,10 @@ let CorporateService = class CorporateService {
             throw new Error('Corporate not found');
         }
         console.log(`[handleCoolingPeriodCompletion] Corporate found: ${JSON.stringify(corporate)}`);
-        const hasSuspiciousContact = corporate.contacts.some((contact) => contact.contact_number === '0123456789');
-        console.log(`[handleCoolingPeriodCompletion] Has suspicious contact (0123456789): ${hasSuspiciousContact}`);
-        let newStatus;
-        let note;
-        if (hasSuspiciousContact) {
-            newStatus = 'Rejected';
-            note = `Rejected automatically due to suspicious contact number.`;
-            console.log(`[handleCoolingPeriodCompletion] Updating status to: ${newStatus}`);
-            await this.updateStatus(corporateId, newStatus, note);
-        }
-        else {
-            newStatus = 'Approved';
-            await this.updateStatus(corporateId, newStatus);
-        }
+        const newStatus = 'Approved';
+        const note = `Cooling period completed. Auto-approved by system after 30 seconds.`;
+        console.log(`[handleCoolingPeriodCompletion] Updating status to: ${newStatus}`);
+        await this.updateStatus(corporateId, newStatus, note);
         const updatedCorporate = await this.findById(corporateId);
         console.log(`[handleCoolingPeriodCompletion] Status updated successfully for corporate ${corporateId}. New status: ${updatedCorporate?.status}`);
         console.log(`[handleCoolingPeriodCompletion] Returning corporate: ${JSON.stringify(updatedCorporate)}`);
