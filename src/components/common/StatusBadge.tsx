@@ -15,6 +15,7 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
         'Rejected': 'bg-red-100 text-red-800',
         'Cooling Period': 'bg-purple-100 text-purple-800',
         'Expired': 'bg-gray-200 text-gray-700',
+        'Amendment Requested': 'bg-orange-100 text-orange-800',
     };
     return (
         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${colorClasses[status]}`}>

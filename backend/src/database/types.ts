@@ -16,7 +16,8 @@ export type CorporateStatus =
   | 'Approved' 
   | 'Rejected' 
   | 'Cooling Period' 
-  | 'Expired';
+  | 'Expired'
+  | 'Amendment Requested';
 
 export type CorporateSystemRole = 'admin' | 'user';
 

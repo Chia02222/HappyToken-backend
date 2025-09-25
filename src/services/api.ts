@@ -98,3 +98,14 @@ export const resendRegistrationLink = async (id: string) => {
     });
     return handleResponse(response);
 };
+
+export const sendAmendmentEmail = async (id: string, data: { requestedChanges: string; amendmentReason: string; approverName: string; crtName: string }) => {
+    const response = await fetch(`${API_BASE_URL}/corporates/${id}/send-amendment-email`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+};

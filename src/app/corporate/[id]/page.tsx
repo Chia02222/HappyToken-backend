@@ -7,9 +7,10 @@ import CorporateForm from '../../../components/forms/CorporateForm';
 import CommercialTermsForm from '../../../components/forms/CommercialTermsForm';
 import ECommercialTermsForm from '../../../components/forms/ECommercialTermsForm';
 import { CorporateDetails, CorporateStatus, Contact } from '../../../types';
-import { getCorporateById, createCorporate, updateCorporate, updateCorporateStatus } from '../../../services/api';
+import { getCorporateById, createCorporate, updateCorporate, updateCorporateStatus, sendAmendmentEmail } from '../../../services/api';
 import SuccessModal from '../../../components/modals/SuccessModal';
 import ErrorMessageModal from '../../../components/modals/ErrorMessageModal';
+import AmendRequestModal from '../../../components/modals/AmendRequestModal';
 import { isRequired, isValidEmail, isValidPhone, isValidDateRange, isPositiveNumberString } from '../../../utils/validators';
 
 let clientSideIdCounter = 0;
@@ -90,6 +91,7 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
   const [successModalContent, setSuccessModalContent] = useState({ title: '', message: '' });
   const [isErrorModalVisible, setIsErrorModalVisible] = useState(false);
   const [errorModalContent, setErrorModalContent] = useState('');
+  const [isAmendRequestModalVisible, setIsAmendRequestModalVisible] = useState(false);
 
   const scrollToField = (fieldId: string) => {
     if (typeof window === 'undefined') return;
@@ -278,6 +280,42 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
     }
   };
 
+  const handleAmendRequest = () => {
+    console.log('Amend Request clicked for corporate:', corporateId);
+    setIsAmendRequestModalVisible(true);
+  };
+
+  const handleSubmitAmendment = async (corporateId: string, requestedChanges: string, amendmentReason: string) => {
+    try {
+      // Create a detailed note for the investigation log with custom formatting
+      const amendmentNote = `Requested Changes: ${requestedChanges}<br>Reason:${amendmentReason}<br>Submitted by: ${formData.contacts?.[0]?.first_name || ''} ${formData.contacts?.[0]?.last_name || ''} (${formData.contacts?.[0]?.email || ''})`;
+
+      // Add to investigation log
+      await updateCorporateStatus(corporateId, 'Amendment Requested', amendmentNote);
+      
+      // Send email notification to CRT team
+      const approverName = `${formData.contacts?.[0]?.first_name || ''} ${formData.contacts?.[0]?.last_name || ''}`.trim();
+      const crtName = 'CRT Team'; // You can make this dynamic if needed
+      
+      await sendAmendmentEmail(corporateId, {
+        requestedChanges,
+        amendmentReason,
+        approverName,
+        crtName
+      });
+      
+      // Show success message
+      setSuccessModalContent({
+        title: 'Amendment Request Submitted',
+        message: 'Your amendment request has been submitted successfully and the CRT team has been notified via email.'
+      });
+      setIsSuccessModalVisible(true);
+    } catch (error) {
+      console.error('Failed to submit amendment request:', error);
+      throw error;
+    }
+  };
+
   const getBaseTitle = () => {
     if (formMode === 'new') return 'New Corporate Account';
     if (formMode === 'approve') return 'First Approval';
@@ -292,7 +330,11 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
                     'E-Commercial Terms & Signature';
 
   return (
-    <FormLayout title={formTitle}>
+    <FormLayout 
+      title={formTitle}
+      showAmendRequestButton={formMode === 'approve' || formMode === 'approve-second'}
+      onAmendRequest={handleAmendRequest}
+    >
         {formStep === 1 ? (
             <CorporateForm
                 onCloseForm={handleCloseCorporateForm}
@@ -331,6 +373,13 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
             isOpen={isErrorModalVisible}
             onClose={() => setIsErrorModalVisible(false)}
             message={errorModalContent}
+        />
+        <AmendRequestModal
+            isOpen={isAmendRequestModalVisible}
+            onClose={() => setIsAmendRequestModalVisible(false)}
+            corporate={formData}
+            corporateId={corporateId}
+            onSubmitAmendment={handleSubmitAmendment}
         />
     </FormLayout>
   );

@@ -78,4 +78,44 @@ export class CorporateController {
   @Post(':id/complete-cooling-period')
   async completeCoolingPeriod(@Param('id') id: string) {
     return await this.corporateService.handleCoolingPeriodCompletion(id);
-  }}
+  }
+
+  @Post(':id/send-amendment-email')
+  async sendAmendmentEmail(
+    @Param('id') id: string,
+    @Body() body: { requestedChanges: string; amendmentReason: string; approverName: string; crtName: string }
+  ) {
+    const corporate = await this.corporateService.findById(id);
+    if (!corporate) {
+      throw new Error('Corporate not found');
+    }
+
+    const subject = `Action Required: Amendment Request for ${corporate.company_name}`;
+    const corporateLink = `http://localhost:3000/corporate/${id}`;
+    
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">Action Required: Amendment Request</h2>
+        <p>Hi ${body.crtName},</p>
+        <p>An amendment request has been submitted and requires your action.</p>
+        
+        <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #333;">Request Details:</h3>
+          <p><strong>Requested Changes:</strong> ${body.requestedChanges}</p>
+          <p><strong>Reason:</strong> ${body.amendmentReason}</p>
+          <p><strong>Requested By:</strong> ${body.approverName}</p>
+          <p><strong>Created By:</strong> ${body.crtName}</p>
+        </div>
+        
+        <p>You can review and update the request by clicking the link below:</p>
+        <p><a href="${corporateLink}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Review Amendment Request</a></p>
+        
+        <p>Thank you,<br>Happy Token Team</p>
+      </div>
+    `;
+
+    // Send email to CRT team (you can configure the CRT email address)
+    const crtEmail = process.env.CRT_EMAIL || 'wanjun123@1utar.my';
+    return await this.resendService.sendCustomEmail(crtEmail, subject, html);
+  }
+}

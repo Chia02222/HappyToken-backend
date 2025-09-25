@@ -498,4 +498,13 @@ export declare class CorporateController {
         created_at: string;
         updated_at: string;
     } | null>;
+    sendAmendmentEmail(id: string, body: {
+        requestedChanges: string;
+        amendmentReason: string;
+        approverName: string;
+        crtName: string;
+    }): Promise<{
+        success: boolean;
+        message: any;
+    }>;
 }
