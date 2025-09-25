@@ -292,6 +292,21 @@ let CorporateService = class CorporateService {
             throw error;
         }
     }
+    async getInvestigationLogs(corporateId) {
+        try {
+            const logs = await this.db
+                .selectFrom('investigation_logs')
+                .selectAll()
+                .where('corporate_id', '=', Number(corporateId))
+                .orderBy('created_at', 'desc')
+                .execute();
+            return logs;
+        }
+        catch (error) {
+            console.error('Error fetching investigation logs:', error);
+            throw error;
+        }
+    }
     async updateStatus(id, status, note) {
         const idNum = Number(id);
         const corporate = await this.findById(String(id));

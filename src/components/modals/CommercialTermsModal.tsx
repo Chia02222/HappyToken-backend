@@ -4,9 +4,10 @@ interface CommercialTermsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAgree: () => void;
+  agreed?: boolean;
 }
 
-const CommercialTermsModal: React.FC<CommercialTermsModalProps> = ({ isOpen, onClose, onAgree }) => {
+const CommercialTermsModal: React.FC<CommercialTermsModalProps> = ({ isOpen, onClose, onAgree, agreed = false }) => {
   const [hasScrolledToBottom, setHasScrolledToBottom] = React.useState(false);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -18,7 +19,6 @@ const CommercialTermsModal: React.FC<CommercialTermsModalProps> = ({ isOpen, onC
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
       onAgree();
-      onClose();
     }
   };
 
@@ -81,7 +81,7 @@ const CommercialTermsModal: React.FC<CommercialTermsModalProps> = ({ isOpen, onC
               <input 
                 type="checkbox" 
                 id="commercial_terms_agreement" 
-                disabled={!hasScrolledToBottom}
+                checked={agreed}
                 onChange={handleCheckboxChange}
                 className="h-4 w-4 border-gray-300 rounded focus:ring-ht-gray disabled:opacity-50" 
               />

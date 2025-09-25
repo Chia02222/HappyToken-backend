@@ -453,7 +453,7 @@ async function migrateData() {
             `;
             const corporateId = insertedCorporate[0].id;
             console.log(`✅ Migrated corporate: ${corporate.companyName} (ID: ${corporateId})`);
-            let insertedContactIds = [];
+            const insertedContactIds = [];
             if (details.contacts && Array.isArray(details.contacts)) {
                 for (const contact of details.contacts) {
                     const insertedContact = await sql `

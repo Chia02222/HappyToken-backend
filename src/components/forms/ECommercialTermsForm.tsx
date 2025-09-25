@@ -107,30 +107,68 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
     };
     const isSecondaryFromList = secondary_approver.use_existing_contact;
     const validateSecondaryApprover = (): boolean => {
-        const { secondary_approver } = formData;
-        if (!secondary_approver) {
+        if (!(formMode === 'approve' || formMode === 'approve-second')) {
+            // No validation required in new/edit modes
+            return true;
+        }
+        // Use resolved secondary approver (may come from existing contact selection)
+        const s = secondary_approver;
+        if (!s) {
             setValidationErrorMessage("Secondary approver details are missing.");
             return false;
         }
 
-        if (secondary_approver.use_existing_contact) {
-            if (!secondary_approver.selected_contact_id) {
+        if (s.use_existing_contact) {
+            if (!s.selected_contact_id) {
                 setValidationErrorMessage("Please select an existing contact for secondary approval.");
                 return false;
             }
         } else {
-            if (!secondary_approver.salutation ||
-                !secondary_approver.first_name ||
-                !secondary_approver.last_name ||
-                !secondary_approver.company_role ||
-                !secondary_approver.system_role ||
-                !secondary_approver.email ||
-                !secondary_approver.contact_number) {
-                setValidationErrorMessage("Please fill in all required fields for secondary approval.");
+            const trim = (v?: string | null) => (typeof v === 'string' ? v.trim() : '');
+            const missing: string[] = [];
+            if (!trim(s.first_name)) missing.push('First Name');
+            if (!trim(s.last_name)) missing.push('Last Name');
+            if (!trim(s.company_role)) missing.push('Company Role');
+            if (!trim(s.email)) missing.push('Email');
+            if (!trim(s.contact_number)) missing.push('Contact Number');
+            if (missing.length) {
+                setValidationErrorMessage(`Please fill in: ${missing.join(', ')}.`);
                 return false;
             }
         }
         setValidationErrorMessage(''); // Clear error message if validation passes
+        return true;
+    };
+
+    const isSecondaryApproverComplete = (): boolean => {
+        if (!(formMode === 'approve' || formMode === 'approve-second')) return true;
+        // Use the resolved secondary_approver (may be derived from selected id)
+        const s = secondary_approver;
+        if (!s) return false;
+        if (s.use_existing_contact) {
+            return !!s.selected_contact_id;
+        }
+        return !!(s.first_name && s.last_name && s.company_role && s.email && s.contact_number);
+    };
+
+    const validateFirstApproval = (): boolean => {
+        if (!formData.first_approval_confirmation) {
+            setValidationErrorMessage('Please confirm first approval.');
+            return false;
+        }
+        if (!formData.agreed_to_generic_terms) {
+            setValidationErrorMessage('Please agree to the Generic Terms and Conditions.');
+            return false;
+        }
+        if (!formData.agreed_to_commercial_terms) {
+            setValidationErrorMessage('Please agree to the Commercial Terms and Conditions.');
+            return false;
+        }
+        if (!validateSecondaryApprover()) {
+            // validateSecondaryApprover sets message
+            return false;
+        }
+        setValidationErrorMessage('');
         return true;
     };
 
@@ -190,8 +228,6 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                 
                 <ContentSection title="First Approval">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                        <DisplayField label="Company Name" value={formData.company_name} />
-                        <DisplayField label="Registration Number" value={formData.reg_number} />
                         <DisplayField label="Signatory Name" value={`${primaryContact.first_name || ''} ${primaryContact.last_name || ''}`.trim()} />
                         <DisplayField label="Company Role" value={primaryContact.company_role} />
                         <DisplayField label="System Role" value={primaryContact.system_role} />
@@ -230,7 +266,7 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                                     name="selected_contact_id"
                                     value={secondary_approver.selected_contact_id ?? null}
                                     onChange={handleSecondaryContactSelect}
-                                    required
+                                    required={formMode === 'approve' || formMode === 'approve-second'}
                                 >
                                     <option value="">Select a contact</option>
                                     {otherContacts.map((contact: Contact) => (
@@ -253,18 +289,18 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                                     name="salutation"
                                     value={secondary_approver.salutation ?? 'Mr'}
                                     onChange={handleSecondaryApproverChange}
-                                    required
+                                    required={formMode === 'approve' || formMode === 'approve-second'}
                                 >
                                     <option value="Mr">Mr</option>
                                     <option value="Mrs">Mrs</option>
                                     <option value="Ms">Ms</option>
                                 </SelectField>
                                 <div className="md:col-span-1"></div>
-                                <InputField id="first_name" label="First Name" name="first_name" value={secondary_approver.first_name ?? null} onChange={handleSecondaryApproverChange} required />
-                                <InputField id="last_name" label="Last Name" name="last_name" value={secondary_approver.last_name ?? null} onChange={handleSecondaryApproverChange} required />
-                                <InputField id="company_role" label="Company Role" name="company_role" value={secondary_approver.company_role ?? null} onChange={handleSecondaryApproverChange} required />
+                                <InputField id="first_name" label="First Name" name="first_name" value={secondary_approver.first_name ?? null} onChange={handleSecondaryApproverChange} required={formMode === 'approve' || formMode === 'approve-second'} />
+                                <InputField id="last_name" label="Last Name" name="last_name" value={secondary_approver.last_name ?? null} onChange={handleSecondaryApproverChange} required={formMode === 'approve' || formMode === 'approve-second'} />
+                                <InputField id="company_role" label="Company Role" name="company_role" value={secondary_approver.company_role ?? null} onChange={handleSecondaryApproverChange} required={formMode === 'approve' || formMode === 'approve-second'} />
 
-                                <InputField id="email" label="Email Address" name="email" type="email" value={secondary_approver.email ?? null} onChange={handleSecondaryApproverChange} required />
+                                <InputField id="email" label="Email Address" name="email" type="email" value={secondary_approver.email ?? null} onChange={handleSecondaryApproverChange} required={formMode === 'approve' || formMode === 'approve-second'} />
                                 <div>
                                     <label className="block text-xs font-medium text-gray-700 mb-1">*Contact Number</label>
                                     <div className="flex">
@@ -309,6 +345,7 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                                 name="agreed_to_generic_terms" 
                                 checked={formData.agreed_to_generic_terms as boolean} 
                                 onChange={handleChange} 
+                                disabled
                                 className="h-4 w-4 border-gray-300 rounded focus:ring-ht-gray" 
                             />
                             <label htmlFor="agreed_to_generic_terms" className="ml-2 block text-sm text-gray-900">
@@ -333,6 +370,7 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                                 name="agreed_to_commercial_terms" 
                                 checked={formData.agreed_to_commercial_terms as boolean} 
                                 onChange={handleChange} 
+                                disabled
                                 className="h-4 w-4 border-gray-300 rounded focus:ring-ht-gray" 
                             />
                             <label htmlFor="agreed_to_commercial_terms" className="ml-2 block text-sm text-gray-900">
@@ -345,13 +383,15 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
             </div>
 
             <div className="flex justify-end items-center pt-6 mt-6 space-x-4">
-                 <button 
-                    type="button"
-                    onClick={() => setFormStep(2)}
-                    className="text-sm text-gray-700 bg-white px-4 py-2 rounded-md border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue"
-                 >
-                    Back
-                 </button>
+                 {(formMode !== 'approve' && formMode !== 'approve-second') && (
+                    <button 
+                        type="button"
+                        onClick={() => setFormStep(1)}
+                        className="text-sm text-gray-700 bg-white px-4 py-2 rounded-md border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue"
+                    >
+                        Back
+                    </button>
+                 )}
                  <button 
                     type="button"
                     onClick={onCloseForm}
@@ -368,7 +408,7 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                         Save
                     </button>
                 )}
-                 {formMode === 'approve' || formMode === 'approve-second' ? (
+                {formMode === 'approve' || formMode === 'approve-second' ? (
                     <>
                         <button 
                             type="button"
@@ -386,11 +426,15 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                                         setShowValidationError(true);
                                         return;
                                     }
+                                } else if (formMode === 'approve') {
+                                    if (!validateFirstApproval()) {
+                                        setShowValidationError(true);
+                                        return;
+                                    }
                                 }
                                 setShowValidationError(false);
                                 onSaveCorporate(formData, 'submit');
                             }}
-                            disabled={(formMode === 'approve' && !formData.first_approval_confirmation) || (formMode === 'approve-second' && !formData.second_approval_confirmation)}
                             className="text-sm bg-ht-blue text-white px-4 py-2 rounded-md hover:bg-ht-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue-dark disabled:bg-ht-gray disabled:cursor-not-allowed"
                         >
                             Approve
@@ -398,17 +442,16 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                     </>
                  ) : (
                     <>
-                        {formMode === 'new' && (
+                        {(formMode === 'new' || formMode === 'edit') && (
                             <button 
                                 type="button"
                                 onClick={() => {
                                     console.log('Submitting form data:', JSON.stringify(formData, null, 2));
-                                    setShowValidationError(false);
-                                    onSaveCorporate(formData, 'submit');
+                                    onSaveCorporate(formData, 'sent');
                                 }}
                                 className="text-sm bg-ht-blue text-white px-4 py-2 rounded-md hover:bg-ht-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue-dark"
                             >
-                                Next
+                                Send to Approver
                             </button>
                         )}
                     </>
@@ -419,6 +462,7 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
             <GenericTermsModal
                 isOpen={isGenericTermsModalOpen}
                 onClose={() => setIsGenericTermsModalOpen(false)}
+                agreed={Boolean(formData.agreed_to_generic_terms)}
                 onAgree={() => {
                     setFormData(prev => ({ ...prev, agreed_to_generic_terms: true }));
                 }}
@@ -427,6 +471,7 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
             <CommercialTermsModal
                 isOpen={isCommercialTermsModalOpen}
                 onClose={() => setIsCommercialTermsModalOpen(false)}
+                agreed={Boolean(formData.agreed_to_commercial_terms)}
                 onAgree={() => {
                     setFormData(prev => ({ ...prev, agreed_to_commercial_terms: true }));
                 }}

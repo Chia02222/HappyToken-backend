@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import InputField from '../common/InputField';
 import SelectField from '../common/SelectField';
 import FormSection from '../common/FormSection';
 import { CorporateDetails, Contact, Subsidiary } from '../../types';
+import { corporateFormSchema } from '../../utils/corporateFormSchema';
 
 interface CorporateFormProps {
     onCloseForm: () => void;
@@ -12,13 +13,66 @@ interface CorporateFormProps {
     setFormData: (dataUpdater: (prevData: CorporateDetails) => CorporateDetails) => void;
     onSaveCorporate: (formData: CorporateDetails, action: 'submit' | 'sent' | 'save') => void;
     generateClientSideId: () => string;
+    onValidationError?: (message: string) => void;
+    formMode: 'new' | 'edit' | 'approve' | 'approve-second';
 }
 
 const malaysianStates = [
     'Johor', 'Kedah', 'Kelantan', 'Melaka', 'Negeri Sembilan', 'Pahang', 'Penang', 'Perak', 'Perlis', 'Sabah', 'Sarawak', 'Selangor', 'Terengganu', 'W.P. Kuala Lumpur', 'W.P. Labuan', 'W.P. Putrajaya'
 ];
 
-const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep, formData, setFormData, onSaveCorporate, generateClientSideId }) => {
+const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep, formData, setFormData, onSaveCorporate, generateClientSideId, onValidationError, formMode = 'new'}) => {
+
+	const [errors, setErrors] = useState<Record<string, string>>({});
+	const [isSaving, setIsSaving] = useState(false);
+	const [isValidatingNext, setIsValidatingNext] = useState(false);
+
+	const scrollToField = (fieldId: string) => {
+		try {
+			document.getElementById(fieldId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		} catch {}
+	};
+
+    // Primary contact id for mapping contact field errors
+    const primaryId = formData.contacts?.[0]?.id || '0';
+
+	const runZodValidation = (): boolean => {
+	    const dataForValidation = formMode === 'edit'
+	        ? {
+	            ...formData,
+	            first_approval_confirmation: true,
+	            second_approval_confirmation: true,
+	            agreed_to_generic_terms: true,
+	            agreed_to_commercial_terms: true,
+	          }
+	        : formData;
+	    const res = corporateFormSchema.safeParse(dataForValidation as unknown);
+		if (res.success) {
+			setErrors({});
+			return true;
+		}
+		// Map the FIRST zod issue to an input id so we can show red and scroll
+		const issue = res.error.issues[0];
+		const p = issue.path.join('.');
+		let id = String(issue.path[0]);
+		if (p === 'agreement_from') id = 'agreementFrom';
+		else if (p === 'agreement_to') id = 'agreementTo';
+		else if (p === 'credit_limit') id = 'creditLimit';
+		else if (p === 'credit_terms') id = 'creditTerms';
+		else if (p === 'transaction_fee') id = 'transactionFee';
+		else if (p === 'late_payment_interest') id = 'latePaymentInterest';
+		else if (p === 'white_labeling_fee') id = 'whiteLabelingFee';
+		else if (p === 'custom_feature_fee') id = 'custom_feature_fee';
+		else if (p.startsWith('contacts.0.first_name')) id = `contact-first_name-${primaryId}`;
+		else if (p.startsWith('contacts.0.last_name')) id = `contact-last_name-${primaryId}`;
+		else if (p.startsWith('contacts.0.contact_number')) id = `contact-number-${primaryId}`;
+		else if (p.startsWith('contacts.0.email')) id = `contact-email-${primaryId}`;
+
+        setErrors({ [id]: issue.message });
+        scrollToField(id);
+		onValidationError?.('Please complete the required fields.');
+		return false;
+	};
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target;
@@ -115,12 +169,12 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
         <div className="space-y-6">
             <FormSection title="Company Information & Official Address">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                    <InputField id="company_name" label="Company Name" name="company_name" value={formData.company_name} onChange={handleChange} required />
-                    <InputField id="reg_number" label="Official Registration Number" name="reg_number" value={formData.reg_number} onChange={handleChange} required />
-                    <InputField id="office_address1" label="Office Address 1" name="office_address1" value={formData.office_address1} onChange={handleChange} required />
+                    <InputField id="company_name" label="Company Name" name="company_name" value={formData.company_name} onChange={handleChange} required error={errors.company_name} />
+                    <InputField id="reg_number" label="Official Registration Number" name="reg_number" value={formData.reg_number} onChange={handleChange} required error={errors.reg_number} />
+                    <InputField id="office_address1" label="Office Address 1" name="office_address1" value={formData.office_address1} onChange={handleChange} required error={errors.office_address1} />
                     <InputField id="office_address2" label="Office Address 2" name="office_address2" value={formData.office_address2 ??  null} onChange={handleChange} />
-                    <InputField id="postcode" label="Postcode" name="postcode" value={formData.postcode} onChange={handleChange} required />
-                    <InputField id="city" label="City" name="city" value={formData.city} onChange={handleChange} required />
+                    <InputField id="postcode" label="Postcode" name="postcode" value={formData.postcode} onChange={handleChange} required error={errors.postcode} />
+                    <InputField id="city" label="City" name="city" value={formData.city} onChange={handleChange} required error={errors.city} />
                     <SelectField id="state" label="State" name="state" value={formData.state} onChange={handleChange} required>
                         <option value="">Select State</option>
                         {malaysianStates.map((state: string) => <option key={state} value={state}>{state}</option>)}
@@ -194,16 +248,17 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                                 <option>Ms</option>
                             </SelectField>
                             <div></div>
-                            <InputField id={`contact-first_name-${contact.id}`} label="First Name" name="first_name" value={contact.first_name} onChange={e => handleContactChange(index, e)} required />
-                            <InputField id={`contact-last_name-${contact.id}`} label="Last Name" name="last_name" value={contact.last_name} onChange={e => handleContactChange(index, e)} required />
+                            <InputField id={`contact-first_name-${contact.id}`} label="First Name" name="first_name" value={contact.first_name} onChange={e => handleContactChange(index, e)} required error={errors[`contact-first_name-${contact.id}`]} />
+                            <InputField id={`contact-last_name-${contact.id}`} label="Last Name" name="last_name" value={contact.last_name} onChange={e => handleContactChange(index, e)} required error={errors[`contact-last_name-${contact.id}`]} />
                              <div>
                                 <label className="block text-xs font-medium text-gray-700 mb-1">*Contact Number</label>
                                 <div className="flex">
                                     <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">+60</span>
-                                    <input type="text" id={`contact-number-${contact.id}`} name="contact_number" value={contact.contact_number} onChange={e => handleContactChange(index, e)} className="flex-1 block w-full rounded-none rounded-r-md border border-gray-300 p-2 text-sm focus:ring-ht-blue focus:border-ht-blue bg-white dark:bg-white" />
+                                    <input type="text" id={`contact-number-${contact.id}`} name="contact_number" value={contact.contact_number} onChange={e => handleContactChange(index, e)} className={`flex-1 block w-full rounded-none rounded-r-md border p-2 text-sm focus:ring-ht-blue bg-white dark:bg-white ${errors[`contact-number-${contact.id}`] ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-ht-blue'}`} />
                                 </div>
+                                {errors[`contact-number-${contact.id}`] && <p className="mt-1 text-xs text-red-600">{errors[`contact-number-${contact.id}`]}</p>}
                             </div>
-                            <InputField id={`contact-email-${contact.id}`} label="Email Address" name="email" value={contact.email} onChange={e => handleContactChange(index, e)} required type="email" />
+                            <InputField id={`contact-email-${contact.id}`} label="Email Address" name="email" value={contact.email} onChange={e => handleContactChange(index, e)} required type="email" error={errors[`contact-email-${contact.id}`]} />
                             <SelectField id={`contact-company_role-${contact.id}`} label="Company Role" name="company_role" value={contact.company_role} onChange={e => handleContactChange(index, e)} required>
                                 <option>Select Role</option>
                             </SelectField>
@@ -227,20 +282,61 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                 </div>
                 {!(formData.billing_same_as_official as boolean) && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                        <InputField id="billing_address1" label="Office Address 1" name="billing_address1" value={formData.billing_address1 as string} onChange={handleChange} required />
+                        <InputField id="billing_address1" label="Office Address 1" name="billing_address1" value={formData.billing_address1 as string} onChange={handleChange} required error={errors.billing_address1} />
                         <InputField id="billing_address2" label="Office Address 2" name="billing_address2" value={formData.billing_address2 as string} onChange={handleChange} />
-                        <InputField id="billing_postcode" label="Postcode" name="billing_postcode" value={formData.billing_postcode as string} onChange={handleChange} required />
-                        <InputField id="billing_city" label="City" name="billing_city" value={formData.billing_city as string} onChange={handleChange} required />
-                        <InputField id="billing_state" label="State" name="billing_state" value={formData.billing_state as string} onChange={handleChange} required />
-                        <InputField id="billing_country" label="Country" name="billing_country" value={formData.billing_country as string} onChange={handleChange} required />
+                        <InputField id="billing_postcode" label="Postcode" name="billing_postcode" value={formData.billing_postcode as string} onChange={handleChange} required error={errors.billing_postcode} />
+                        <InputField id="billing_city" label="City" name="billing_city" value={formData.billing_city as string} onChange={handleChange} required error={errors.billing_city} />
+                        <InputField id="billing_state" label="State" name="billing_state" value={formData.billing_state as string} onChange={handleChange} required error={errors.billing_state} />
+                        <InputField id="billing_country" label="Country" name="billing_country" value={formData.billing_country as string} onChange={handleChange} required error={errors.billing_country} />
                     </div>
                 )}
             </FormSection>
             
             <FormSection title="Tax Information">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                    <InputField id="company_tin" label="Company TIN" name="company_tin" value={formData.company_tin as string} onChange={handleChange} required />
+                    <InputField id="company_tin" label="Company TIN" name="company_tin" value={formData.company_tin as string} onChange={handleChange} required error={errors.company_tin} />
                     <InputField id="sst_number" label="SST Number" name="sst_number" value={formData.sst_number as string} onChange={handleChange} />
+                </div>
+            </FormSection>
+
+            <FormSection title="Commercial Terms">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                    <div className="md:col-span-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Agreement Duration</label>
+                        <div className="flex items-center space-x-2">
+                           <InputField id="agreementFrom" label="" name="agreement_from" value={(formData.agreement_from ? String(formData.agreement_from).slice(0,10) : '')} onChange={handleChange} type="date" required min={new Date().toISOString().split('T')[0]} error={errors.agreementFrom} />
+                           <span className="text-gray-500">to</span>
+                           <InputField id="agreementTo" label="" name="agreement_to" value={(formData.agreement_to ? String(formData.agreement_to).slice(0,10) : '')} onChange={handleChange} type="date" required min={(formData.agreement_from ? String(formData.agreement_from).slice(0,10) : new Date().toISOString().split('T')[0])} error={errors.agreementTo} />
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Credit Limit</label>
+                        <div className="flex items-center">
+                             <span className="inline-flex items-center px-3 h-[38px] rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">MYR</span>
+                            <InputField id="creditLimit" label="" name="credit_limit" value={formData.credit_limit ?? null} onChange={handleChange} required error={errors.creditLimit} />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Credit Terms</label>
+                        <div className="flex items-center">
+                           <InputField id="creditTerms" label="" name="credit_terms" value={formData.credit_terms ?? null} onChange={handleChange} required error={errors.creditTerms} />
+                           <span className="ml-2 text-gray-500">days from invoice date</span>
+                        </div>
+                    </div>
+                    
+                    <InputField id="transactionFee" label="Transaction Fees Rate (% based on total purchased amount)" name="transaction_fee" value={formData.transaction_fee ?? null} onChange={handleChange} required error={errors.transactionFee} />
+                    <InputField id="latePaymentInterest" label="Late Payment Interest (% per 14 days)" name="late_payment_interest" value={formData.late_payment_interest ?? null} onChange={handleChange} required error={errors.latePaymentInterest} />
+                    
+                    <InputField id="whiteLabelingFee" label="White Labeling Fee (*only when request) (% based on total purchased amount)" name="white_labeling_fee" value={formData.white_labeling_fee ?? null} onChange={handleChange} required error={errors.whiteLabelingFee} />
+                     <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Custom Feature Request Fee (*only when request)</label>
+                        <div className="flex items-center">
+                             <span className="inline-flex items-center px-3 h-[38px] rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">MYR</span>
+                            <InputField id="custom_feature_fee" label="" name="custom_feature_fee" value={formData.custom_feature_fee ?? null} onChange={handleChange} required error={errors.custom_feature_fee} />
+                        </div>
+                </div>
                 </div>
             </FormSection>
 
@@ -252,21 +348,39 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                  >
                     Cancel
                  </button>
-                 <button 
+                <button 
                     type="button"
-                    onClick={() => onSaveCorporate(formData, 'save')}
-                    className="text-sm text-gray-700 bg-white px-4 py-2 rounded-md border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue"
+                    onClick={async () => {
+                        // Save should validate, but in edit mode checkboxes are relaxed in runZodValidation
+                        if (!runZodValidation()) return;
+                        try {
+                            setIsSaving(true);
+                            await Promise.resolve(onSaveCorporate(formData, 'save'));
+                        } finally {
+                            setIsSaving(false);
+                        }
+                    }}
+                    disabled={isSaving || isValidatingNext}
+                    className={`text-sm px-4 py-2 rounded-md border ${isSaving || isValidatingNext ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'text-gray-700 bg-white hover:bg-gray-50'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue`}
                  >
-                    Save
+                    {isSaving ? 'Saving…' : 'Save'}
                  </button>
                  <button 
                     type="button"
-                    onClick={() => {
-                        // In a real app, form data would be validated here.
-                        setFormStep(2);
+                    onClick={async () => {
+                        setIsValidatingNext(true);
+                        try {
+                            // In edit mode, allow navigating to next without validation
+                            if (formMode !== 'edit' && !runZodValidation()) return;
+                            setFormStep(2);
+                        } finally {
+                            setIsValidatingNext(false);
+                        }
                     }}
+                    disabled={isSaving || isValidatingNext}
+                    className={`text-sm px-4 py-2 rounded-md ${isSaving || isValidatingNext ? 'bg-ht-gray text-white cursor-not-allowed' : 'bg-ht-blue text-white hover:bg-ht-blue-dark'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue`}
                 >
-                    Next
+                    {isValidatingNext ? 'Validating…' : 'Next'}
                 </button>
             </div>
         </div>

@@ -4,10 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import FormLayout from '../../../components/layout/FormLayout';
 import CorporateForm from '../../../components/forms/CorporateForm';
-import CommercialTermsForm from '../../../components/forms/CommercialTermsForm';
 import ECommercialTermsForm from '../../../components/forms/ECommercialTermsForm';
 import { CorporateDetails, CorporateStatus, Contact } from '../../../types';
-import { getCorporateById, createCorporate, updateCorporate, updateCorporateStatus, sendAmendmentEmail } from '../../../services/api';
+import { getCorporateById, createCorporate, updateCorporate, updateCorporateStatus, sendAmendmentEmail, sendEcommericialTermlink } from '../../../services/api';
 import SuccessModal from '../../../components/modals/SuccessModal';
 import ErrorMessageModal from '../../../components/modals/ErrorMessageModal';
 import AmendRequestModal from '../../../components/modals/AmendRequestModal';
@@ -58,12 +57,12 @@ const INITIAL_CORPORATE_FORM_DATA: CorporateDetails = {
     sst_number: '',
     agreement_from: '',
     agreement_to: '',
-    credit_limit: '0.00',
+    credit_limit: '',
     credit_terms: '',
     transaction_fee: '',
     late_payment_interest: '',
     white_labeling_fee: '',
-    custom_feature_fee: '0.00',
+    custom_feature_fee: '',
     agreed_to_generic_terms: false,
     agreed_to_commercial_terms: false,
     first_approval_confirmation: false,
@@ -71,9 +70,7 @@ const INITIAL_CORPORATE_FORM_DATA: CorporateDetails = {
     investigation_log: [],
 };
 
-interface CorporateFormPageProps {
-  // params are now accessed via useParams hook, so no longer needed here
-}
+type CorporateFormPageProps = object;
 
 const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
   const router = useRouter();
@@ -82,13 +79,13 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
   const corporateId = params.id as string;
   const mode = searchParams.get('mode') as 'new' | 'edit' | 'approve' | 'approve-second' | null;
 
-  const [formStep, setFormStep] = useState(1);
+  const initialStep = (mode === 'approve' || mode === 'approve-second' || searchParams.get('step') === '2') ? 2 : 1;
+  const [formStep, setFormStep] = useState(initialStep);
   const [formData, setFormData] = useState<CorporateDetails>(INITIAL_CORPORATE_FORM_DATA);
   const [formMode, setFormMode] = useState<'new' | 'edit' | 'approve' | 'approve-second'>(mode || 'new');
-  const [isConfirmDeleteModalVisible, setIsConfirmDeleteModalVisible] = useState(false);
-  const [corporateToDeleteId, setCorporateToDeleteId] = useState<string | null>(null);
   const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
   const [successModalContent, setSuccessModalContent] = useState({ title: '', message: '' });
+  const [shouldCloseOnSuccessClose, setShouldCloseOnSuccessClose] = useState(false);
   const [isErrorModalVisible, setIsErrorModalVisible] = useState(false);
   const [errorModalContent, setErrorModalContent] = useState('');
   const [isAmendRequestModalVisible, setIsAmendRequestModalVisible] = useState(false);
@@ -110,10 +107,15 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
       if (corporateId && corporateId !== 'new') {
         try {
           const fullFormData = await getCorporateById(corporateId);
-          setFormData({
+          const adjusted = {
             ...INITIAL_CORPORATE_FORM_DATA,
             ...fullFormData,
-          });
+            ...(mode === 'approve-second' ? {
+              agreed_to_generic_terms: false,
+              agreed_to_commercial_terms: false,
+            } : {}),
+          } as CorporateDetails;
+          setFormData(adjusted);
           // Set formMode based on URL parameter if available, otherwise default to 'edit'
           setFormMode(mode || 'edit');
         } catch (error) {
@@ -126,7 +128,7 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
     };
 
     fetchCorporateData();
-  }, [corporateId, mode]);
+  }, [corporateId, mode, searchParams]);
 
   const handleCloseCorporateForm = () => {
     router.push('/');
@@ -235,29 +237,50 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
         secondary_approver: updatedFormData.secondary_approver,
       };
 
-      // Debug: inspect outgoing payload
-      try {
-        // Avoid logging huge blobs if any
-        console.debug('[SaveCorporate] mode:', formMode, 'action:', action);
-        console.debug('[SaveCorporate] payload:', JSON.stringify(dataToSend));
-      } catch {}
+      // Debug logging removed to avoid main-thread overhead
 
       let savedCorporateId = corporateId;
 
       if (corporateId && corporateId !== 'new') {
-        const updatedCorporate = await updateCorporate(corporateId, dataToSend);
+        await updateCorporate(corporateId, dataToSend);
       } else {
         const newCorporate = await createCorporate(dataToSend);
         savedCorporateId = newCorporate.id;
-        if (action === 'sent') {
-            await updateCorporateStatus(newCorporate.id, 'Pending 1st Approval', 'Submitted to 1st approver.');
-        }
       }
 
-      if (formMode === 'approve' && action === 'submit' && savedCorporateId) {
+      if (action === 'sent' && savedCorporateId) {
+        // Send email to first approver and update status via backend
+        try {
+          await sendEcommericialTermlink(savedCorporateId);
+          setSuccessModalContent({ title: 'Sent', message: 'Email sent to the first approver and status updated to Pending 1st Approval.' });
+          setShouldCloseOnSuccessClose(true);
+          setIsSuccessModalVisible(true);
+          return;
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          setErrorModalContent(`Failed to send for approval: ${msg}`);
+          setIsErrorModalVisible(true);
+          return;
+        }
+      } else if (formMode === 'approve' && action === 'submit' && savedCorporateId) {
         await updateCorporateStatus(savedCorporateId, 'Pending 2nd Approval', 'First approval completed.');
+        try {
+          await sendEcommericialTermlink(savedCorporateId, 'second');
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          setErrorModalContent(`Failed to email second approver: ${msg}`);
+          setIsErrorModalVisible(true);
+          return;
+        }
       } else if (formMode === 'approve-second' && action === 'submit' && savedCorporateId) {
         await updateCorporateStatus(savedCorporateId, 'Cooling Period', 'Second approval completed.');
+      }
+
+      if (action === 'save') {
+        setSuccessModalContent({ title: 'Saved', message: 'Corporate saved successfully.' });
+        setIsSuccessModalVisible(true);
+        setShouldCloseOnSuccessClose(true);
+        return;
       }
 
       handleCloseCorporateForm();
@@ -287,22 +310,14 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
 
   const handleSubmitAmendment = async (corporateId: string, requestedChanges: string, amendmentReason: string) => {
     try {
-      // Create a detailed note for the investigation log with custom formatting
-      const amendmentNote = `Requested Changes: ${requestedChanges}<br>Reason:${amendmentReason}<br>Submitted by: ${formData.contacts?.[0]?.first_name || ''} ${formData.contacts?.[0]?.last_name || ''} (${formData.contacts?.[0]?.email || ''})`;
+      // Create a detailed note for the investigation log with proper formatting for parsing
+      const amendmentNote = `Amendment Request Submitted<br>Requested Changes: ${requestedChanges}<br>Reason: ${amendmentReason}<br>Submitted by: ${formData.contacts?.[0]?.first_name || ''} ${formData.contacts?.[0]?.last_name || ''} (${formData.contacts?.[0]?.email || ''})`;
 
       // Add to investigation log
       await updateCorporateStatus(corporateId, 'Amendment Requested', amendmentNote);
       
-      // Send email notification to CRT team
-      const approverName = `${formData.contacts?.[0]?.first_name || ''} ${formData.contacts?.[0]?.last_name || ''}`.trim();
-      const crtName = 'CRT Team'; // You can make this dynamic if needed
-      
-      await sendAmendmentEmail(corporateId, {
-        requestedChanges,
-        amendmentReason,
-        approverName,
-        crtName
-      });
+      // Send email notification to CRT team (no body parameters needed)
+      await sendAmendmentEmail(corporateId);
       
       // Show success message
       setSuccessModalContent({
@@ -310,14 +325,16 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
         message: 'Your amendment request has been submitted successfully and the CRT team has been notified via email.'
       });
       setIsSuccessModalVisible(true);
+      setIsAmendRequestModalVisible(false);
     } catch (error) {
       console.error('Failed to submit amendment request:', error);
-      throw error;
+      setErrorModalContent('Failed to submit amendment request. Please try again.');
+      setIsErrorModalVisible(true);
     }
   };
 
   const getBaseTitle = () => {
-    if (formMode === 'new') return 'New Corporate Account';
+    if (formMode === 'new' || formMode === 'edit') return 'New Corporate Account';
     if (formMode === 'approve') return 'First Approval';
     if (formMode === 'approve-second') return 'Second Approval';
     if (corporateId && corporateId !== 'new') return 'Corporate Account';
@@ -325,34 +342,17 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
   };
   const baseTitle = getBaseTitle();
   
-  const formTitle = formStep === 1 ? baseTitle :
-                    formStep === 2 ? 'Commercial Terms' : 
-                    'E-Commercial Terms & Signature';
+  const formTitle = (formMode === 'approve' || formMode === 'approve-second' || formStep === 2)
+    ? 'E-Commercial Terms & Signature'
+    : baseTitle;
 
   return (
     <FormLayout 
       title={formTitle}
-      showAmendRequestButton={formMode === 'approve' || formMode === 'approve-second'}
+      showAmendRequestButton={formStep === 2 && (formMode === 'approve' || formMode === 'approve-second')}
       onAmendRequest={handleAmendRequest}
     >
-        {formStep === 1 ? (
-            <CorporateForm
-                onCloseForm={handleCloseCorporateForm}
-                setFormStep={setFormStep}
-                formData={({ ...formData}) as CorporateDetails}
-                setFormData={setFormData}
-                onSaveCorporate={handleSaveCorporate}
-                generateClientSideId={generateClientSideId}
-            />
-        ) : formStep === 2 ? (
-            <CommercialTermsForm
-                onCloseForm={handleCloseCorporateForm}
-                setFormStep={setFormStep}
-                formData={({ ...formData}) as CorporateDetails}
-                setFormData={setFormData}
-                onSaveCorporate={handleSaveCorporate}
-            />
-        ) : (
+        {(formMode === 'approve' || formMode === 'approve-second' || formStep === 2) ? (
             <ECommercialTermsForm
                 onCloseForm={handleCloseCorporateForm}
                 setFormStep={setFormStep}
@@ -362,10 +362,26 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
                 formMode={formMode}
                 updateStatus={handleUpdateStatus}
             />
+        ) : (
+            <CorporateForm
+                onCloseForm={handleCloseCorporateForm}
+                setFormStep={setFormStep}
+                formData={({ ...formData}) as CorporateDetails}
+                setFormData={setFormData}
+                onSaveCorporate={handleSaveCorporate}
+                generateClientSideId={generateClientSideId}
+                formMode={formMode}
+            />
         )}
         <SuccessModal
             isOpen={isSuccessModalVisible}
-            onClose={() => setIsSuccessModalVisible(false)}
+        onClose={() => {
+          setIsSuccessModalVisible(false);
+          if (shouldCloseOnSuccessClose) {
+            setShouldCloseOnSuccessClose(false);
+            handleCloseCorporateForm();
+          }
+        }}
             title={successModalContent.title}
             message={successModalContent.message}
         />

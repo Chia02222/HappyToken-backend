@@ -259,6 +259,15 @@ export declare class CorporateService {
         from_status: CorporateStatus | null;
         to_status: CorporateStatus | null;
     }>;
+    getInvestigationLogs(corporateId: string): Promise<{
+        id: number;
+        created_at: string;
+        corporate_id: number;
+        timestamp: string;
+        note: string | null;
+        from_status: CorporateStatus | null;
+        to_status: CorporateStatus | null;
+    }[]>;
     updateStatus(id: string, status: string, note?: string): Promise<{
         contacts: {
             id: number;

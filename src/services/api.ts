@@ -92,20 +92,20 @@ export const deleteCorporate = async (id: string) => {
     return handleResponse(response);
 };
 
-export const resendRegistrationLink = async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/corporates/${id}/resend-link`, {
+export const sendEcommericialTermlink = async (id: string, approver: 'first' | 'second' = 'first') => {
+    const q = approver ? `?approver=${approver}` : '';
+    const response = await fetch(`${API_BASE_URL}/corporates/${id}/resend-link${q}`, {
         method: 'POST',
     });
     return handleResponse(response);
 };
 
-export const sendAmendmentEmail = async (id: string, data: { requestedChanges: string; amendmentReason: string; approverName: string; crtName: string }) => {
+export const sendAmendmentEmail = async (id: string) => {
     const response = await fetch(`${API_BASE_URL}/corporates/${id}/send-amendment-email`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
     });
     return handleResponse(response);
 };

@@ -363,24 +363,24 @@ export async function migrateData() {
             const details = CORPORATE_DETAILS_DATA[corporate.id] || {};
             
             // Derive billing address from office by default
-            const office_address1 = (details as any).officeAddress1 || 'Address Line 1';
-            const office_address2 = (details as any).officeAddress2 || '';
-            const postcode = (details as any).postcode || '50000';
-            const city = (details as any).city || 'Kuala Lumpur';
-            const state = (details as any).state || 'W.P. Kuala Lumpur';
-            const country = (details as any).country || 'Malaysia';
-            const website = (details as any).website || null;
-            const account_note = (details as any).accountNote || '';
-            const company_tin = (details as any).companyTIN || 'N/A';
-            const sst_number = (details as any).sstNumber || '';
-            const agreement_from = (details as any).agreementFrom || null;
-            const agreement_to = (details as any).agreementTo || null;
-            const credit_limit = (details as any).creditLimit || '0.00';
-            const credit_terms = (details as any).creditTerms || '30';
-            const transaction_fee = (details as any).transactionFee || '2.0';
-            const late_payment_interest = (details as any).latePaymentInterest || '1.5';
-            const white_labeling_fee = (details as any).whiteLabelingFee || '0.00';
-            const custom_feature_fee = (details as any).customFeatureFee || '0.00';
+            const office_address1 = (details as { officeAddress1?: string }).officeAddress1 || 'Address Line 1';
+            const office_address2 = (details as { officeAddress2?: string }).officeAddress2 || '';
+            const postcode = (details as { postcode?: string }).postcode || '50000';
+            const city = (details as { city?: string }).city || 'Kuala Lumpur';
+            const state = (details as { state?: string }).state || 'W.P. Kuala Lumpur';
+            const country = (details as { country?: string }).country || 'Malaysia';
+            const website = (details as { website?: string }).website || null;
+            const account_note = (details as { accountNote?: string }).accountNote || '';
+            const company_tin = (details as { companyTIN?: string }).companyTIN || 'N/A';
+            const sst_number = (details as { sstNumber?: string }).sstNumber || '';
+            const agreement_from = (details as { agreementFrom?: string | null }).agreementFrom || null;
+            const agreement_to = (details as { agreementTo?: string | null }).agreementTo || null;
+            const credit_limit = (details as { creditLimit?: string }).creditLimit || '0.00';
+            const credit_terms = (details as { creditTerms?: string }).creditTerms || '30';
+            const transaction_fee = (details as { transactionFee?: string }).transactionFee || '2.0';
+            const late_payment_interest = (details as { latePaymentInterest?: string }).latePaymentInterest || '1.5';
+            const white_labeling_fee = (details as { whiteLabelingFee?: string }).whiteLabelingFee || '0.00';
+            const custom_feature_fee = (details as { customFeatureFee?: string }).customFeatureFee || '0.00';
             
             const billing_same_as_official = true;
             const billing_address1 = office_address1;
@@ -464,7 +464,7 @@ export async function migrateData() {
             console.log(`✅ Migrated corporate: ${corporate.companyName} (ID: ${corporateId})`);
 
             // Migrate contacts and capture IDs
-            let insertedContactIds: number[] = [];
+            const insertedContactIds: number[] = [];
             if (details.contacts && Array.isArray(details.contacts)) {
                 for (const contact of details.contacts as ContactData[]) {
                     const insertedContact = await sql`
@@ -479,7 +479,7 @@ export async function migrateData() {
                             ${new Date().toISOString()}, ${new Date().toISOString()}
                         ) RETURNING id
                     `;
-                    insertedContactIds.push((insertedContact as any)[0].id as number);
+                    insertedContactIds.push((insertedContact as Array<{ id: number }>)[0].id as number);
                 }
                 console.log(`  📞 Migrated ${details.contacts.length} contacts`);
             }
@@ -526,13 +526,13 @@ export async function migrateData() {
 
             // Migrate investigation logs
             if (corporate.investigationLog) {
-                for (const log of corporate.investigationLog) {
+                for (const log of corporate.investigationLog as Array<{ timestamp: string; note?: string | null; from?: CorporateStatus; to?: CorporateStatus }>) {
                     await sql`
                         INSERT INTO investigation_logs (
                             corporate_id, timestamp, note, from_status, to_status, created_at
                         ) VALUES (
                             ${corporateId}, ${log.timestamp}, ${log.note || null},
-                            ${(log as any).from || null}, ${(log as any).to || null}, ${new Date().toISOString()}
+                            ${log.from || null}, ${log.to || null}, ${new Date().toISOString()}
                         )
                     `;
                 }

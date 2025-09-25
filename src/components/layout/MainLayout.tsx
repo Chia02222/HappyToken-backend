@@ -12,9 +12,10 @@ interface MainLayoutProps {
     onToggleSidebar: () => void;
     children: React.ReactNode;
     userRole: 'admin' | 'client';
+    onLogout?: () => void;
 }
 
-const MainLayout: React.FC<MainLayoutProps> = ({ currentPage, setCurrentPage, isSidebarCollapsed, onToggleSidebar, children, userRole }) => {
+const MainLayout: React.FC<MainLayoutProps> = ({ currentPage, setCurrentPage, isSidebarCollapsed, onToggleSidebar, children, userRole, onLogout }) => {
     return (
         <div className="flex h-screen bg-ht-gray-light font-sans text-sm">
             <Sidebar
@@ -25,14 +26,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ currentPage, setCurrentPage, is
                 userRole={userRole}
             />
             <div className="flex-1 flex flex-col overflow-hidden">
-                <Header />
-                <div className="bg-white shadow-sm p-4 flex justify-between items-center">
-                    <h1 className="text-lg font-semibold text-ht-gray-dark">{currentPage}</h1>
-                </div>
-                <main className={`flex-1 overflow-y-auto ${currentPage === 'CRT Corporate' || currentPage === 'Approver Corporate' ? '' : 'p-6'}`}>
+                <Header userRole={userRole} onLogout={onLogout} currentPage={currentPage} />
+                <main className={`flex-1 overflow-y-auto ${currentPage === 'CRT Corporate' ? '' : 'p-6'}`}>
                     {children}
                 </main>
-                {(currentPage !== 'CRT Corporate' && currentPage !== 'Approver Corporate') && <Footer />}
+                {currentPage !== 'CRT Corporate' && <Footer />}
             </div>
         </div>
     );

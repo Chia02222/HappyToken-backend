@@ -239,7 +239,7 @@ export class CorporateService {
     if (contacts) {
       for (const contact of contacts) {
         console.log('Processing contact:', contact);
-        const cid = (contact as any).id;
+        const cid = (contact as { id?: unknown }).id;
         if (isPersistedId(cid)) {
           await this.contactsService.updateContact(Number(cid), contact);
         } else if (!cid || isClientTempId(cid)) {
@@ -260,7 +260,7 @@ export class CorporateService {
 
     if (subsidiaries) {
       for (const subsidiary of subsidiaries) {
-        const sid = (subsidiary as any).id;
+        const sid = (subsidiary as { id?: unknown }).id;
         if (isPersistedId(sid)) {
           await this.subsidiariesService.updateSubsidiary(Number(sid), subsidiary);
         } else if (!sid || isClientTempId(sid)) {
@@ -314,6 +314,21 @@ export class CorporateService {
       return inserted!;
     } catch (error) {
       console.error('Error inserting investigation log:', error);
+      throw error;
+    }
+  }
+
+  async getInvestigationLogs(corporateId: string) {
+    try {
+      const logs = await this.db
+        .selectFrom('investigation_logs')
+        .selectAll()
+        .where('corporate_id', '=', Number(corporateId))
+        .orderBy('created_at', 'desc')
+        .execute();
+      return logs;
+    } catch (error) {
+      console.error('Error fetching investigation logs:', error);
       throw error;
     }
   }

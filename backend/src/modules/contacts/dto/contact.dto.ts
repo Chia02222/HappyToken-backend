@@ -1,5 +1,5 @@
 import { PartialType } from '@nestjs/mapped-types';
-import { z, ZodObject } from 'zod';
+import { z, type ZodObject, type ZodRawShape } from 'zod';
 
 // Base DTO that explicitly defines properties from the `contacts` table
 export class BaseContactDto {
@@ -30,8 +30,8 @@ export const createContactSchema = z.object({
     email: z.string().email(),
     company_role: z.string().min(1),
     system_role: z.string().min(1),
-}) as ZodObject<any>;
+}) as ZodObject<ZodRawShape>;
 
-export const updateContactSchema = (createContactSchema as ZodObject<any>).partial().extend({
+export const updateContactSchema = (createContactSchema as ZodObject<ZodRawShape>).partial().extend({
     id: z.number().int().positive().optional(),
 });

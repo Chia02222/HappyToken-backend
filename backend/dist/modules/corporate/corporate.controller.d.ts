@@ -416,7 +416,7 @@ export declare class CorporateController {
         created_at: string;
         updated_at: string;
     } | null>;
-    resendRegistrationLink(id: string): Promise<{
+    sendEcommericialTermlink(id: string, approver?: 'first' | 'second'): Promise<{
         success: boolean;
         message: any;
     }>;
@@ -498,12 +498,7 @@ export declare class CorporateController {
         created_at: string;
         updated_at: string;
     } | null>;
-    sendAmendmentEmail(id: string, body: {
-        requestedChanges: string;
-        amendmentReason: string;
-        approverName: string;
-        crtName: string;
-    }): Promise<{
+    sendAmendmentEmail(id: string): Promise<{
         success: boolean;
         message: any;
     }>;

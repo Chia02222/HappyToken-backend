@@ -1,4 +1,4 @@
-import { z, ZodObject } from 'zod';
+import { z, type ZodObject, type ZodRawShape } from 'zod';
 export declare class BaseContactDto {
     corporate_id: number;
     salutation: string;
@@ -15,9 +15,9 @@ declare const UpdateContactDto_base: import("@nestjs/mapped-types").MappedType<P
 export declare class UpdateContactDto extends UpdateContactDto_base {
     id?: number;
 }
-export declare const createContactSchema: ZodObject<any>;
+export declare const createContactSchema: ZodObject<ZodRawShape>;
 export declare const updateContactSchema: z.ZodObject<{
-    [x: string]: z.ZodOptional<any>;
+    readonly [x: string]: z.ZodOptional<z.core.$ZodType<unknown, unknown, z.core.$ZodTypeInternals<unknown, unknown>>>;
     id: z.ZodOptional<z.ZodNumber>;
 }, z.core.$strip>;
 export {};

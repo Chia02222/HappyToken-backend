@@ -2,11 +2,10 @@
 
 import { getCorporateById } from '../services/api';
 import React, { useState, useEffect } from 'react';
-import { Corporate, CorporateStatus, Contact } from '../types';
+import { Corporate, CorporateStatus } from '../types';
 import StatusBadge from './common/StatusBadge';
 import ChangeStatusModal from './modals/ChangeStatusModal';
 import CopyLinkModal from './modals/CopyLinkModal';
-import ResendModal from './modals/ResendModal';
 import EllipsisMenu from './common/EllipsisMenu';
 
 interface CorporatePageProps {
@@ -18,8 +17,7 @@ interface CorporatePageProps {
     corporateToAutoSendLink: Corporate | null;
     setCorporateToAutoSendLink: React.Dispatch<React.SetStateAction<Corporate | null>>;
     onDeleteCorporate: (id: string) => Promise<void>;
-    onResendRegistrationLink: (id: string) => Promise<void>;
-    onSendRegistrationLink: (id: string) => Promise<void>;
+    onSendEcommericialTermlink: (id: string) => Promise<void>;
     fetchCorporates: () => Promise<void>;
 }
 
@@ -32,25 +30,16 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
     corporateToAutoSendLink,
     setCorporateToAutoSendLink,
     onDeleteCorporate,
-    onResendRegistrationLink,
-    onSendRegistrationLink,
+    onSendEcommericialTermlink,
     fetchCorporates,
 }) => {
     const [selectedCorporate, setSelectedCorporate] = useState<Corporate | null>(null);
     const [targetStatus, setTargetStatus] = useState<CorporateStatus | null>(null);
     const [isChangeStatusModalVisible, setIsChangeStatusModalVisible] = useState(false);
     const [isCopyLinkModalVisible, setIsCopyLinkModalVisible] = useState(false);
-    const [isResendModalVisible, setIsResendModalVisible] = useState(false);
     const [remainingTimes, setRemainingTimes] = useState<{ [corporateId: string]: number }>({});
     const [featuredCorporateIds, setFeaturedCorporateIds] = useState<Set<string>>(new Set());
-    const [isRejectingStatus, setIsRejectingStatus] = useState(false);
-
-    const handleOpenChangeStatusModal = (corporate: Corporate, status: CorporateStatus) => {
-        setSelectedCorporate(corporate);
-        setTargetStatus(status);
-        setIsRejectingStatus(status === 'Rejected');
-        setIsChangeStatusModalVisible(true);
-    };
+    const [isRejectingStatus] = useState(false);
 
     useEffect(() => {
         if (corporateToAutoSendLink) {
@@ -110,7 +99,6 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
     const handleCloseModals = () => {
         setIsChangeStatusModalVisible(false);
         setIsCopyLinkModalVisible(false);
-        setIsResendModalVisible(false);
         setSelectedCorporate(null);
         setTargetStatus(null);
     };
@@ -237,8 +225,8 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
                                                     onClick: () => handleOpenCopyLinkModal(corporate),
                                                 },
                                                 {
-                                                    label: 'Send to 1st Approver',
-                                                    onClick: () => onSendRegistrationLink(corporate.id),
+                                                    label: 'Send to Approver',
+                                                    onClick: () => onSendEcommericialTermlink(corporate.id),
                                                 },
                                                 {
                                                     label: featuredCorporateIds.has(corporate.id) ? 'Unfeature' : 'Feature',
@@ -277,12 +265,7 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
                 corporate={selectedCorporate}
             />
 
-            <ResendModal
-                isOpen={isResendModalVisible}
-                onClose={handleCloseModals}
-                corporate={selectedCorporate}
-                onResend={onResendRegistrationLink}
-            />
+            {/* Resend modal removed */}
         </>
     );
 };

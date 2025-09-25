@@ -14,7 +14,7 @@ async function migrateToLatest() {
     throw new Error('Database connection string not found in environment variables');
   }
 
-  const db = new Kysely<any>({
+  const db = new Kysely<unknown>({
     dialect: new PostgresDialect({
       pool: new Pool({
         connectionString,

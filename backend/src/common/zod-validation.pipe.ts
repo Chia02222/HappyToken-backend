@@ -8,9 +8,11 @@ type PipeTransform = NestCommon.PipeTransform;
 
 @Injectable()
 export class ZodValidationPipe implements PipeTransform {
-  constructor(private schema: ZodType<any>) {}
+  constructor(private schema: ZodType<unknown>) {}
 
-  transform(value: any, _metadata: ArgumentMetadata) {
+  transform(value: unknown, _metadata: ArgumentMetadata) {
+    // Mark metadata as intentionally unused to satisfy linter
+    void _metadata;
     const result = this.schema.safeParse(value);
     if (!result.success) {
       const zerr = result.error as ZodError;
@@ -18,7 +20,6 @@ export class ZodValidationPipe implements PipeTransform {
       try {
         // Debug log to help identify offending payloads
         const preview = typeof value === 'object' ? Object.keys(value || {}) : String(value).slice(0, 200);
-        // eslint-disable-next-line no-console
         console.error('[ZodValidationPipe] Validation failed. Keys/preview:', preview, 'Issues:', message);
       } catch {}
       throw new BadRequestException(message);

@@ -6,8 +6,28 @@ export declare class ResendService {
         success: boolean;
         message: any;
     }>;
-    resendRegistrationLink(id: string): Promise<{
+    sendEcommericialTermlink(id: string, approver?: 'first' | 'second'): Promise<{
         success: boolean;
         message: any;
+    }>;
+    sendAmendmentRequestEmail(corporateId: string): Promise<{
+        success: boolean;
+        message: any;
+    }>;
+    sendRejectEmail(corporateId: string, note?: string): Promise<{
+        success: boolean;
+        message: any;
+    }>;
+    sendAmendRejectEmail(corporateId: string, note?: string): Promise<{
+        success: boolean;
+        message: any;
+    }>;
+    sendExpiredEmail(corporateId: string, note?: string): Promise<{
+        success: boolean;
+        message: any;
+    }>;
+    sendAccountCreatedSuccessEmail(corporateId: string): Promise<{
+        success: boolean;
+        message: string;
     }>;
 }
