@@ -47,7 +47,7 @@ const HistoryLogModal: React.FC<HistoryLogModalProps> = ({ isOpen, onClose, corp
                                 ) : (
                                     <p className="text-sm font-semibold text-ht-gray-dark">Log Added</p>
                                 )}
-                                <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: log.note }} />
+                                <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: log.note || '' }} />
                             </div>
                         ))
                     ) : (

@@ -7,6 +7,8 @@ import SelectField from '../common/SelectField';
 import ContentSection from '../common/ContentSection';
 import ErrorMessageModal from '../modals/ErrorMessageModal';
 import ChangeStatusModal from '../modals/ChangeStatusModal';
+import GenericTermsModal from '../modals/GenericTermsModal';
+import CommercialTermsModal from '../modals/CommercialTermsModal';
 
 import { CorporateDetails, Contact, CorporateStatus } from '../../types';
 
@@ -24,6 +26,8 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
     const [showValidationError, setShowValidationError] = React.useState(false);
     const [validationErrorMessage, setValidationErrorMessage] = React.useState('');
     const [isRejectModalOpen, setIsRejectModalOpen] = React.useState(false);
+    const [isGenericTermsModalOpen, setIsGenericTermsModalOpen] = React.useState(false);
+    const [isCommercialTermsModalOpen, setIsCommercialTermsModalOpen] = React.useState(false);
 
     const primaryContact = formData.contacts?.[0] || {};
     const otherContacts = formData.contacts?.slice(1) || [];
@@ -285,9 +289,62 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                         </label>
                     </div>
                 </ContentSection>
+
+                <ContentSection title="Terms & Conditions">
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between p-4 bg-gray-50 border border-gray-300 rounded-md hover:bg-gray-100 cursor-pointer"
+                             onClick={() => setIsGenericTermsModalOpen(true)}>
+                            <span className="text-sm font-medium text-gray-900">
+                                Generic Terms and Conditions
+                            </span>
+                            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                        </div>
+                        
+                        <div className="flex items-center">
+                            <input 
+                                type="checkbox" 
+                                id="agreed_to_generic_terms" 
+                                name="agreed_to_generic_terms" 
+                                checked={formData.agreed_to_generic_terms as boolean} 
+                                onChange={handleChange} 
+                                className="h-4 w-4 border-gray-300 rounded focus:ring-ht-gray" 
+                            />
+                            <label htmlFor="agreed_to_generic_terms" className="ml-2 block text-sm text-gray-900">
+                                I have read and agree to the Generic Terms and Conditions
+                            </label>
+                        </div>
+                        
+                        <div className="flex items-center justify-between p-4 bg-gray-50 border border-gray-300 rounded-md hover:bg-gray-100 cursor-pointer"
+                             onClick={() => setIsCommercialTermsModalOpen(true)}>
+                            <span className="text-sm font-medium text-gray-900">
+                                Commercial Terms and Conditions
+                            </span>
+                            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                        </div>
+                        
+                        <div className="flex items-center">
+                            <input 
+                                type="checkbox" 
+                                id="agreed_to_commercial_terms" 
+                                name="agreed_to_commercial_terms" 
+                                checked={formData.agreed_to_commercial_terms as boolean} 
+                                onChange={handleChange} 
+                                className="h-4 w-4 border-gray-300 rounded focus:ring-ht-gray" 
+                            />
+                            <label htmlFor="agreed_to_commercial_terms" className="ml-2 block text-sm text-gray-900">
+                                I have read and agree to the Commercial Terms and Conditions
+                            </label>
+                        </div>
+                    </div>
+                </ContentSection>
+
             </div>
 
-            <div className="flex justify-end items-center pt-6 border-t mt-6 space-x-4">
+            <div className="flex justify-end items-center pt-6 mt-6 space-x-4">
                  <button 
                     type="button"
                     onClick={() => setFormStep(2)}
@@ -357,6 +414,23 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                     </>
                  )}
             </div>
+
+            {/* Terms Modals */}
+            <GenericTermsModal
+                isOpen={isGenericTermsModalOpen}
+                onClose={() => setIsGenericTermsModalOpen(false)}
+                onAgree={() => {
+                    setFormData(prev => ({ ...prev, agreed_to_generic_terms: true }));
+                }}
+            />
+            
+            <CommercialTermsModal
+                isOpen={isCommercialTermsModalOpen}
+                onClose={() => setIsCommercialTermsModalOpen(false)}
+                onAgree={() => {
+                    setFormData(prev => ({ ...prev, agreed_to_commercial_terms: true }));
+                }}
+            />
         </div>
     );
 };

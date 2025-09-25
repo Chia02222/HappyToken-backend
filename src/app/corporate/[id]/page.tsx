@@ -320,7 +320,7 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
     if (formMode === 'new') return 'New Corporate Account';
     if (formMode === 'approve') return 'First Approval';
     if (formMode === 'approve-second') return 'Second Approval';
-    if (corporateId && corporateId !== 'new') return 'View / Edit Corporate Account';
+    if (corporateId && corporateId !== 'new') return 'Corporate Account';
     return 'New Corporate Account';
   };
   const baseTitle = getBaseTitle();

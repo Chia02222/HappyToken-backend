@@ -65,36 +65,10 @@ const CommercialTermsForm: React.FC<CommercialTermsFormProps> = ({ onCloseForm, 
                             <InputField id="custom_feature_fee" label="" name="custom_feature_fee" value={formData.custom_feature_fee ?? null} onChange={handleChange} required />
                         </div>
                     </div>
-
-                    <div className="md:col-span-2 mt-6 pt-6 border-t">
-                        <div className="prose prose-sm max-w-none h-40 overflow-y-auto border p-4 rounded-md text-gray-600 bg-gray-50/50">
-                            <h4 className="font-semibold">Commercial Agreement Terms</h4>
-                            <p>By proceeding, the Client acknowledges and agrees to the commercial terms specified herein, including but not limited to the agreed-upon fees, credit limits, and payment schedules. These terms form a legally binding part of the service agreement between the Client and HT Voucher Trading Sdn Bhd.</p>
-                            <ul>
-                                <li><strong>Transaction Fees:</strong> The specified percentage will be applied to the total value of each transaction processed through the platform.</li>
-                                <li><strong>Credit Terms:</strong> Invoices are due within the number of days specified from the invoice date. Late payments will incur interest as per the agreed rate.</li>
-                                <li><strong>Service Fees:</strong> Additional fees for services like White Labeling or Custom Feature Requests are applicable only upon request and will be billed separately as incurred.</li>
-                                <li><strong>Confidentiality:</strong> All commercial terms, including pricing and fee structures, are confidential and shall not be disclosed to any third party without prior written consent from both parties.</li>
-                            </ul>
-                        </div>
-                        <div className="flex items-center mt-4">
-                            <input 
-                                type="checkbox" 
-                                id="agreed_to_commercial_terms" 
-                                name="agreed_to_commercial_terms" 
-                                checked={formData.agreed_to_commercial_terms as boolean}  
-                                onChange={handleChange} 
-                                className="h-4 w-4 border-gray-300 rounded focus:ring-ht-gray" 
-                            />
-                            <label htmlFor="agreed_to_commercial_terms" className="ml-2 block text-sm text-gray-900">
-                                I confirm that I have read, understood, and agree to the commercial terms outlined above.
-                            </label>
-                        </div>
-                    </div>
                  </div>
             </FormSection>
 
-            <div className="flex justify-end items-center pt-6 border-t mt-6 space-x-4">
+            <div className="flex justify-end items-center pt-6 mt-6 space-x-4">
                  <button 
                     type="button"
                     onClick={() => setFormStep(1)}
@@ -121,8 +95,6 @@ const CommercialTermsForm: React.FC<CommercialTermsFormProps> = ({ onCloseForm, 
                     onClick={() => {
                         setFormStep(3);
                     }}
-                    disabled={!formData.agreed_to_commercial_terms}
-                    className="text-sm bg-ht-blue text-white px-4 py-2 rounded-md hover:bg-ht-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue-dark disabled:bg-ht-gray disabled:cursor-not-allowed"
                 >
                     Next
                 </button>

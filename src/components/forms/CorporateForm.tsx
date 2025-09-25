@@ -244,27 +244,7 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                 </div>
             </FormSection>
 
-            <FormSection title="Generic Terms & Conditions">
-                <div className="prose prose-sm max-w-none h-48 overflow-y-auto border p-4 rounded-md text-gray-600 bg-gray-50/50">
-                    <p className="text-xs">Last Updated: [Insert Date]</p>
-                    <p>These Standard Terms and Conditions (&quot;Terms&quot;) govern the relationship between HT Voucher Trading Sdn Bhd (Company No. [Insert], trading as HappieToken, hereinafter referred to as the &quot;Company&quot;) and any party (&quot;Client&quot;) who enters into a commercial arrangement with the Company for the use of its products or services, whether by signing an order form, accepting a quotation, or registering via an online form. These Terms are legally binding and apply to all Clients unless otherwise agreed in writing.</p>
-                    <h4 className="font-semibold">1. Definitions</h4>
-                    <ul>
-                        <li>&quot;Agreement&quot; means the binding contract between the Company and the Client, consisting of these Terms and any applicable Order Form or Commercial Terms Schedule.</li>
-                        <li>&quot;Services&quot; means the platform access, features, tools, APIs, or solutions provided by the Company.</li>
-                        <li>&quot;Client Data&quot; means any information, material, or content uploaded, submitted, or shared by the Client through the Services.</li>
-                        <li>&quot;Effective Date&quot; means the date on which the Client first accepts or is deemed to accept these Terms.</li>
-                    </ul>
-                    <h4 className="font-semibold">2. Provision of Services</h4>
-                    <p>The Company shall provide the Services described in the a relevant Commercial Terms Schedule or online order form. The Company reserves the right to improve, modify, or discontinue any part of the Services with reasonable notice.</p>
-                </div>
-                 <div className="flex items-center mt-4">
-                    <input type="checkbox" id="agreed_to_generic_terms" name="agreed_to_generic_terms" checked={formData.agreed_to_generic_terms as boolean} onChange={handleChange} className="h-4 w-4 border-gray-300 rounded focus:ring-ht-gray" />
-                    <label htmlFor="agreed_to_generic_terms" className="ml-2 block text-sm text-gray-900">I have read and agree to the Generic Terms and Conditions.</label>
-                </div>
-            </FormSection>
-
-            <div className="flex justify-end items-center pt-6 border-t mt-6 space-x-4">
+            <div className="flex justify-end items-center pt-6 mt-6 space-x-4">
                  <button 
                     type="button"
                     onClick={onCloseForm}
@@ -285,8 +265,6 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                         // In a real app, form data would be validated here.
                         setFormStep(2);
                     }}
-                    disabled={!formData.agreed_to_generic_terms}
-                    className="text-sm bg-ht-blue text-white px-4 py-2 rounded-md hover:bg-ht-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue-dark disabled:bg-ht-gray disabled:cursor-not-allowed"
                 >
                     Next
                 </button>
