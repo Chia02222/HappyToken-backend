@@ -13,7 +13,6 @@ export class ContactsService {
 
   async addContact(contactData: CreateContactDto) {
     console.log('addContact called with:', contactData);
-    // Explicitly remove 'id' from contactData if it exists, before constructing insertData
     const { id: _id, ...contactDataWithoutId } = contactData as CreateContactDto & { id?: number }; // Cast to allow destructuring 'id'
 
     const insertData: CreateContactDto = {

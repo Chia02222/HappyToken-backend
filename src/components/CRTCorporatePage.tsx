@@ -1,6 +1,5 @@
 "use client";
 
-import { getCorporateById } from '../services/api';
 import React, { useState, useEffect } from 'react';
 import { Corporate, CorporateStatus } from '../types';
 import StatusBadge from './common/StatusBadge';
@@ -31,7 +30,6 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
     setCorporateToAutoSendLink,
     onDeleteCorporate,
     onSendEcommericialTermlink,
-    fetchCorporates,
 }) => {
     const [selectedCorporate, setSelectedCorporate] = useState<Corporate | null>(null);
     const [targetStatus, setTargetStatus] = useState<CorporateStatus | null>(null);

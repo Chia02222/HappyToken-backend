@@ -3,7 +3,6 @@
 import React from 'react';
 import { CorporateDetails } from '../../types';
 import ContentSection from '../common/ContentSection';
-import DisplayField from '../common/DisplayField';
 
 interface AmendRequestModalProps {
   isOpen: boolean;
@@ -13,15 +12,12 @@ interface AmendRequestModalProps {
   onSubmitAmendment: (corporateId: string, requestedChanges: string, amendmentReason: string) => Promise<void>;
 }
 
-const AmendRequestModal: React.FC<AmendRequestModalProps> = ({ isOpen, onClose, corporate, corporateId, onSubmitAmendment }) => {
+const AmendRequestModal: React.FC<AmendRequestModalProps> = ({ isOpen, onClose, corporateId, onSubmitAmendment }) => {
   const [requestedChanges, setRequestedChanges] = React.useState('');
   const [amendmentReason, setAmendmentReason] = React.useState('');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   if (!isOpen) return null;
-
-  const primaryContact = corporate.contacts?.[0] || {};
-  const secondaryContact = corporate.contacts?.[1] || {};
 
   return (
     <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50" aria-modal="true">

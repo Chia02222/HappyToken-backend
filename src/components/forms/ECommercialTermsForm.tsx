@@ -143,17 +143,6 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
         return true;
     };
 
-    const isSecondaryApproverComplete = (): boolean => {
-        if (!(formMode === 'approve' || formMode === 'approve-second')) return true;
-        // Use the resolved secondary_approver (may be derived from selected id)
-        const s = secondary_approver;
-        if (!s) return false;
-        if (s.use_existing_contact) {
-            return !!s.selected_contact_id;
-        }
-        return !!(s.first_name && s.last_name && s.company_role && s.email && s.contact_number);
-    };
-
     const validateFirstApproval = (): boolean => {
         if (!formData.first_approval_confirmation) {
             setValidationErrorMessage('Please confirm first approval.');

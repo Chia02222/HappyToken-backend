@@ -5,7 +5,7 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import FormLayout from '../../../components/layout/FormLayout';
 import CorporateForm from '../../../components/forms/CorporateForm';
 import ECommercialTermsForm from '../../../components/forms/ECommercialTermsForm';
-import { CorporateDetails, CorporateStatus, Contact } from '../../../types';
+import { CorporateDetails, CorporateStatus, Contact, LogEntry } from '../../../types';
 import { getCorporateById, createCorporate, updateCorporate, updateCorporateStatus, sendAmendmentEmail, sendEcommericialTermlink, sendAmendRejectEmail } from '../../../services/api';
 import SuccessModal from '../../../components/modals/SuccessModal';
 import ErrorMessageModal from '../../../components/modals/ErrorMessageModal';
@@ -111,13 +111,13 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
           let prefilledSecondary: Partial<CorporateDetails> = {};
           if (mode === 'approve-second') {
             const contacts = fullFormData.contacts || [];
-            const secId = (fullFormData as any).secondary_approver_id as string | number | undefined;
-            const byId = contacts.find((c: any) => String(c.id) === String(secId));
-            const byRole = contacts.find((c: any) => c.system_role === 'secondary_approver');
+            const secId = fullFormData.secondary_approver_id ?? undefined;
+            const byId = contacts.find((c: Contact) => String(c.id) === String(secId));
+            const byRole = contacts.find((c: Contact) => c.system_role === 'secondary_approver');
             const chosen = byId || byRole;
             if (chosen) {
               prefilledSecondary = {
-                secondary_approver_id: chosen.id as any,
+                secondary_approver_id: chosen.id ?? null,
                 secondary_approver: {
                   use_existing_contact: true,
                   selected_contact_id: chosen.id,
@@ -128,7 +128,7 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
                   system_role: 'secondary_approver',
                   email: chosen.email,
                   contact_number: chosen.contact_number,
-                } as any,
+                } as CorporateDetails['secondary_approver'],
               } as Partial<CorporateDetails>;
             }
           }
@@ -252,18 +252,18 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
       } else if (formMode === 'approve' && action === 'submit') {
         updatedFormData.first_approval_confirmation = true;
         // Ensure secondary approver is persisted to contacts table and linked on corporate
-        const sa = updatedFormData.secondary_approver as (Contact & { use_existing_contact?: boolean; selected_contact_id?: string | number }) | undefined;
+        const sa = updatedFormData.secondary_approver as (Contact & { use_existing_contact?: boolean; selected_contact_id?: string }) | undefined;
         if (sa) {
           // Always enforce system_role for secondary approver when saving
-          (updatedFormData as any).secondary_approver = { ...sa, system_role: 'secondary_approver' } as any;
+          updatedFormData.secondary_approver = { ...sa, system_role: 'secondary_approver' };
 
           if (sa.use_existing_contact && sa.selected_contact_id) {
             const selected = updatedFormData.contacts?.find(c => String(c.id) === String(sa.selected_contact_id));
             if (selected) {
               // Populate fields to avoid overwriting existing contact with empty strings in backend
-              (updatedFormData as any).secondary_approver = {
+              updatedFormData.secondary_approver = {
                 ...sa,
-                selected_contact_id: selected.id,
+                selected_contact_id: String(selected.id ?? ''),
                 salutation: selected.salutation,
                 first_name: selected.first_name,
                 last_name: selected.last_name,
@@ -399,7 +399,7 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
 
   const latestRejectedLog = React.useMemo(() => {
     try {
-      const logs = (formData as any).investigation_log as Array<{ to_status?: string; note?: string; timestamp?: string }>|undefined;
+      const logs = formData.investigation_log as LogEntry[] | undefined;
       if (!Array.isArray(logs)) return null;
       const rej = logs.find(l => l.to_status === 'Rejected') || logs.find(l => (l.note || '').toLowerCase().includes('reject')) || null;
       return rej;
@@ -408,7 +408,7 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
 
   const latestAmendLog = React.useMemo(() => {
     try {
-      const logs = (formData as any).investigation_log as Array<{ to_status?: string; from_status?: string; note?: string; timestamp?: string }>|undefined;
+      const logs = formData.investigation_log as LogEntry[] | undefined;
       if (!Array.isArray(logs)) return null;
       const amend = logs.find(l => l.to_status === 'Amendment Requested') || logs.find(l => (l.note || '').includes('Amendment Request Submitted')) || null;
       return amend;
@@ -416,9 +416,9 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
   }, [formData]);
 
   const resolvePrevStatusForAmendment = (): CorporateStatus => {
-    const from = (latestAmendLog as any)?.from_status as CorporateStatus | undefined;
-    if (from) return from;
-    const hasSecondary = Boolean((formData as any).secondary_approver_id);
+    const from = latestAmendLog?.from_status ?? undefined;
+    if (from) return from as CorporateStatus;
+    const hasSecondary = Boolean(formData.secondary_approver_id);
     return (hasSecondary ? 'Pending 2nd Approval' : 'Pending 1st Approval') as CorporateStatus;
   };
 
@@ -450,7 +450,7 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="font-semibold mb-1">Amendment Requested</div>
-                <div className="text-sm whitespace-pre-wrap">{formatAmendNote(latestAmendLog?.note)}</div>
+                <div className="text-sm whitespace-pre-wrap">{formatAmendNote(latestAmendLog?.note ?? undefined)}</div>
               </div>
               {(formMode !== 'approve' && formMode !== 'approve-second') && (
               <div className="flex items-center gap-2">
