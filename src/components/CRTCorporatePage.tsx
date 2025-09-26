@@ -37,7 +37,6 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
     const [targetStatus, setTargetStatus] = useState<CorporateStatus | null>(null);
     const [isChangeStatusModalVisible, setIsChangeStatusModalVisible] = useState(false);
     const [isCopyLinkModalVisible, setIsCopyLinkModalVisible] = useState(false);
-    const [remainingTimes, setRemainingTimes] = useState<{ [corporateId: string]: number }>({});
     const [featuredCorporateIds, setFeaturedCorporateIds] = useState<Set<string>>(new Set());
     const [isRejectingStatus] = useState(false);
 
@@ -53,48 +52,6 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
         setIsCopyLinkModalVisible(true);
     };
 
-    useEffect(() => {
-        const intervals = new Map<string, NodeJS.Timeout>();
-
-        corporates.forEach((corporate) => {
-            if (corporate.status === 'Cooling Period' && corporate.cooling_period_end) {
-                const endTime = new Date(corporate.cooling_period_end).getTime();
-
-                const updateRemainingTime = () => {
-                    const now = new Date().getTime();
-                    const timeLeft = Math.max(0, Math.floor((endTime - now) / 1000));
-                    setRemainingTimes(prev => ({ ...prev, [corporate.id]: timeLeft }));
-
-                    if (timeLeft <= 0) {
-                        clearInterval(intervals.get(`countdown_${corporate.id}`));
-                        fetchCorporates();
-                    }
-                };
-
-                updateRemainingTime();
-                const countdownInterval = setInterval(updateRemainingTime, 1000);
-                intervals.set(`countdown_${corporate.id}`, countdownInterval);
-
-                const pollingInterval = setInterval(async () => {
-                    try {
-                        const updatedCorporate = await getCorporateById(corporate.id);
-                        if (updatedCorporate.status !== 'Cooling Period') {
-                            clearInterval(intervals.get(`polling_${corporate.id}`));
-                            clearInterval(intervals.get(`countdown_${corporate.id}`));
-                            setRemainingTimes(prev => ({ ...prev, [corporate.id]: 0 }));
-                        }
-                    } catch (error) {
-                        console.error('Failed to poll corporate status:', error);
-                    }
-                }, 3000);
-                intervals.set(`polling_${corporate.id}`, pollingInterval);
-            }
-        });
-
-        return () => {
-            intervals.forEach((interval) => clearInterval(interval));
-        };
-    }, [corporates, updateStatus, fetchCorporates]);
 
     const handleCloseModals = () => {
         setIsChangeStatusModalVisible(false);
@@ -111,13 +68,11 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
     };
 
     const renderActions = (corporate: Corporate) => {
-        const remainingTime = remainingTimes[corporate.id];
-
         switch (corporate.status) {
             case 'Cooling Period':
                 return (
                     <span className="text-gray-500 text-xs">
-                        Cooling Period (Auto-processing in {remainingTime !== undefined ? remainingTime : '...'}s...)
+                        Cooling Period 
                     </span>
                 );
             case 'Rejected':

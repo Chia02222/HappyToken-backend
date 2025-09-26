@@ -6,7 +6,7 @@ import FormLayout from '../../../components/layout/FormLayout';
 import CorporateForm from '../../../components/forms/CorporateForm';
 import ECommercialTermsForm from '../../../components/forms/ECommercialTermsForm';
 import { CorporateDetails, CorporateStatus, Contact } from '../../../types';
-import { getCorporateById, createCorporate, updateCorporate, updateCorporateStatus, sendAmendmentEmail, sendEcommericialTermlink } from '../../../services/api';
+import { getCorporateById, createCorporate, updateCorporate, updateCorporateStatus, sendAmendmentEmail, sendEcommericialTermlink, sendAmendRejectEmail } from '../../../services/api';
 import SuccessModal from '../../../components/modals/SuccessModal';
 import ErrorMessageModal from '../../../components/modals/ErrorMessageModal';
 import AmendRequestModal from '../../../components/modals/AmendRequestModal';
@@ -427,6 +427,8 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
   };
 
   const [isAmendRejecting, setIsAmendRejecting] = React.useState(false);
+  const [isAmendConfirming, setIsAmendConfirming] = React.useState(false);
+  const [isRejectingAmendment, setIsRejectingAmendment] = React.useState(false);
   const [amendRejectReason, setAmendRejectReason] = React.useState('');
 
   const formatAmendNote = (note?: string) => {
@@ -453,8 +455,10 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
               {(formMode !== 'approve' && formMode !== 'approve-second') && (
               <div className="flex items-center gap-2">
                 <button
-                  className="text-sm bg-ht-blue text-white px-3 py-2 rounded-md hover:bg-ht-blue-dark"
+                  className="text-sm bg-ht-blue text-white px-3 py-2 rounded-md hover:bg-ht-blue-dark disabled:bg-ht-gray disabled:cursor-not-allowed"
+                  disabled={isAmendConfirming}
                   onClick={async () => {
+                    setIsAmendConfirming(true);
                     try {
                       const prev = resolvePrevStatusForAmendment();
                       await updateCorporateStatus(corporateId, prev, `Amendment approved by CRT; reverting to ${prev}.`);
@@ -465,21 +469,28 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
                         message: `Reverted to ${prev}. Email sent to ${approver === 'second' ? 'second' : 'first'} approver.`,
                       });
                       setIsSuccessModalVisible(true);
+                      // Auto-refresh the page after successful processing
+                      setTimeout(() => {
+                        window.location.reload();
+                      }, 1000); // Refresh after 1 seconds
                     } catch (e) {
                       setErrorModalContent(`Failed to confirm amendment: ${e instanceof Error ? e.message : String(e)}`);
                       setIsErrorModalVisible(true);
+                    } finally {
+                      setIsAmendConfirming(false);
                     }
                   }}
                 >
-                  Confirm
+                  {isAmendConfirming ? 'Processing...' : 'Confirm'}
                 </button>
                 <button
-                  className="text-sm bg-red-600 text-white px-3 py-2 rounded-md hover:bg-red-700"
+                  className="text-sm bg-red-600 text-white px-3 py-2 rounded-md hover:bg-red-700 disabled:bg-red-400 disabled:cursor-not-allowed"
+                  disabled={isAmendRejecting}
                   onClick={() => {
                     setIsAmendRejecting(true);
                   }}
                 >
-                  Reject
+                  {isAmendRejecting ? 'Processing...' : 'Reject'}
                 </button>
               </div>
               )}
@@ -506,28 +517,30 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
               <div className="flex justify-end gap-2 mt-4">
                 <button className="text-sm px-3 py-2 rounded-md border" onClick={() => setIsAmendRejecting(false)}>Cancel</button>
                 <button
-                  className="text-sm bg-red-600 text-white px-3 py-2 rounded-md hover:bg-red-700 disabled:bg-red-300"
-                  disabled={!amendRejectReason.trim()}
+                  className="text-sm bg-red-600 text-white px-3 py-2 rounded-md hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed"
+                  disabled={!amendRejectReason.trim() || isRejectingAmendment}
                   onClick={async () => {
+                    setIsRejectingAmendment(true);
                     try {
                       const prev = resolvePrevStatusForAmendment();
                       await updateCorporateStatus(corporateId, prev, `Amendment rejected by CRT: ${amendRejectReason}`);
-                      const approver = resolveApproverForStatus(prev);
-                      await sendEcommericialTermlink(corporateId, approver);
+                      await sendAmendRejectEmail(corporateId, amendRejectReason);
                       setIsAmendRejecting(false);
                       setAmendRejectReason('');
                       setSuccessModalContent({
                         title: 'Amendment Rejected',
-                        message: `Reverted to ${prev}. Email sent to ${approver === 'second' ? 'second' : 'first'} approver.`,
+                        message: `Reverted to ${prev}. Rejection email sent to the appropriate approver.`,
                       });
                       setIsSuccessModalVisible(true);
                     } catch (e) {
                       setErrorModalContent(`Failed to reject amendment: ${e instanceof Error ? e.message : String(e)}`);
                       setIsErrorModalVisible(true);
+                    } finally {
+                      setIsRejectingAmendment(false);
                     }
                   }}
                 >
-                  Reject Amendment
+                  {isRejectingAmendment ? 'Processing...' : 'Reject Amendment'}
                 </button>
               </div>
             </div>

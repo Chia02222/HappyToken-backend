@@ -375,6 +375,14 @@ let CorporateService = class CorporateService {
         await this.updateStatus(corporateId, newStatus, note);
         const updatedCorporate = await this.findById(corporateId);
         console.log(`[handleCoolingPeriodCompletion] Status updated successfully for corporate ${corporateId}. New status: ${updatedCorporate?.status}`);
+        try {
+            console.log(`[handleCoolingPeriodCompletion] Sending welcome email for corporate ${corporateId}`);
+            await this.resendService.sendAccountCreatedSuccessEmail(corporateId);
+            console.log(`[handleCoolingPeriodCompletion] Welcome email sent successfully for corporate ${corporateId}`);
+        }
+        catch (error) {
+            console.error(`[handleCoolingPeriodCompletion] Failed to send welcome email for corporate ${corporateId}:`, error);
+        }
         console.log(`[handleCoolingPeriodCompletion] Returning corporate: ${JSON.stringify(updatedCorporate)}`);
         return updatedCorporate;
     }

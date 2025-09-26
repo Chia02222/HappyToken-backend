@@ -72,6 +72,9 @@ let CorporateController = class CorporateController {
     async sendAmendmentEmail(id) {
         return await this.resendService.sendAmendmentRequestEmail(id);
     }
+    async sendAmendRejectEmail(id, body) {
+        return await this.resendService.sendAmendRejectEmail(id, body.note);
+    }
 };
 exports.CorporateController = CorporateController;
 __decorate([
@@ -154,6 +157,14 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], CorporateController.prototype, "sendAmendmentEmail", null);
+__decorate([
+    (0, common_1.Post)(':id/send-amend-reject-email'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], CorporateController.prototype, "sendAmendRejectEmail", null);
 exports.CorporateController = CorporateController = __decorate([
     (0, common_1.Controller)('corporates'),
     __metadata("design:paramtypes", [corporate_service_1.CorporateService,

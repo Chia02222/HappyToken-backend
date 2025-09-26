@@ -502,4 +502,10 @@ export declare class CorporateController {
         success: boolean;
         message: any;
     }>;
+    sendAmendRejectEmail(id: string, body: {
+        note?: string;
+    }): Promise<{
+        success: boolean;
+        message: any;
+    }>;
 }

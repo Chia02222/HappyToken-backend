@@ -93,4 +93,9 @@ export class CorporateController {
   async sendAmendmentEmail(@Param('id') id: string) {
     return await this.resendService.sendAmendmentRequestEmail(id);
   }
+
+  @Post(':id/send-amend-reject-email')
+  async sendAmendRejectEmail(@Param('id') id: string, @Body() body: { note?: string }) {
+    return await this.resendService.sendAmendRejectEmail(id, body.note);
+  }
 }

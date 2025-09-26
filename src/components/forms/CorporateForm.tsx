@@ -351,11 +351,13 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                 <button 
                     type="button"
                     onClick={async () => {
-                        // Save should validate, but in edit mode checkboxes are relaxed in runZodValidation
-                        if (!runZodValidation()) return;
+                        // In edit mode, skip validation to allow saving
+                        if (formMode !== 'edit' && !runZodValidation()) return;
                         try {
                             setIsSaving(true);
-                            await Promise.resolve(onSaveCorporate(formData, 'save'));
+                            await onSaveCorporate(formData, 'save');
+                        } catch (error) {
+                            console.error('Save failed:', error);
                         } finally {
                             setIsSaving(false);
                         }
@@ -363,7 +365,7 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                     disabled={isSaving || isValidatingNext}
                     className={`text-sm px-4 py-2 rounded-md border ${isSaving || isValidatingNext ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'text-gray-700 bg-white hover:bg-gray-50'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue`}
                  >
-                    {isSaving ? 'Saving…' : 'Save'}
+                    {isSaving ? 'Processing...' : 'Save'}
                  </button>
                  <button 
                     type="button"

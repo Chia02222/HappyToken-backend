@@ -25,9 +25,9 @@ const AmendRequestModal: React.FC<AmendRequestModalProps> = ({ isOpen, onClose, 
 
   return (
     <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50" aria-modal="true">
-      <div className="bg-white rounded-lg shadow-xl max-w-5xl w-full mx-4 max-h-[90vh] flex flex-col" role="dialog" aria-labelledby="amendment-request-title">
+      <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[80vh] flex flex-col" role="dialog" aria-labelledby="amendment-request-title">
         <div className="flex flex-col min-h-0">
-          <div className="flex justify-between items-center px-6 py-4 bg-ht-blue text-white rounded-t-lg">
+          <div className="flex justify-between items-center px-6 py-3 bg-ht-blue text-white rounded-t-lg">
             <h1 id="amendment-request-title" className="text-center text-lg font-bold">Amendment Request</h1>
             <button
               onClick={onClose}
@@ -36,59 +36,7 @@ const AmendRequestModal: React.FC<AmendRequestModalProps> = ({ isOpen, onClose, 
               ×
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto p-8 md:p-12">
-
-          <p className="text-xs text-gray-600 mb-6 p-4 bg-gray-50 border rounded-md">
-            Current corporate account details for <strong>{corporate.company_name || '[Company Name]'}</strong> (Registration Number: {corporate.reg_number || 'XXXXXXXX-X'}). 
-            Please review the information below and specify what changes you would like to request.
-          </p>
-
-          <ContentSection title="Company Information">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-              <div className="space-y-4">
-                <DisplayField label="Company Name" value={corporate.company_name} />
-                <DisplayField label="Official Registration Number" value={corporate.reg_number} />
-                <DisplayField label="Office Address" value={`${corporate.office_address1}${corporate.office_address2 ? `, ${corporate.office_address2}` : ''}`} />
-                <DisplayField label="Postcode" value={corporate.postcode} />
-                <DisplayField label="City" value={corporate.city} />
-                <DisplayField label="State" value={corporate.state} />
-                <DisplayField label="Country" value={corporate.country} />
-                <DisplayField label="Website" value={corporate.website} />
-                <DisplayField label="Account Note" value={corporate.account_note} />
-              </div>
-              <div className="space-y-4">
-                <DisplayField label="Agreement Duration" value={corporate.agreement_from && corporate.agreement_to ? `${corporate.agreement_from} to ${corporate.agreement_to}` : ''} />
-                <DisplayField label="Credit Limit" value={`MYR ${corporate.credit_limit}`} />
-                <DisplayField label="Credit Terms" value={`${corporate.credit_terms} days`} />
-                <DisplayField label="Transaction Fees Rate" value={`${corporate.transaction_fee}%`} />
-                <DisplayField label="Late Payment Interest" value={`${corporate.late_payment_interest}%`} />
-                <DisplayField label="White Labeling Fee (*only when request)" value={corporate.white_labeling_fee ? `${corporate.white_labeling_fee}%` : 'N/A'} />
-                <DisplayField label="Custom Feature Request Fee (*only when request)" value={`MYR ${corporate.custom_feature_fee}`} />
-              </div>
-            </div>
-          </ContentSection>
-
-          <ContentSection title="Primary Contact">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-              <DisplayField label="Signatory Name" value={`${primaryContact.first_name || ''} ${primaryContact.last_name || ''}`.trim()} />
-              <DisplayField label="Company Role" value={primaryContact.company_role} />
-              <DisplayField label="System Role" value={primaryContact.system_role} />
-              <DisplayField label="Email Address" value={primaryContact.email} />
-              <DisplayField label="Contact Number" value={primaryContact.contact_number ? `+60 ${primaryContact.contact_number}` : ''} />
-            </div>
-          </ContentSection>
-
-          {secondaryContact && (secondaryContact.first_name || secondaryContact.last_name) && (
-            <ContentSection title="Secondary Contact">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                <DisplayField label="Signatory Name" value={`${secondaryContact.first_name || ''} ${secondaryContact.last_name || ''}`.trim()} />
-                <DisplayField label="Company Role" value={secondaryContact.company_role} />
-                <DisplayField label="System Role" value={secondaryContact.system_role} />
-                <DisplayField label="Email Address" value={secondaryContact.email} />
-                <DisplayField label="Contact Number" value={secondaryContact.contact_number ? `+60 ${secondaryContact.contact_number}` : ''} />
-              </div>
-            </ContentSection>
-          )}
+          <div className="flex-1 overflow-y-auto p-6">
 
           <ContentSection title="Amendment Request Details">
             <div className="space-y-6">

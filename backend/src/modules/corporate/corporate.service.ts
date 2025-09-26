@@ -411,6 +411,17 @@ export class CorporateService {
 
     const updatedCorporate = await this.findById(corporateId);
     console.log(`[handleCoolingPeriodCompletion] Status updated successfully for corporate ${corporateId}. New status: ${updatedCorporate?.status}`);
+    
+    // Send welcome email to first and second approvers
+    try {
+      console.log(`[handleCoolingPeriodCompletion] Sending welcome email for corporate ${corporateId}`);
+      await this.resendService.sendAccountCreatedSuccessEmail(corporateId);
+      console.log(`[handleCoolingPeriodCompletion] Welcome email sent successfully for corporate ${corporateId}`);
+    } catch (error) {
+      console.error(`[handleCoolingPeriodCompletion] Failed to send welcome email for corporate ${corporateId}:`, error);
+      // Don't throw error - email failure shouldn't stop the cooling period completion
+    }
+    
     console.log(`[handleCoolingPeriodCompletion] Returning corporate: ${JSON.stringify(updatedCorporate)}`);
     return updatedCorporate;
   }

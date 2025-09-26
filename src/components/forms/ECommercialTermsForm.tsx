@@ -28,6 +28,9 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
     const [isRejectModalOpen, setIsRejectModalOpen] = React.useState(false);
     const [isGenericTermsModalOpen, setIsGenericTermsModalOpen] = React.useState(false);
     const [isCommercialTermsModalOpen, setIsCommercialTermsModalOpen] = React.useState(false);
+    const [isApproving, setIsApproving] = React.useState(false);
+    const [isSendingToApprover, setIsSendingToApprover] = React.useState(false);
+    const [isSaving, setIsSaving] = React.useState(false);
 
     const primaryContact = formData.contacts?.[0] || {};
     const otherContacts = formData.contacts?.slice(1) || [];
@@ -207,35 +210,35 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                 <ContentSection title="Commercial Terms">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                         <div className="space-y-4">
-                            <DisplayField label="Company Name" value={formData.company_name} />
-                            <DisplayField label="Official Registration Number" value={formData.reg_number} />
-                            <DisplayField label="Office Address" value={`${formData.office_address1}${formData.office_address2 ? `, ${formData.office_address2}` : ''}`} />
-                            <DisplayField label="Postcode" value={formData.postcode} />
-                            <DisplayField label="City" value={formData.city} />
-                            <DisplayField label="State" value={formData.state} />
-                            <DisplayField label="Country" value={formData.country} />
-                            <DisplayField label="Website" value={formData.website} />
-                            <DisplayField label="Account Note" value={formData.account_note} />
+                            <DisplayField label="Company Name" value={formData.company_name} borderless />
+                            <DisplayField label="Official Registration Number" value={formData.reg_number} borderless />
+                            <DisplayField label="Office Address" value={`${formData.office_address1}${formData.office_address2 ? `, ${formData.office_address2}` : ''}`} borderless />
+                            <DisplayField label="Postcode" value={formData.postcode} borderless />
+                            <DisplayField label="City" value={formData.city} borderless />
+                            <DisplayField label="State" value={formData.state} borderless />
+                            <DisplayField label="Country" value={formData.country} borderless />
+                            <DisplayField label="Website" value={formData.website} borderless />
+                            <DisplayField label="Account Note" value={formData.account_note} borderless />
                         </div>
                         <div className="space-y-4">
-                            <DisplayField label="Agreement Duration" value={formData.agreement_from && formData.agreement_to ? `${formData.agreement_from} to ${formData.agreement_to}` : ''} />
-                            <DisplayField label="Credit Limit" value={`MYR ${formData.credit_limit}`} />
-                            <DisplayField label="Credit Terms" value={`${formData.credit_terms} days`} />
-                            <DisplayField label="Transaction Fees Rate" value={`${formData.transaction_fee}%`} />
-                            <DisplayField label="Late Payment Interest" value={`${formData.late_payment_interest}%`} />
-                            <DisplayField label="White Labeling Fee (*only when request)" value={formData.white_labeling_fee ? `${formData.white_labeling_fee}%` : 'N/A'} />
-                            <DisplayField label="Custom Feature Request Fee (*only when request)" value={`MYR ${formData.custom_feature_fee}`} />
+                            <DisplayField label="Agreement Duration" value={formData.agreement_from && formData.agreement_to ? `${formData.agreement_from} to ${formData.agreement_to}` : ''} borderless />
+                            <DisplayField label="Credit Limit" value={`MYR ${formData.credit_limit}`} borderless />
+                            <DisplayField label="Credit Terms" value={`${formData.credit_terms} days`} borderless />
+                            <DisplayField label="Transaction Fees Rate" value={`${formData.transaction_fee}%`} borderless />
+                            <DisplayField label="Late Payment Interest" value={`${formData.late_payment_interest}%`} borderless />
+                            <DisplayField label="White Labeling Fee (*only when request)" value={formData.white_labeling_fee ? `${formData.white_labeling_fee}%` : 'N/A'} borderless />
+                            <DisplayField label="Custom Feature Request Fee (*only when request)" value={`MYR ${formData.custom_feature_fee}`} borderless />
                         </div>
                     </div>
                 </ContentSection>
                 
                 <ContentSection title="First Approval">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                        <DisplayField label="Signatory Name" value={`${primaryContact.first_name || ''} ${primaryContact.last_name || ''}`.trim()} />
-                        <DisplayField label="Company Role" value={primaryContact.company_role} />
-                        <DisplayField label="System Role" value={primaryContact.system_role} />
-                        <DisplayField label="Email Address" value={primaryContact.email} />
-                        <DisplayField label="Contact Number" value={primaryContact.contact_number ? `+60 ${primaryContact.contact_number}` : ''} />
+                        <DisplayField label="Signatory Name" value={`${primaryContact.first_name || ''} ${primaryContact.last_name || ''}`.trim()} borderless />
+                        <DisplayField label="Company Role" value={primaryContact.company_role} borderless />
+                        <DisplayField label="System Role" value={primaryContact.system_role} borderless />
+                        <DisplayField label="Email Address" value={primaryContact.email} borderless />
+                        <DisplayField label="Contact Number" value={primaryContact.contact_number ? `+60 ${primaryContact.contact_number}` : ''} borderless />
                     </div>
                     <div className="flex items-start mt-6">
                         <input type="checkbox" id="first_approval_confirmation" name="first_approval_confirmation" checked={formData.first_approval_confirmation ?? false} onChange={handleChange} className="h-4 w-4 mt-0.5 border-gray-300 rounded focus:ring-ht-gray" />
@@ -322,8 +325,16 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                         )}
                     </div>
                     <div className="flex items-start mt-6">
-                        <input type="checkbox" id="second_approval_confirmation" name="second_approval_confirmation" checked={formData.second_approval_confirmation ?? false} onChange={handleChange} className="h-4 w-4 mt-0.5 border-gray-300 rounded focus:ring-ht-gray" />
-                        <label htmlFor="second_approval_confirmation" className="ml-3 block text-xs text-gray-800">
+                        <input 
+                            type="checkbox" 
+                            id="second_approval_confirmation" 
+                            name="second_approval_confirmation" 
+                            checked={formData.second_approval_confirmation ?? false} 
+                            onChange={handleChange} 
+                            disabled={formMode === 'approve'}
+                            className="h-4 w-4 mt-0.5 border-gray-300 rounded focus:ring-ht-gray disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100" 
+                        />
+                        <label htmlFor="second_approval_confirmation" className={`ml-3 block text-xs ${formMode === 'approve' ? 'text-gray-500' : 'text-gray-800'}`}>
                             I hereby confirm that I have read, understood, and agree to the terms and conditions of this Agreement, and I consent to proceed accordingly.
                         </label>
                     </div>
@@ -348,10 +359,10 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                                 name="agreed_to_generic_terms" 
                                 checked={formData.agreed_to_generic_terms as boolean} 
                                 onChange={handleChange} 
-                                disabled
-                                className="h-4 w-4 border-gray-300 rounded focus:ring-ht-gray" 
+                                disabled={!formData.agreed_to_generic_terms}
+                                className="h-4 w-4 border-gray-300 rounded focus:ring-ht-gray disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100" 
                             />
-                            <label htmlFor="agreed_to_generic_terms" className="ml-2 block text-sm text-gray-900">
+                            <label htmlFor="agreed_to_generic_terms" className={`ml-2 block text-sm ${!formData.agreed_to_generic_terms ? 'text-gray-500' : 'text-gray-900'}`}>
                                 I have read and agree to the Generic Terms and Conditions
                             </label>
                         </div>
@@ -373,10 +384,10 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                                 name="agreed_to_commercial_terms" 
                                 checked={formData.agreed_to_commercial_terms as boolean} 
                                 onChange={handleChange} 
-                                disabled
-                                className="h-4 w-4 border-gray-300 rounded focus:ring-ht-gray" 
+                                disabled={!formData.agreed_to_commercial_terms}
+                                className="h-4 w-4 border-gray-300 rounded focus:ring-ht-gray disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100" 
                             />
-                            <label htmlFor="agreed_to_commercial_terms" className="ml-2 block text-sm text-gray-900">
+                            <label htmlFor="agreed_to_commercial_terms" className={`ml-2 block text-sm ${!formData.agreed_to_commercial_terms ? 'text-gray-500' : 'text-gray-900'}`}>
                                 I have read and agree to the Commercial Terms and Conditions
                             </label>
                         </div>
@@ -405,10 +416,20 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                  {formMode !== 'approve' && formMode !== 'approve-second' && (
                     <button 
                         type="button"
-                        onClick={() => onSaveCorporate(formData, 'save')}
-                        className="text-sm text-gray-700 bg-white px-4 py-2 rounded-md border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue"
+                        onClick={async () => {
+                            setIsSaving(true);
+                            try {
+                                await onSaveCorporate(formData, 'save');
+                            } catch (error) {
+                                console.error('Save failed:', error);
+                            } finally {
+                                setIsSaving(false);
+                            }
+                        }}
+                        disabled={isSaving}
+                        className={`text-sm px-4 py-2 rounded-md border ${isSaving ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'text-gray-700 bg-white hover:bg-gray-50'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue`}
                     >
-                        Save
+                        {isSaving ? 'Processing...' : 'Save'}
                     </button>
                 )}
                  {(formMode === 'approve' || formMode === 'approve-second') && formData.status !== 'Rejected' ? (
@@ -422,8 +443,10 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                         </button>
                         <button 
                             type="button"
-                            onClick={() => {
+                            onClick={async () => {
                                 console.log('Submitting form data:', JSON.stringify(formData, null, 2));
+                                
+                                // Validation checks
                                 if (formMode === 'approve-second') {
                                     if (!validateSecondaryApprover()) {
                                         setShowValidationError(true);
@@ -435,12 +458,22 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                                         return;
                                     }
                                 }
+                                
                                 setShowValidationError(false);
-                                onSaveCorporate(formData, 'submit');
+                                setIsApproving(true); // Set loading state
+                                
+                                try {
+                                    await onSaveCorporate(formData, 'submit');
+                                } catch (error) {
+                                    console.error('Approval failed:', error);
+                                } finally {
+                                    setIsApproving(false); // Reset loading state
+                                }
                             }}
+                            disabled={isApproving} // Disable button during loading
                             className="text-sm bg-ht-blue text-white px-4 py-2 rounded-md hover:bg-ht-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue-dark disabled:bg-ht-gray disabled:cursor-not-allowed"
                         >
-                            Approve
+                            {isApproving ? 'Validating...' : 'Approve'}
                         </button>
                      </>
                   ) : (
@@ -448,13 +481,21 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                         {(formMode === 'new' || formMode === 'edit') && (
                             <button 
                                 type="button"
-                                onClick={() => {
+                                onClick={async () => {
                                     console.log('Submitting form data:', JSON.stringify(formData, null, 2));
-                                    onSaveCorporate(formData, 'sent');
+                                    setIsSendingToApprover(true);
+                                    try {
+                                        await onSaveCorporate(formData, 'sent');
+                                    } catch (error) {
+                                        console.error('Failed to send to approver:', error);
+                                    } finally {
+                                        setIsSendingToApprover(false);
+                                    }
                                 }}
-                                className="text-sm bg-ht-blue text-white px-4 py-2 rounded-md hover:bg-ht-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue-dark"
+                                disabled={isSendingToApprover}
+                                className="text-sm bg-ht-blue text-white px-4 py-2 rounded-md hover:bg-ht-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue-dark disabled:bg-ht-gray disabled:cursor-not-allowed"
                             >
-                                Send to Approver
+                                {isSendingToApprover ? 'Processing...' : 'Send to Approver'}
                             </button>
                         )}
                     </>
@@ -468,6 +509,7 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                 agreed={Boolean(formData.agreed_to_generic_terms)}
                 onAgree={() => {
                     setFormData(prev => ({ ...prev, agreed_to_generic_terms: true }));
+                    setIsGenericTermsModalOpen(false);
                 }}
             />
             
@@ -477,6 +519,7 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                 agreed={Boolean(formData.agreed_to_commercial_terms)}
                 onAgree={() => {
                     setFormData(prev => ({ ...prev, agreed_to_commercial_terms: true }));
+                    setIsCommercialTermsModalOpen(false);
                 }}
             />
         </div>

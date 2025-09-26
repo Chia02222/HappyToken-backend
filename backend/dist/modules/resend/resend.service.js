@@ -65,17 +65,18 @@ let ResendService = class ResendService {
         if (!corporate) {
             return { success: false, message: 'Corporate not found.' };
         }
+        const firstContact = corporate.contacts?.[0];
+        const secId = corporate.secondary_approver_id;
+        const contacts = (corporate.contacts || []);
+        const byId = contacts.find(c => Number(c.id) === Number(secId));
+        const byRole = contacts.find(c => c.system_role === 'secondary_approver');
+        const fallback = contacts.length > 1 ? contacts[1] : undefined;
+        const secondary = byId || byRole || fallback;
         let recipientEmail;
         if (approver === 'first') {
-            recipientEmail = corporate.contacts?.[0]?.email;
+            recipientEmail = firstContact?.email;
         }
         else {
-            const secId = corporate.secondary_approver_id;
-            const contacts = (corporate.contacts || []);
-            const byId = contacts.find(c => Number(c.id) === Number(secId));
-            const byRole = contacts.find(c => c.system_role === 'secondary_approver');
-            const fallback = contacts.length > 1 ? contacts[1] : undefined;
-            const secondary = byId || byRole || fallback;
             recipientEmail = secondary?.email;
         }
         if (recipientEmail) {
@@ -97,10 +98,49 @@ let ResendService = class ResendService {
                 body: JSON.stringify({
                     from: SENDER_EMAIL,
                     to: recipientEmail,
-                    subject: approver === 'first' ? 'First Approval Required' : 'Second Approval Required',
+                    subject: 'Action Required: New Corporate Account Setup Requires Your Approval',
                     html: approver === 'first'
-                        ? `<p>Hi,</p><p>Please review and approve the E-Commercial Terms: <a href="${corporateFormLink}">Open Link</a></p>`
-                        : `<p>Hi,</p><p>Please perform second approval for E-Commercial Terms: <a href="${corporateFormLink}">Open Link</a></p>`,
+                        ? `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <p>Hi ${firstContact ? `${firstContact.first_name || ''} ${firstContact.last_name || ''}`.trim() : 'Approver'},</p>
+                
+                <p>An new corporate account has been created for your review and approval.</p>
+                
+                <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                  <p><strong>Company Name:</strong> ${corporate.company_name}</p>
+                  <p><strong>Registration No.:</strong> ${corporate.reg_number}</p>
+                </div>
+                
+                <p>You can review and take action by clicking the link below:</p>
+                
+                <p style="margin: 25px 0;">
+                  <a href="${corporateFormLink}" style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">Review Corporate Account</a>
+                </p>
+                
+                <p>Thank you,<br/>Happy Token Team</p>
+              </div>
+            `
+                        : `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <p>Hello ${secondary ? `${secondary.first_name || ''} ${secondary.last_name || ''}`.trim() : '2nd Approver'},</p>
+                
+                <p>An new corporate account has been approved by the previous approver and now requires your review and final approval.</p>
+                
+                <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                  <p><strong>Company Name:</strong> ${corporate.company_name}</p>
+                  <p><strong>Registration No.:</strong> ${corporate.reg_number}</p>
+                  <p><strong>Previous Reviewer:</strong> ${firstContact ? `${firstContact.first_name || ''} ${firstContact.last_name || ''}`.trim() : 'First Approver'}</p>
+                </div>
+                
+                <p>You can review and take action by clicking the link below:</p>
+                
+                <p style="margin: 25px 0;">
+                  <a href="${corporateFormLink}" style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">Review Corporate Account</a>
+                </p>
+                
+                <p>Thank you,<br/>Happy Token Team</p>
+              </div>
+            `,
                 }),
             });
             const data = await response.json();
@@ -203,12 +243,28 @@ let ResendService = class ResendService {
             return { success: false, message: 'Corporate not found.' };
         }
         const subject = `Corporate Rejected: ${corporate.company_name}`;
+        const corporateLink = `http://localhost:3000/corporate/${corporateId}`;
         const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #333;">Corporate Account Rejected</h2>
+        
         <p>Dear CRT,</p>
-        <p>The corporate account for <strong>${corporate.company_name}</strong> (Reg No: ${corporate.reg_number}) has been rejected.</p>
-        <p><strong>Reason:</strong> ${note || 'N/A'}</p>
-        <p>Regards,<br/>HappyToken</p>
+        
+        <p>The corporate account for <strong>${corporate.company_name}</strong> (Registration No: ${corporate.reg_number}) has been rejected.</p>
+        
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <p><strong>Company:</strong> ${corporate.company_name}</p>
+          <p><strong>Registration No.:</strong> ${corporate.reg_number}</p>
+          <p><strong>Rejection Reason:</strong> ${note || 'No reason provided'}</p>
+        </div>
+        
+        <p>You can review the corporate account details by clicking the link below:</p>
+        
+        <p style="margin: 25px 0;">
+          <a href="${corporateLink}" style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">Review Corporate Account</a>
+        </p>
+        
+        <p>Thank you,<br/>Happy Token Team</p>
       </div>
     `;
         const resp = await fetch('https://api.resend.com/emails', {
@@ -226,7 +282,6 @@ let ResendService = class ResendService {
     async sendAmendRejectEmail(corporateId, note) {
         const RESEND_API_KEY = process.env.RESEND_API_KEY;
         const SENDER_EMAIL = process.env.SENDER_EMAIL;
-        const CRT_EMAIL = process.env.CRT_EMAIL || 'wanjun123@1utar.my';
         if (!RESEND_API_KEY || !SENDER_EMAIL) {
             console.error('Resend API Key or Sender Email is not configured.');
             return { success: false, message: 'Resend API Key or Sender Email is not configured.' };
@@ -235,26 +290,64 @@ let ResendService = class ResendService {
         if (!corporate) {
             return { success: false, message: 'Corporate not found.' };
         }
+        let recipientEmail;
+        let approverName;
+        if (corporate.status === 'Pending 2nd Approval') {
+            const secId = corporate.secondary_approver_id;
+            const contacts = (corporate.contacts || []);
+            const byId = contacts.find(c => Number(c.id) === Number(secId));
+            const byRole = contacts.find(c => c.system_role === 'secondary_approver');
+            const fallback = contacts.length > 1 ? contacts[1] : undefined;
+            const secondary = byId || byRole || fallback;
+            recipientEmail = secondary?.email;
+            approverName = secondary ? `${secondary.first_name || ''} ${secondary.last_name || ''}`.trim() : 'Second Approver';
+        }
+        else {
+            const firstContact = corporate.contacts?.[0];
+            recipientEmail = firstContact?.email;
+            approverName = firstContact ? `${firstContact.first_name || ''} ${firstContact.last_name || ''}`.trim() : 'First Approver';
+        }
+        if (!recipientEmail || recipientEmail === 'N/A' || recipientEmail === '') {
+            return { success: false, message: 'Recipient email not found for the appropriate approver.' };
+        }
         const subject = `Amendment Rejected: ${corporate.company_name}`;
+        const corporateLink = `http://localhost:3000/corporate/${corporate.id}?mode=approve&step=2`;
         const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <p>Dear CRT,</p>
-        <p>An amendment request for <strong>${corporate.company_name}</strong> was rejected.</p>
-        <p><strong>Reason:</strong> ${note || 'N/A'}</p>
-        <p>Regards,<br/>HappyToken</p>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #333;">Amendment Request Rejected</h2>
+        
+        <p>Dear ${approverName},</p>
+        
+        <p>An amendment request for <strong>${corporate.company_name}</strong> (Registration No: ${corporate.reg_number}) has been rejected by the CRT team.</p>
+        
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <p><strong>Company:</strong> ${corporate.company_name}</p>
+          <p><strong>Registration No.:</strong> ${corporate.reg_number}</p>
+          <p><strong>Rejection Reason:</strong> ${note || 'No reason provided'}</p>
+        </div>
+        
+        <p>The corporate account has been reverted to its previous status and you may need to take further action.</p>
+        
+        <p>You can review the corporate account by clicking the link below:</p>
+        
+        <p style="margin: 25px 0;">
+          <a href="${corporateLink}" style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">Review Corporate Account</a>
+        </p>
+        
+        <p>Thank you,<br/>Happy Token Team</p>
       </div>
     `;
         const resp = await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ from: SENDER_EMAIL, to: CRT_EMAIL, subject, html })
+            body: JSON.stringify({ from: SENDER_EMAIL, to: recipientEmail, subject, html })
         });
         const data = await resp.json();
         if (!resp.ok) {
             console.error('Failed to send amendment reject email:', data);
             return { success: false, message: data.message || 'Failed to send amendment reject email.' };
         }
-        return { success: true, message: 'Amendment reject email sent.' };
+        return { success: true, message: 'Amendment reject email sent to approver.' };
     }
     async sendExpiredEmail(corporateId, note) {
         const RESEND_API_KEY = process.env.RESEND_API_KEY;
@@ -295,32 +388,55 @@ let ResendService = class ResendService {
         if (!corporate) {
             return { success: false, message: 'Corporate not found.' };
         }
-        const firstEmail = corporate.contacts?.[0]?.email;
+        const firstContact = corporate.contacts?.[0];
+        const firstEmail = firstContact?.email;
         const secondary = (corporate.contacts || []).find(c => c.id === corporate.secondary_approver_id) ||
             (corporate.contacts || []).find(c => c.system_role === 'secondary_approver');
         const secondEmail = secondary?.email;
-        const subject = `Account Created Successfully: ${corporate.company_name}`;
-        const link = `http://localhost:3002/corporate/${corporate.id}`;
-        const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color:#333;">Account Created Successfully</h2>
-        <p>The corporate account <strong>${corporate.company_name}</strong> has been approved.</p>
-        <p>You can view the corporate details here: <a href="${link}">Open Corporate</a></p>
-        <p>Regards,<br/>HappyToken</p>
+        const firstApproverName = firstContact ? `${firstContact.first_name || ''} ${firstContact.last_name || ''}`.trim() : 'First Approver';
+        const secondApproverName = secondary ? `${secondary.first_name || ''} ${secondary.last_name || ''}`.trim() : 'Second Approver';
+        const createdBy = `${firstApproverName}, ${secondApproverName}`;
+        const subject = `Welcome! Your Corporate Account is Ready – ${corporate.company_name}`;
+        const portalLink = `http://localhost:3000/corporate/${corporate.id}`;
+        const createEmailHtml = (userName) => `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #333;">Welcome! Your Corporate Account is Ready</h2>
+        
+        <p>Hello ${userName},</p>
+        
+        <p>We're pleased to inform you that your corporate account has been created successfully.</p>
+        
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <p><strong>Company Name:</strong> ${corporate.company_name}</p>
+          <p><strong>Created By:</strong> ${createdBy}</p>
+        </div>
+        
+        <p>Get started by logging in to your corporate portal.</p>
+        
+        <p style="margin: 25px 0;">
+          <a href="${portalLink}" style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">Go to Corporate Portal</a>
+        </p>
+        
+        <p>Thank you for joining us,<br/>Happy Token Team</p>
       </div>
     `;
-        const sendTo = async (to) => {
+        const sendTo = async (to, userName) => {
             if (!to)
                 return { success: false };
             const resp = await fetch('https://api.resend.com/emails', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ from: SENDER_EMAIL, to, subject, html })
+                body: JSON.stringify({
+                    from: SENDER_EMAIL,
+                    to,
+                    subject,
+                    html: createEmailHtml(userName)
+                })
             });
             return { ok: resp.ok, data: await resp.json() };
         };
-        const r1 = await sendTo(firstEmail);
-        const r2 = await sendTo(secondEmail);
+        const r1 = await sendTo(firstEmail || '', firstApproverName);
+        const r2 = await sendTo(secondEmail || '', secondApproverName);
         if ((r1.ok === false && r2.ok === false)) {
             console.error('Failed to send account created emails:', r1.data, r2.data);
             return { success: false, message: 'Failed to send account created emails.' };

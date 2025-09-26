@@ -109,3 +109,14 @@ export const sendAmendmentEmail = async (id: string) => {
     });
     return handleResponse(response);
 };
+
+export const sendAmendRejectEmail = async (id: string, note?: string) => {
+    const response = await fetch(`${API_BASE_URL}/corporates/${id}/send-amend-reject-email`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ note }),
+    });
+    return handleResponse(response);
+};
