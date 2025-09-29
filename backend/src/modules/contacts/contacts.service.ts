@@ -11,12 +11,12 @@ export class ContactsService {
     return this.dbService.getDb();
   }
 
-  async addContact(contactData: CreateContactDto) {
+  async addContact(contactData: any) {
     console.log('addContact called with:', contactData);
-    const { id: _id, ...contactDataWithoutId } = contactData as CreateContactDto & { id?: number }; // Cast to allow destructuring 'id'
+    const { id: _id, ...contactDataWithoutId } = contactData as CreateContactDto & { id?: string | number }; // transitional support
 
-    const insertData: CreateContactDto = {
-      corporate_id: contactDataWithoutId.corporate_id,
+    const insertData = {
+      corporate_uuid: (contactDataWithoutId as any).corporate_uuid,
       salutation: contactDataWithoutId.salutation,
       first_name: contactDataWithoutId.first_name,
       last_name: contactDataWithoutId.last_name,
@@ -24,7 +24,7 @@ export class ContactsService {
       email: contactDataWithoutId.email,
       company_role: contactDataWithoutId.company_role,
       system_role: contactDataWithoutId.system_role,
-    };
+    } as any;
 
     const dataWithDefaults = {
       ...insertData,
@@ -43,14 +43,14 @@ export class ContactsService {
         ...dataWithDefaults,
         created_at: sql`date_trunc('second', now())::timestamp(0)`,
         updated_at: sql`date_trunc('second', now())::timestamp(0)`,
-      })
+      } as any)
       .returningAll()
       .executeTakeFirst();
     return inserted!;
   }
 
-  async updateContact(id: number, contactData: UpdateContactDto) {
-    console.log('updateContact called with:', { id, contactData });
+  async updateContact(uuid: string, contactData: UpdateContactDto) {
+    console.log('updateContact called with:', { uuid, contactData });
     // Never update primary key
     const { id: _contactId, ...updateData } = contactData;
     const updated = await this.db
@@ -59,15 +59,15 @@ export class ContactsService {
         ...updateData,
         updated_at: sql`date_trunc('second', now())::timestamp(0)`,
       })
-      .where('id', '=', id)
+      .where('uuid', '=', uuid)
       .returningAll()
       .executeTakeFirst();
     return updated!;
   }
 
-  async deleteContact(id: number) {
-    console.log('deleteContact called with id:', id);
-    await this.db.deleteFrom('contacts').where('id', '=', id).execute();
+  async deleteContact(uuid: string) {
+    console.log('deleteContact called with uuid:', uuid);
+    await this.db.deleteFrom('contacts').where('uuid', '=', uuid).execute();
     return { success: true };
   }
 }

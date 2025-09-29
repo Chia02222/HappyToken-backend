@@ -137,7 +137,7 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
                         <tbody className="bg-white divide-y divide-gray-200">
                             {orderedCorporates.map((corporate) => (
                                 <tr
-                                    key={corporate.id}
+                                    key={corporate.id || corporate.reg_number}
                                     className={`${featuredCorporateIds.has(corporate.id) ? 'bg-ht-blue-light hover:bg-ht-blue-light' : 'hover:bg-gray-50'} cursor-pointer`}
                                     onClick={() => onView(corporate)}
                                 >

@@ -4,6 +4,7 @@ exports.updateSubsidiarySchema = exports.createSubsidiarySchema = exports.Update
 const mapped_types_1 = require("@nestjs/mapped-types");
 const zod_1 = require("zod");
 class BaseSubsidiaryDto {
+    corporate_uuid;
     corporate_id;
     company_name;
     reg_number;
@@ -25,7 +26,8 @@ class UpdateSubsidiaryDto extends (0, mapped_types_1.PartialType)(BaseSubsidiary
 }
 exports.UpdateSubsidiaryDto = UpdateSubsidiaryDto;
 exports.createSubsidiarySchema = zod_1.z.object({
-    corporate_id: zod_1.z.number().int().positive(),
+    corporate_uuid: zod_1.z.string().uuid().optional(),
+    corporate_id: zod_1.z.number().int().positive().optional(),
     company_name: zod_1.z.string().min(1),
     reg_number: zod_1.z.string().min(1),
     office_address1: zod_1.z.string().min(1),
@@ -36,6 +38,9 @@ exports.createSubsidiarySchema = zod_1.z.object({
     country: zod_1.z.string().min(1),
     website: zod_1.z.string().url().nullable().optional(),
     account_note: zod_1.z.string().nullable().optional(),
+}).refine((d) => Boolean(d.corporate_uuid || d.corporate_id), {
+    message: 'Either corporate_uuid or corporate_id is required',
+    path: ['corporate_uuid'],
 });
 exports.updateSubsidiarySchema = exports.createSubsidiarySchema.partial().extend({
     id: zod_1.z.number().int().positive().optional(),

@@ -25,7 +25,7 @@ let ContactsService = class ContactsService {
         console.log('addContact called with:', contactData);
         const { id: _id, ...contactDataWithoutId } = contactData;
         const insertData = {
-            corporate_id: contactDataWithoutId.corporate_id,
+            corporate_uuid: contactDataWithoutId.corporate_uuid,
             salutation: contactDataWithoutId.salutation,
             first_name: contactDataWithoutId.first_name,
             last_name: contactDataWithoutId.last_name,
@@ -55,8 +55,8 @@ let ContactsService = class ContactsService {
             .executeTakeFirst();
         return inserted;
     }
-    async updateContact(id, contactData) {
-        console.log('updateContact called with:', { id, contactData });
+    async updateContact(uuid, contactData) {
+        console.log('updateContact called with:', { uuid, contactData });
         const { id: _contactId, ...updateData } = contactData;
         const updated = await this.db
             .updateTable('contacts')
@@ -64,14 +64,14 @@ let ContactsService = class ContactsService {
             ...updateData,
             updated_at: (0, kysely_1.sql) `date_trunc('second', now())::timestamp(0)`,
         })
-            .where('id', '=', id)
+            .where('uuid', '=', uuid)
             .returningAll()
             .executeTakeFirst();
         return updated;
     }
-    async deleteContact(id) {
-        console.log('deleteContact called with id:', id);
-        await this.db.deleteFrom('contacts').where('id', '=', id).execute();
+    async deleteContact(uuid) {
+        console.log('deleteContact called with uuid:', uuid);
+        await this.db.deleteFrom('contacts').where('uuid', '=', uuid).execute();
         return { success: true };
     }
 };

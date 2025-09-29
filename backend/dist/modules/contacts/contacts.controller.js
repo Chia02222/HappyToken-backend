@@ -22,37 +22,36 @@ let ContactsController = class ContactsController {
     constructor(contactsService) {
         this.contactsService = contactsService;
     }
-    async addContact(corporateId, contactData) {
-        const corporateIdNum = Number(corporateId);
-        return await this.contactsService.addContact({ ...contactData, corporate_id: corporateIdNum });
+    async addContact(corporateUuid, contactData) {
+        return await this.contactsService.addContact({ ...contactData, corporate_uuid: corporateUuid });
     }
-    async updateContact(id, contactData) {
-        return await this.contactsService.updateContact(Number(id), contactData);
+    async updateContact(uuid, contactData) {
+        return await this.contactsService.updateContact(uuid, contactData);
     }
-    async deleteContact(id) {
-        return await this.contactsService.deleteContact(Number(id));
+    async deleteContact(uuid) {
+        return await this.contactsService.deleteContact(uuid);
     }
 };
 exports.ContactsController = ContactsController;
 __decorate([
-    (0, common_1.Post)(':corporateId'),
-    __param(0, (0, common_1.Param)('corporateId')),
+    (0, common_1.Post)(':corporateUuid'),
+    __param(0, (0, common_1.Param)('corporateUuid')),
     __param(1, (0, common_1.Body)(new zod_validation_pipe_1.ZodValidationPipe(contact_dto_1.createContactSchema.omit({ corporate_id: true })))),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], ContactsController.prototype, "addContact", null);
 __decorate([
-    (0, common_1.Put)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    (0, common_1.Put)(':uuid'),
+    __param(0, (0, common_1.Param)('uuid')),
     __param(1, (0, common_1.Body)(new zod_validation_pipe_1.ZodValidationPipe(contact_dto_1.updateContactSchema))),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, contact_dto_1.UpdateContactDto]),
     __metadata("design:returntype", Promise)
 ], ContactsController.prototype, "updateContact", null);
 __decorate([
-    (0, common_1.Delete)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    (0, common_1.Delete)(':uuid'),
+    __param(0, (0, common_1.Param)('uuid')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)

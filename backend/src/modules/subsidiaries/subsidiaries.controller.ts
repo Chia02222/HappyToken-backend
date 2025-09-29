@@ -7,26 +7,26 @@ import { ZodValidationPipe } from '../../common/zod-validation.pipe';
 export class SubsidiariesController {
   constructor(private readonly subsidiariesService: SubsidiariesService) {}
 
-  @Post(':corporateId')
+  @Post(':corporateUuid')
   @UsePipes(new ZodValidationPipe(createSubsidiarySchema.omit({ corporate_id: true })))
   async addSubsidiary(
-    @Param('corporateId') corporateId: number,
+    @Param('corporateUuid') corporateUuid: string,
     @Body() subsidiaryData: Omit<CreateSubsidiaryDto, 'corporate_id'>
   ) {
-    return await this.subsidiariesService.addSubsidiary({ ...subsidiaryData, corporate_id: corporateId });
+    return await this.subsidiariesService.addSubsidiary({ ...subsidiaryData, corporate_uuid: corporateUuid } as any);
   }
 
-  @Put(':id')
+  @Put(':uuid')
   @UsePipes(new ZodValidationPipe(updateSubsidiarySchema))
   async updateSubsidiary(
-    @Param('id') id: string,
+    @Param('uuid') uuid: string,
     @Body() subsidiaryData: UpdateSubsidiaryDto
   ) {
-    return await this.subsidiariesService.updateSubsidiary(Number(id), subsidiaryData);
+    return await this.subsidiariesService.updateSubsidiary(String(uuid), subsidiaryData);
   }
 
-  @Delete(':id')
-  async deleteSubsidiary(@Param('id') id: string) {
-    return await this.subsidiariesService.deleteSubsidiary(Number(id));
+  @Delete(':uuid')
+  async deleteSubsidiary(@Param('uuid') uuid: string) {
+    return await this.subsidiariesService.deleteSubsidiary(String(uuid));
   }
 }

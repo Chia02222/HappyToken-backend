@@ -3,7 +3,8 @@ import { z } from 'zod';
 
 // Base DTO that explicitly defines properties from the `subsidiaries` table
 export class BaseSubsidiaryDto {
-    corporate_id: number;
+    corporate_uuid?: string;
+    corporate_id?: number; // legacy during transition
     company_name: string;
     reg_number: string;
     office_address1: string;
@@ -25,7 +26,8 @@ export class UpdateSubsidiaryDto extends PartialType(BaseSubsidiaryDto) {
 }
 
 export const createSubsidiarySchema = z.object({
-    corporate_id: z.number().int().positive(),
+    corporate_uuid: z.string().uuid().optional(),
+    corporate_id: z.number().int().positive().optional(),
     company_name: z.string().min(1),
     reg_number: z.string().min(1),
     office_address1: z.string().min(1),
@@ -36,6 +38,9 @@ export const createSubsidiarySchema = z.object({
     country: z.string().min(1),
     website: z.string().url().nullable().optional(),
     account_note: z.string().nullable().optional(),
+}).refine((d) => Boolean((d as any).corporate_uuid || (d as any).corporate_id), {
+  message: 'Either corporate_uuid or corporate_id is required',
+  path: ['corporate_uuid'],
 });
 
 export const updateSubsidiarySchema = createSubsidiarySchema.partial().extend({

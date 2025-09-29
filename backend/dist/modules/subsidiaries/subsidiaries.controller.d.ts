@@ -3,8 +3,8 @@ import { CreateSubsidiaryDto, UpdateSubsidiaryDto } from './dto/subsidiary.dto';
 export declare class SubsidiariesController {
     private readonly subsidiariesService;
     constructor(subsidiariesService: SubsidiariesService);
-    addSubsidiary(corporateId: number, subsidiaryData: Omit<CreateSubsidiaryDto, 'corporate_id'>): Promise<{
-        id: number;
+    addSubsidiary(corporateUuid: string, subsidiaryData: Omit<CreateSubsidiaryDto, 'corporate_id'>): Promise<{
+        corporate_uuid: string;
         company_name: string;
         reg_number: string;
         office_address1: string;
@@ -15,12 +15,12 @@ export declare class SubsidiariesController {
         country: string;
         website: string | null;
         account_note: string | null;
+        uuid: string;
         created_at: string;
         updated_at: string;
-        corporate_id: number;
     }>;
-    updateSubsidiary(id: string, subsidiaryData: UpdateSubsidiaryDto): Promise<{
-        id: number;
+    updateSubsidiary(uuid: string, subsidiaryData: UpdateSubsidiaryDto): Promise<{
+        corporate_uuid: string;
         company_name: string;
         reg_number: string;
         office_address1: string;
@@ -31,11 +31,11 @@ export declare class SubsidiariesController {
         country: string;
         website: string | null;
         account_note: string | null;
+        uuid: string;
         created_at: string;
         updated_at: string;
-        corporate_id: number;
     }>;
-    deleteSubsidiary(id: string): Promise<{
+    deleteSubsidiary(uuid: string): Promise<{
         success: boolean;
     }>;
 }

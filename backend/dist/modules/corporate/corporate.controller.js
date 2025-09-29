@@ -48,6 +48,21 @@ let CorporateController = class CorporateController {
     async updateStatus(id, body) {
         return await this.corporateService.updateStatus(id, body.status, body.note);
     }
+    async createAmendmentRequest(corporateId, amendmentData) {
+        return await this.corporateService.createAmendmentRequest(corporateId, amendmentData);
+    }
+    async updateAmendmentStatus(corporateId, amendmentId, body) {
+        return await this.corporateService.updateAmendmentStatus(corporateId, amendmentId, body.status, body.reviewNotes);
+    }
+    async getAmendmentRequests(corporateId) {
+        return await this.corporateService.getAmendmentRequests(corporateId);
+    }
+    async getAmendmentRequestsByCorporate(id) {
+        return await this.corporateService.getAmendmentRequests(id);
+    }
+    async getAmendmentById(amendmentId) {
+        return await this.corporateService.getAmendmentById(amendmentId);
+    }
     async submitForFirstApproval(id) {
         return await this.corporateService.updateStatus(id, 'Pending 1st Approval', 'Submitted to 1st approver.');
     }
@@ -85,7 +100,7 @@ __decorate([
 ], CorporateController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
@@ -99,7 +114,7 @@ __decorate([
 ], CorporateController.prototype, "create", null);
 __decorate([
     (0, common_1.Put)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
     __param(1, (0, common_1.Body)(new zod_validation_pipe_1.ZodValidationPipe(corporate_dto_1.updateCorporateSchema))),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, corporate_dto_1.UpdateCorporateDto]),
@@ -107,14 +122,14 @@ __decorate([
 ], CorporateController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], CorporateController.prototype, "delete", null);
 __decorate([
     (0, common_1.Post)(':id/investigation-logs'),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
     __param(1, (0, common_1.Body)(new zod_validation_pipe_1.ZodValidationPipe(corporate_dto_1.investigationLogSchema))),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
@@ -122,22 +137,60 @@ __decorate([
 ], CorporateController.prototype, "addInvestigationLog", null);
 __decorate([
     (0, common_1.Put)(':id/status'),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
     __param(1, (0, common_1.Body)(new zod_validation_pipe_1.ZodValidationPipe(corporate_dto_1.updateStatusSchema))),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], CorporateController.prototype, "updateStatus", null);
 __decorate([
+    (0, common_1.Post)(':id/amendment-requests'),
+    __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], CorporateController.prototype, "createAmendmentRequest", null);
+__decorate([
+    (0, common_1.Patch)(':id/amendment-requests/:amendmentId'),
+    __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
+    __param(1, (0, common_1.Param)('amendmentId', new common_1.ParseUUIDPipe())),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:returntype", Promise)
+], CorporateController.prototype, "updateAmendmentStatus", null);
+__decorate([
+    (0, common_1.Get)('amendment-requests'),
+    __param(0, (0, common_1.Query)('corporateId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], CorporateController.prototype, "getAmendmentRequests", null);
+__decorate([
+    (0, common_1.Get)(':id/amendment-requests'),
+    __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], CorporateController.prototype, "getAmendmentRequestsByCorporate", null);
+__decorate([
+    (0, common_1.Get)('amendment-requests/:amendmentId'),
+    __param(0, (0, common_1.Param)('amendmentId', new common_1.ParseUUIDPipe())),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], CorporateController.prototype, "getAmendmentById", null);
+__decorate([
     (0, common_1.Put)(':id/submit'),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], CorporateController.prototype, "submitForFirstApproval", null);
 __decorate([
     (0, common_1.Post)(':id/resend-link'),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
     __param(1, (0, common_1.Query)('approver')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String]),
@@ -145,21 +198,21 @@ __decorate([
 ], CorporateController.prototype, "sendEcommericialTermlink", null);
 __decorate([
     (0, common_1.Post)(':id/complete-cooling-period'),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], CorporateController.prototype, "completeCoolingPeriod", null);
 __decorate([
     (0, common_1.Post)(':id/send-amendment-email'),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], CorporateController.prototype, "sendAmendmentEmail", null);
 __decorate([
     (0, common_1.Post)(':id/send-amend-reject-email'),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),

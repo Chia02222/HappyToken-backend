@@ -3,24 +3,9 @@ import React from 'react';
 interface GenericTermsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAgree: () => void;
-  agreed?: boolean;
 }
 
-const GenericTermsModal: React.FC<GenericTermsModalProps> = ({ isOpen, onClose, onAgree, agreed = false }) => {
-  const [hasScrolledToBottom, setHasScrolledToBottom] = React.useState(false);
-
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10; // 10px tolerance
-    setHasScrolledToBottom(isAtBottom);
-  };
-
-  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.checked) {
-      onAgree();
-    }
-  };
+const GenericTermsModal: React.FC<GenericTermsModalProps> = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
@@ -40,7 +25,6 @@ const GenericTermsModal: React.FC<GenericTermsModalProps> = ({ isOpen, onClose, 
         </div>
         <div 
           className="flex-1 overflow-y-auto p-6"
-          onScroll={handleScroll}
         >
           <div className="prose prose-sm max-w-none">
             <p className="text-xs text-gray-500 mb-4">Last Updated: [Insert Date]</p>
@@ -81,29 +65,6 @@ const GenericTermsModal: React.FC<GenericTermsModalProps> = ({ isOpen, onClose, 
             <h4 className="font-semibold mt-6">10. Force Majeure</h4>
             <p>The Company shall not be liable for any failure or delay in performance due to circumstances beyond its reasonable control, including but not limited to acts of God, natural disasters, war, terrorism, or government actions.</p>
             
-          </div>
-        </div>
-        <div className="p-6 border-t bg-gray-50">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <input 
-                type="checkbox" 
-                id="generic_terms_agreement" 
-                checked={agreed}
-                disabled={!hasScrolledToBottom || agreed}
-                onChange={handleCheckboxChange}
-                className="h-4 w-4 border-gray-300 rounded focus:ring-ht-gray disabled:opacity-50" 
-              />
-              <label htmlFor="generic_terms_agreement" className="ml-2 block text-sm text-gray-900">
-                I have read and agree to the Generic Terms and Conditions
-              </label>
-            </div>
-            <button
-              onClick={onClose}
-              className="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-            >
-              Cancel
-            </button>
           </div>
         </div>
       </div>

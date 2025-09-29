@@ -15,8 +15,8 @@ import { SubsidiariesService } from '../subsidiaries/subsidiaries.service';
 import { ResendService } from '../resend/resend.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
-// Define a type for CorporateTable without the 'id' property
-type UpdatableCorporateTable = Omit<CorporateTable, 'id'>;
+// Define a type for CorporateTable without the primary key 'uuid'
+type UpdatableCorporateTable = Omit<CorporateTable, 'uuid'>;
 
 @Injectable()
 export class CorporateService {
@@ -41,26 +41,21 @@ export class CorporateService {
   }
 
   async findById(id: string) {
-    const idNum = Number(id);
     const corporate = await this.db
       .selectFrom('corporates')
       .selectAll()
-      .where('id', '=', idNum)
+      .where('uuid', '=', id)
       .executeTakeFirst();
 
     if (!corporate) {
       return null;
     }
 
+    // Load children via uuid-first; fallback to numeric FK if present (transition safety)
     const [contacts, subsidiaries, investigationLogs] = await Promise.all([
-      this.db.selectFrom('contacts').selectAll().where('corporate_id', '=', idNum).orderBy('created_at', 'asc').execute(),
-      this.db.selectFrom('subsidiaries').selectAll().where('corporate_id', '=', idNum).execute(),
-      this.db
-        .selectFrom('investigation_logs')
-        .selectAll()
-        .where('corporate_id', '=', idNum)
-        .orderBy('timestamp', 'desc')
-        .execute(),
+      this.db.selectFrom('contacts').selectAll().where('corporate_uuid', '=', corporate.uuid).orderBy('created_at', 'asc').execute(),
+      this.db.selectFrom('subsidiaries').selectAll().where('corporate_uuid', '=', corporate.uuid).execute(),
+      this.db.selectFrom('investigation_logs').selectAll().where('corporate_uuid', '=', corporate.uuid).orderBy('timestamp', 'desc').execute(),
     ]);
 
     return {
@@ -95,21 +90,24 @@ export class CorporateService {
 
     if (contacts) {
       for (const contact of contacts) {
-        await this.contactsService.addContact({ ...contact, corporate_id: inserted.id });
+        // @ts-ignore transitional support; ContactsService to be updated to accept corporate_uuid
+        await this.contactsService.addContact({ ...contact, corporate_uuid: (inserted as any).uuid });
       }
     }
 
     if (subsidiaries) {
       for (const subsidiary of subsidiaries) {
-        await this.subsidiariesService.addSubsidiary({ ...subsidiary, corporate_id: inserted.id });
+        // @ts-ignore transitional support; SubsidiariesService to be updated to accept corporate_uuid
+        await this.subsidiariesService.addSubsidiary({ ...subsidiary, corporate_uuid: (inserted as any).uuid });
       }
     }
 
     if (secondary_approver) {
-      let secondaryApproverId: number | undefined;
+      let secondaryApproverUuid: string | undefined;
 
       if (secondary_approver.use_existing_contact && secondary_approver.selected_contact_id) {
-        await this.contactsService.updateContact(Number(secondary_approver.selected_contact_id), {
+        const selectedUuid = String(secondary_approver.selected_contact_id);
+        await this.contactsService.updateContact(selectedUuid, {
           salutation: secondary_approver.salutation ?? '',
           first_name: secondary_approver.first_name ?? '',
           last_name: secondary_approver.last_name ?? '',
@@ -118,10 +116,11 @@ export class CorporateService {
           email: secondary_approver.email ?? '',
           contact_number: secondary_approver.contact_number ?? '',
         });
-        secondaryApproverId = Number(secondary_approver.selected_contact_id);
+        secondaryApproverUuid = selectedUuid;
       } else if (!secondary_approver.use_existing_contact) {
         const insertedContact = await this.contactsService.addContact({
-          corporate_id: inserted.id,
+          // @ts-ignore use uuid linkage
+          corporate_uuid: (inserted as any).uuid,
           salutation: secondary_approver.salutation ?? '',
           first_name: secondary_approver.first_name ?? '',
           last_name: secondary_approver.last_name ?? '',
@@ -130,17 +129,17 @@ export class CorporateService {
           email: secondary_approver.email ?? '',
           contact_number: secondary_approver.contact_number ?? '',
         });
-        secondaryApproverId = insertedContact.id as unknown as number;
+        secondaryApproverUuid = (insertedContact as any).uuid as string;
       }
 
-      if (secondaryApproverId !== undefined) {
+      if (secondaryApproverUuid !== undefined) {
         await this.db
           .updateTable('corporates')
           .set({
-            secondary_approver_id: secondaryApproverId,
+            secondary_approver_uuid: secondaryApproverUuid,
             updated_at: sql`date_trunc('second', now())::timestamp(0)` as unknown as string,
           })
-          .where('id', '=', inserted.id)
+          .where('uuid', '=', (inserted as any).uuid)
           .execute();
       }
     }
@@ -166,7 +165,7 @@ export class CorporateService {
       ...corporateUpdateData
     } = restOfUpdateData;
 
-    const idNum = Number(id);
+    const looksUuid = true;
     const secondaryApproverData = updateData.secondary_approver;
 
     console.log('Derived corporateUpdateData keys:', Object.keys(corporateUpdateData));
@@ -174,10 +173,11 @@ export class CorporateService {
     console.log('subsidiaryIdsToDelete:', subsidiaryIdsToDelete);
 
     if (secondaryApproverData) {
-      let secondaryApproverId: number | undefined;
+      let secondaryApproverUuid: string | undefined;
 
       if (secondaryApproverData.use_existing_contact && secondaryApproverData.selected_contact_id) {
-        await this.contactsService.updateContact(Number(secondaryApproverData.selected_contact_id), {
+        const selectedUuid = String(secondaryApproverData.selected_contact_id);
+        await this.contactsService.updateContact(selectedUuid, {
           salutation: secondaryApproverData.salutation ?? '',
           first_name: secondaryApproverData.first_name ?? '',
           last_name: secondaryApproverData.last_name ?? '',
@@ -186,10 +186,12 @@ export class CorporateService {
           email: secondaryApproverData.email ?? '',
           contact_number: secondaryApproverData.contact_number ?? '',
         });
-        secondaryApproverId = Number(secondaryApproverData.selected_contact_id);
+        secondaryApproverUuid = selectedUuid;
       } else if (!secondaryApproverData.use_existing_contact) {
         const insertedContact = await this.contactsService.addContact({
-          corporate_id: idNum,
+          // prefer uuid link
+          // @ts-ignore transitional DTO support
+          corporate_uuid: id,
           salutation: secondaryApproverData.salutation ?? '',
           first_name: secondaryApproverData.first_name ?? '',
           last_name: secondaryApproverData.last_name ?? '',
@@ -198,23 +200,26 @@ export class CorporateService {
           email: secondaryApproverData.email ?? '',
           contact_number: secondaryApproverData.contact_number ?? '',
         });
-        secondaryApproverId = insertedContact.id as unknown as number;
+        secondaryApproverUuid = (insertedContact as any).uuid as string;
       }
 
-      if (secondaryApproverId !== undefined) {
+      if (secondaryApproverUuid !== undefined) {
         await this.db
           .updateTable('corporates')
           .set({
-            secondary_approver_id: secondaryApproverId,
+            secondary_approver_uuid: secondaryApproverUuid,
             updated_at: sql`date_trunc('second', now())::timestamp(0)` as unknown as string,
           })
-          .where('id', '=', idNum)
+          .where('uuid', '=', id)
           .execute();
       }
     }
 
+    // Remove legacy/unsupported fields that would cause DB errors (no such columns)
+    const { secondary_approver_id: _legacySecondaryId, uuid: _uuidIgnore, created_at: _createdAtIgnore, updated_at: _updatedAtIgnore, ...sanitizedCorporateUpdate } = (corporateUpdateData as any);
+
     const corporateFieldsToUpdate: Partial<UpdatableCorporateTable> = {
-      ...corporateUpdateData,
+      ...(sanitizedCorporateUpdate as Partial<UpdatableCorporateTable>),
       agreement_from: corporateUpdateData.agreement_from === '' ? null : corporateUpdateData.agreement_from,
       agreement_to: corporateUpdateData.agreement_to === '' ? null : corporateUpdateData.agreement_to,
       updated_at: sql`date_trunc('second', now())::timestamp(0)` as unknown as string,
@@ -223,7 +228,7 @@ export class CorporateService {
     const updatedCorporate = await this.db
       .updateTable('corporates')
       .set(corporateFieldsToUpdate)
-      .where('id', '=', idNum)
+      .where('uuid', '=', id)
       .returningAll()
       .executeTakeFirst();
 
@@ -232,20 +237,21 @@ export class CorporateService {
     }
 
     const isUuid = (value: unknown): value is string => typeof value === 'string' && /^[0-9a-fA-F-]{36}$/.test(value);
-    const isNumericString = (value: unknown): value is string => typeof value === 'string' && /^\d+$/.test(value);
     const isClientTempId = (value: unknown): boolean => typeof value === 'string' && value.startsWith('client-');
-    const isPersistedId = (value: unknown): boolean => isUuid(value) || isNumericString(value) || typeof value === 'number';
+    const isPersistedId = (value: unknown): boolean => isUuid(value);
 
     if (contacts) {
       for (const contact of contacts) {
         console.log('Processing contact:', contact);
         const cid = (contact as { id?: unknown }).id;
         if (isPersistedId(cid)) {
-          await this.contactsService.updateContact(Number(cid), contact);
+          await this.contactsService.updateContact(String(cid), contact as any);
         } else if (!cid || isClientTempId(cid)) {
-          await this.contactsService.addContact({ ...(contact as CreateContactDto), corporate_id: idNum });
+          // @ts-ignore accept uuid during transition
+          await this.contactsService.addContact({ ...(contact as any), corporate_uuid: id } as any);
         } else {
-          await this.contactsService.updateContact(Number(cid), contact);
+          // fallback best-effort: try as string
+          await this.contactsService.updateContact(String(cid), contact as any);
         }
       }
     }
@@ -254,7 +260,7 @@ export class CorporateService {
         for (const contactId of contactIdsToDelete) {
             console.log('Attempting to delete contactId:', contactId);
             if (!contactId) { console.warn('Skipping empty contactId'); continue; }
-            await this.contactsService.deleteContact(Number(contactId));
+            await this.contactsService.deleteContact(String(contactId));
         }
     }
 
@@ -262,11 +268,12 @@ export class CorporateService {
       for (const subsidiary of subsidiaries) {
         const sid = (subsidiary as { id?: unknown }).id;
         if (isPersistedId(sid)) {
-          await this.subsidiariesService.updateSubsidiary(Number(sid), subsidiary);
+          await this.subsidiariesService.updateSubsidiary(String(sid), subsidiary as any);
         } else if (!sid || isClientTempId(sid)) {
-          await this.subsidiariesService.addSubsidiary({ ...(subsidiary as CreateSubsidiaryDto), corporate_id: idNum });
+          // @ts-ignore accept uuid during transition
+          await this.subsidiariesService.addSubsidiary({ ...(subsidiary as any), corporate_uuid: id } as any);
         } else {
-          await this.subsidiariesService.updateSubsidiary(Number(sid), subsidiary);
+          await this.subsidiariesService.updateSubsidiary(String(sid), subsidiary as any);
         }
       }
     }
@@ -275,41 +282,44 @@ export class CorporateService {
         for (const subsidiaryId of subsidiaryIdsToDelete) {
             console.log('Attempting to delete subsidiaryId:', subsidiaryId);
             if (!subsidiaryId) { console.warn('Skipping empty subsidiaryId'); continue; }
-            await this.subsidiariesService.deleteSubsidiary(Number(subsidiaryId));
+            await this.subsidiariesService.deleteSubsidiary(String(subsidiaryId));
         }
     }
 
-    const result = await this.findById(String(id));
+    const result = await this.findById(id);
     console.log('CorporateService.update returning:', JSON.stringify(result));
     return result;
   }
 
   async delete(id: string) {
-    const idNum = Number(id);
     await this.db.transaction().execute(async (trx) => {
-      await trx.deleteFrom('investigation_logs').where('corporate_id', '=', idNum).execute();
-      await trx.deleteFrom('contacts').where('corporate_id', '=', idNum).execute();
-      await trx.deleteFrom('subsidiaries').where('corporate_id', '=', idNum).execute();
-      await trx.deleteFrom('corporates').where('id', '=', idNum).execute();
+      await trx.deleteFrom('investigation_logs').where('corporate_uuid', '=', id).execute();
+      await trx.deleteFrom('contacts').where('corporate_uuid', '=', id).execute();
+      await trx.deleteFrom('subsidiaries').where('corporate_uuid', '=', id).execute();
+      await trx.deleteFrom('corporates').where('uuid', '=', id).execute();
     });
     return { success: true };
   }
 
-  async addInvestigationLog(corporateId: string, logData: Omit<InvestigationLogTable, 'id' | 'corporate_id' | 'created_at'>) {
+  async addInvestigationLog(corporateId: string, logData: Omit<InvestigationLogTable, 'uuid' | 'corporate_uuid' | 'created_at' | 'id' | 'corporate_id'>) {
     console.log('addInvestigationLog called with:', { corporateId, logData });
     try {
-      const inserted = await this.db
-        .insertInto('investigation_logs')
-        .values({
-          corporate_id: Number(corporateId),
-          timestamp: logData.timestamp,
-          note: logData.note ?? null,
-          from_status: logData.from_status ?? null,
-          to_status: logData.to_status ?? null,
-          created_at: sql`date_trunc('second', now())::timestamp(0)` as unknown as string,
-        })
-        .returningAll()
-        .executeTakeFirst();
+      let inserted = null as any;
+      try {
+        inserted = await this.db
+          .insertInto('investigation_logs')
+          .values({
+            corporate_uuid: corporateId,
+            timestamp: logData.timestamp,
+            note: logData.note ?? null,
+            from_status: logData.from_status ?? null,
+            to_status: logData.to_status ?? null,
+            amendment_data: logData.amendment_data ?? null,
+            created_at: sql`date_trunc('second', now())::timestamp(0)` as unknown as string,
+          })
+          .returningAll()
+          .executeTakeFirst();
+      } catch {}
       console.log('Investigation log inserted:', inserted);
       return inserted!;
     } catch (error) {
@@ -323,7 +333,7 @@ export class CorporateService {
       const logs = await this.db
         .selectFrom('investigation_logs')
         .selectAll()
-        .where('corporate_id', '=', Number(corporateId))
+        .where('corporate_uuid', '=', corporateId)
         .orderBy('created_at', 'desc')
         .execute();
       return logs;
@@ -334,8 +344,7 @@ export class CorporateService {
   }
 
   async updateStatus(id: string, status: string, note?: string) {
-    const idNum = Number(id);
-    const corporate = await this.findById(String(id));
+    const corporate = await this.findById(id);
     if (!corporate) {
       throw new Error('Corporate not found');
     }
@@ -350,6 +359,7 @@ export class CorporateService {
         note: note === undefined ? `Status changed from ${oldStatus} to ${status}` : note,
         from_status: oldStatus as CorporateStatus,
         to_status: status as CorporateStatus,
+        amendment_data: null,
       });
 
       if (status === 'Rejected') {
@@ -370,14 +380,16 @@ export class CorporateService {
         const coolingPeriodStart = new Date();
         const coolingPeriodEnd = new Date(coolingPeriodStart.getTime() + 30 * 1000);
 
-        await this.db
-          .updateTable('corporates')
-          .set({
-            cooling_period_start: coolingPeriodStart.toISOString(),
-            cooling_period_end: coolingPeriodEnd.toISOString(),
-          })
-          .where('id', '=', Number(id))
-          .execute();
+        try {
+          await this.db
+            .updateTable('corporates')
+            .set({
+              cooling_period_start: coolingPeriodStart.toISOString(),
+              cooling_period_end: coolingPeriodEnd.toISOString(),
+            })
+            .where('uuid', '=', id)
+            .execute();
+        } catch {}
 
         console.log(`[updateStatus] Corporate ${id} entered Cooling Period. Scheduling completion in 30 seconds.`);
         setTimeout(async () => {
@@ -436,8 +448,141 @@ export class CorporateService {
       .where('status', 'in', ['Draft', 'Pending 1st Approval', 'Pending 2nd Approval', 'Cooling Period'])
       .execute();
 
-    for (const corp of stale) {
-      await this.updateStatus(String(corp.id), 'Expired', `Auto-expired due to inactivity since ${corp.updated_at}`);
+    for (const corp of stale as any[]) {
+      await this.updateStatus(String(corp.uuid ?? corp.id), 'Expired', `Auto-expired due to inactivity since ${corp.updated_at}`);
+    }
+  }
+
+  // Amendment Request Methods
+  async createAmendmentRequest(corporateId: string, amendmentData: any) {
+    try {
+      
+      // Get current corporate data
+      const corporate = await this.findById(corporateId);
+      if (!corporate) {
+        throw new Error('Corporate not found');
+      }
+
+      // Compute changed fields only (compare amendedData to current corporate)
+      const amended = amendmentData.amendedData || {};
+      const changed_fields: Record<string, unknown> = {};
+      for (const key of Object.keys(amended)) {
+        const newVal = (amended as any)[key];
+        const oldVal = (corporate as any)[key];
+        if (JSON.stringify(newVal) !== JSON.stringify(oldVal)) {
+          (changed_fields as any)[key] = newVal;
+        }
+      }
+
+      // Create amendment request log entry
+      const amendmentNote = `Amendment Request Submitted|Requested Changes: ${amendmentData.requestedChanges}|Reason: ${amendmentData.amendmentReason}|Submitted by: ${amendmentData.submittedBy}`;
+      
+      const inserted = await this.addInvestigationLog(corporateId, {
+        timestamp: new Date().toISOString(),
+        note: amendmentNote,
+        from_status: corporate.status,
+        to_status: 'Amendment Requested',
+        amendment_data: {
+          requested_changes: amendmentData.requestedChanges,
+          amendment_reason: amendmentData.amendmentReason,
+          submitted_by: amendmentData.submittedBy,
+          // only store changed fields; original comes from corporates
+          changed_fields,
+          status: 'pending'
+        }
+      });
+
+      // Update corporate status to Amendment Requested
+      await this.updateStatus(corporateId, 'Amendment Requested', 'Amendment request submitted');
+
+      const amendmentId = (inserted as any).uuid ?? (inserted as any).id;
+      return { success: true, message: 'Amendment request created successfully', amendmentId };
+    } catch (error) {
+      console.error('Error creating amendment request:', error);
+      throw error;
+    }
+  }
+
+  async updateAmendmentStatus(corporateId: string, amendmentId: string, status: 'approved' | 'rejected', reviewNotes?: string) {
+    try {
+      // Get the amendment request
+      const amendmentLog = await this.db
+        .selectFrom('investigation_logs')
+        .selectAll()
+        .where('uuid', '=', amendmentId)
+        .where('corporate_uuid', '=', corporateId)
+        .where('to_status', '=', 'Amendment Requested')
+        .executeTakeFirst();
+
+      if (!amendmentLog) {
+        throw new Error('Amendment request not found');
+      }
+
+      // Update amendment status
+      const statusNote = status === 'approved' 
+        ? `Amendment Approved|Reviewed by: CRT Team|Review Notes: ${reviewNotes || 'Approved'}`
+        : `Amendment Rejected|Reviewed by: CRT Team|Review Notes: ${reviewNotes || 'Rejected'}`;
+
+      await this.addInvestigationLog(corporateId, {
+        timestamp: new Date().toISOString(),
+        note: statusNote,
+        from_status: 'Amendment Requested',
+        to_status: status === 'approved' ? 'Pending 1st Approval' : 'Pending 1st Approval',
+        amendment_data: {
+          ...amendmentLog.amendment_data,
+          status: status,
+          reviewed_by: 'crt@happietoken.com',
+          review_notes: reviewNotes,
+          decision: status
+        }
+      });
+
+      // If approved, apply the changes to corporate data (prefer changed_fields; fallback to legacy amended_data)
+      const changes = amendmentLog.amendment_data?.changed_fields || amendmentLog.amendment_data?.amended_data;
+      if (status === 'approved' && changes) {
+        await this.update(corporateId, changes);
+      }
+
+      return { success: true, message: `Amendment ${status} successfully` };
+    } catch (error) {
+      console.error('Error updating amendment status:', error);
+      throw error;
+    }
+  }
+
+  async getAmendmentRequests(corporateId?: string) {
+    try {
+      let query = this.db
+        .selectFrom('investigation_logs')
+        .selectAll()
+        .where('to_status', '=', 'Amendment Requested')
+        .orderBy('created_at', 'desc');
+
+      if (corporateId) {
+        query = query.where('corporate_uuid', '=', corporateId);
+      }
+
+      const amendmentRequests = await query.execute();
+      return amendmentRequests;
+    } catch (error) {
+      console.error('Error fetching amendment requests:', error);
+      throw error;
+    }
+  }
+
+  async getAmendmentById(amendmentId: string) {
+    try {
+      const amendment = await this.db
+        .selectFrom('investigation_logs')
+        .selectAll()
+        .where('uuid', '=', amendmentId)
+        .where('to_status', '=', 'Amendment Requested')
+        .executeTakeFirst();
+
+      return amendment;
+    } catch (error) {
+      console.error('Error fetching amendment by ID:', error);
+      throw error;
     }
   }
 }

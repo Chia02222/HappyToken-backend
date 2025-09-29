@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, HttpException, HttpStatus, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Patch, Body, Param, HttpException, HttpStatus, Query, ParseUUIDPipe } from '@nestjs/common';
 import { CorporateService } from './corporate.service';
 import { ResendService } from '../resend/resend.service';
 import { InvestigationLogTable } from '../../database/types';
@@ -18,7 +18,7 @@ export class CorporateController {
   }
 
   @Get(':id')
-  async findById(@Param('id') id: string) {
+  async findById(@Param('id', new ParseUUIDPipe()) id: string) {
     return await this.corporateService.findById(id);
   }
 
@@ -31,20 +31,20 @@ export class CorporateController {
 
   @Put(':id')
   async update(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body(new ZodValidationPipe(updateCorporateSchema)) updateData: UpdateCorporateDto
   ) {
     return await this.corporateService.update(id, updateData);
   }
 
   @Delete(':id')
-  async delete(@Param('id') id: string) {
+  async delete(@Param('id', new ParseUUIDPipe()) id: string) {
     return await this.corporateService.delete(id);
   }
 
   @Post(':id/investigation-logs')
   async addInvestigationLog(
-    @Param('id') corporateId: string,
+    @Param('id', new ParseUUIDPipe()) corporateId: string,
     @Body(new ZodValidationPipe(investigationLogSchema)) logData: Omit<InvestigationLogTable, 'id' | 'corporate_id' | 'created_at'>
   ) {
     return await this.corporateService.addInvestigationLog(corporateId, logData);
@@ -52,22 +52,61 @@ export class CorporateController {
 
   @Put(':id/status')
   async updateStatus(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body(new ZodValidationPipe(updateStatusSchema)) body: { status: string; note?: string }
   ) {
     return await this.corporateService.updateStatus(id, body.status, body.note);
   }
 
+  // Amendment Request Endpoints
+  @Post(':id/amendment-requests')
+  async createAmendmentRequest(
+    @Param('id', new ParseUUIDPipe()) corporateId: string,
+    @Body() amendmentData: {
+      requestedChanges: string;
+      amendmentReason: string;
+      submittedBy: string;
+      originalData: any;
+      amendedData: any;
+    }
+  ) {
+    return await this.corporateService.createAmendmentRequest(corporateId, amendmentData);
+  }
+
+  @Patch(':id/amendment-requests/:amendmentId')
+  async updateAmendmentStatus(
+    @Param('id', new ParseUUIDPipe()) corporateId: string,
+    @Param('amendmentId', new ParseUUIDPipe()) amendmentId: string,
+    @Body() body: { status: 'approved' | 'rejected'; reviewNotes?: string }
+  ) {
+    return await this.corporateService.updateAmendmentStatus(corporateId, amendmentId, body.status, body.reviewNotes);
+  }
+
+  @Get('amendment-requests')
+  async getAmendmentRequests(@Query('corporateId') corporateId?: string) {
+    return await this.corporateService.getAmendmentRequests(corporateId);
+  }
+
+  @Get(':id/amendment-requests')
+  async getAmendmentRequestsByCorporate(@Param('id', new ParseUUIDPipe()) id: string) {
+    return await this.corporateService.getAmendmentRequests(id);
+  }
+
+  @Get('amendment-requests/:amendmentId')
+  async getAmendmentById(@Param('amendmentId', new ParseUUIDPipe()) amendmentId: string) {
+    return await this.corporateService.getAmendmentById(amendmentId);
+  }
+
   @Put(':id/submit')
   async submitForFirstApproval(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
   ) {
     return await this.corporateService.updateStatus(id, 'Pending 1st Approval', 'Submitted to 1st approver.');
   }
 
   @Post(':id/resend-link')
   async sendEcommericialTermlink(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Query('approver') approver: 'first' | 'second' = 'first',
   ) {
     const result = await this.resendService.sendEcommericialTermlink(id, approver);
@@ -85,17 +124,17 @@ export class CorporateController {
   }
 
   @Post(':id/complete-cooling-period')
-  async completeCoolingPeriod(@Param('id') id: string) {
+  async completeCoolingPeriod(@Param('id', new ParseUUIDPipe()) id: string) {
     return await this.corporateService.handleCoolingPeriodCompletion(id);
   }
 
   @Post(':id/send-amendment-email')
-  async sendAmendmentEmail(@Param('id') id: string) {
+  async sendAmendmentEmail(@Param('id', new ParseUUIDPipe()) id: string) {
     return await this.resendService.sendAmendmentRequestEmail(id);
   }
 
   @Post(':id/send-amend-reject-email')
-  async sendAmendRejectEmail(@Param('id') id: string, @Body() body: { note?: string }) {
+  async sendAmendRejectEmail(@Param('id', new ParseUUIDPipe()) id: string, @Body() body: { note?: string }) {
     return await this.resendService.sendAmendRejectEmail(id, body.note);
   }
 }

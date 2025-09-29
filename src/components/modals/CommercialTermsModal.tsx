@@ -3,24 +3,9 @@ import React from 'react';
 interface CommercialTermsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAgree: () => void;
-  agreed?: boolean;
 }
 
-const CommercialTermsModal: React.FC<CommercialTermsModalProps> = ({ isOpen, onClose, onAgree, agreed = false }) => {
-  const [hasScrolledToBottom, setHasScrolledToBottom] = React.useState(false);
-
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10; // 10px tolerance
-    setHasScrolledToBottom(isAtBottom);
-  };
-
-  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.checked) {
-      onAgree();
-    }
-  };
+const CommercialTermsModal: React.FC<CommercialTermsModalProps> = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
@@ -40,7 +25,6 @@ const CommercialTermsModal: React.FC<CommercialTermsModalProps> = ({ isOpen, onC
         </div>
         <div 
           className="flex-1 overflow-y-auto p-6"
-          onScroll={handleScroll}
         >
           <div className="prose prose-sm max-w-none">
             <h4 className="font-semibold">Commercial Agreement Terms</h4>
@@ -73,29 +57,6 @@ const CommercialTermsModal: React.FC<CommercialTermsModalProps> = ({ isOpen, onC
             <h4 className="font-semibold mt-6">Termination and Suspension</h4>
             <p>Either party may terminate this agreement with written notice as specified in the terms. The Company reserves the right to suspend or terminate services immediately in case of breach of terms, non-payment, or regulatory requirements. Upon termination, all outstanding fees become immediately due.</p>
             
-          </div>
-        </div>
-        <div className="p-6 border-t bg-gray-50">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <input 
-                type="checkbox" 
-                id="commercial_terms_agreement" 
-                checked={agreed}
-                disabled={!hasScrolledToBottom || agreed}
-                onChange={handleCheckboxChange}
-                className="h-4 w-4 border-gray-300 rounded focus:ring-ht-gray disabled:opacity-50" 
-              />
-              <label htmlFor="commercial_terms_agreement" className="ml-2 block text-sm text-gray-900">
-                I have read and agree to the Commercial Terms and Conditions
-              </label>
-            </div>
-            <button
-              onClick={onClose}
-              className="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-            >
-              Cancel
-            </button>
           </div>
         </div>
       </div>

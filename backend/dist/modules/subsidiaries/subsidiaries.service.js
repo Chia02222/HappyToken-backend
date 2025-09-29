@@ -35,8 +35,8 @@ let SubsidiariesService = class SubsidiariesService {
             .executeTakeFirst();
         return inserted;
     }
-    async updateSubsidiary(id, subsidiaryData) {
-        console.log('updateSubsidiary called with:', { id, subsidiaryData });
+    async updateSubsidiary(uuid, subsidiaryData) {
+        console.log('updateSubsidiary called with:', { uuid, subsidiaryData });
         const { id: _subsidiaryId, ...updateData } = subsidiaryData;
         const updated = await this.db
             .updateTable('subsidiaries')
@@ -44,14 +44,14 @@ let SubsidiariesService = class SubsidiariesService {
             ...updateData,
             updated_at: (0, kysely_1.sql) `date_trunc('second', now())::timestamp(0)`,
         })
-            .where('id', '=', id)
+            .where('uuid', '=', uuid)
             .returningAll()
             .executeTakeFirst();
         return updated;
     }
-    async deleteSubsidiary(id) {
-        console.log('deleteSubsidiary called with id:', id);
-        await this.db.deleteFrom('subsidiaries').where('id', '=', id).execute();
+    async deleteSubsidiary(uuid) {
+        console.log('deleteSubsidiary called with uuid:', uuid);
+        await this.db.deleteFrom('subsidiaries').where('uuid', '=', uuid).execute();
         return { success: true };
     }
 };

@@ -137,10 +137,11 @@ let SeedService = class SeedService {
             for (const corporateData of mockCorporates) {
                 const corporate = await this.corporateService.create(corporateData);
                 console.log(`✅ Created corporate: ${corporate.company_name}`);
-                if (corporate.id) {
+                const corpUuid = corporate.uuid ?? corporate.id;
+                if (corpUuid) {
                     if (corporate.company_name === 'Global Tech Inc.') {
                         await this.contactsService.addContact({
-                            corporate_id: corporate.id,
+                            corporate_uuid: corpUuid,
                             salutation: 'Mr',
                             first_name: 'John',
                             last_name: 'Smith',
@@ -150,7 +151,7 @@ let SeedService = class SeedService {
                             system_role: 'Finance',
                         });
                         await this.subsidiariesService.addSubsidiary({
-                            corporate_id: corporate.id,
+                            corporate_uuid: corpUuid,
                             company_name: 'Global Tech Solutions',
                             reg_number: '202301010001',
                             office_address1: '123 Tech Park',
@@ -162,11 +163,12 @@ let SeedService = class SeedService {
                             website: 'https://globaltechsolutions.com',
                             account_note: 'Subsidiary for software development',
                         });
-                        await this.corporateService.addInvestigationLog(String(corporate.id), {
+                        await this.corporateService.addInvestigationLog(String(corpUuid), {
                             timestamp: new Date().toISOString(),
                             note: 'Initial review completed. No issues found.',
                             from_status: 'Draft',
                             to_status: 'Approved',
+                            amendment_data: null,
                         });
                     }
                 }

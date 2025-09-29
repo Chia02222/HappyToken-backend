@@ -63,9 +63,9 @@ export class ResendService {
 
     // Get contact information for email personalization
     const firstContact = corporate.contacts?.[0];
-    const secId = (corporate as { secondary_approver_id?: unknown }).secondary_approver_id;
+    const secUuid = (corporate as { secondary_approver_uuid?: unknown }).secondary_approver_uuid as string | undefined;
     const contacts = (corporate.contacts || []);
-    const byId = contacts.find(c => Number((c as { id?: unknown }).id) === Number(secId));
+    const byId = contacts.find(c => String((c as { id?: unknown }).id) === String(secUuid));
     const byRole = contacts.find(c => (c as { system_role?: string }).system_role === 'secondary_approver');
     const fallback = contacts.length > 1 ? contacts[1] : undefined;
     const secondary = byId || byRole || fallback;
@@ -85,9 +85,9 @@ export class ResendService {
       return { success: false, message: 'Recipient email not found or is invalid for corporate.' };
     }
 
-    const sanitizedCorporateId = String(corporate.id).replace(/[^a-zA-Z0-9]/g, '');
+    const sanitizedCorporateId = String((corporate as any).uuid ?? (corporate as any).id).replace(/[^a-zA-Z0-9-]/g, '');
     const mode = approver === 'first' ? 'approve' : 'approve-second';
-    const corporateFormLink = `http://localhost:3000/corporate/${corporate.id}?mode=${mode}&step=2`;
+    const corporateFormLink = `http://localhost:3000/corporate/${(corporate as any).uuid ?? (corporate as any).id}?mode=${mode}&step=2`;
 
     try {
       const response = await fetch('https://api.resend.com/emails', {
@@ -176,11 +176,10 @@ export class ResendService {
         return { success: false, message: 'Corporate not found.' };
       }
 
-      // Get the latest amendment request from investigation logs
+      // Get the latest/pending amendment request from investigation logs
       const investigationLogs = await this.corporateService.getInvestigationLogs(corporateId);
-      const latestAmendmentLog = investigationLogs.find((log: { note?: string | null }) => 
-        log.note != null && log.note.includes('Amendment Request Submitted')
-      );
+      const latestAmendmentLog = investigationLogs.find((log: any) => log.to_status === 'Amendment Requested')
+        || investigationLogs.find((log: { note?: string | null }) => log.note != null && log.note.includes('Amendment Request Submitted'));
 
       if (!latestAmendmentLog) {
         return { success: false, message: 'No amendment request found in investigation logs.' };
@@ -201,7 +200,9 @@ export class ResendService {
       // CRT email configuration
       const crtEmail = process.env.CRT_EMAIL || 'wanjun123@1utar.my';
       const subject = `Action Required: Amendment Request for ${corporate.company_name}`;
-      const corporateLink = `http://localhost:3000/corporate/${corporateId}`;
+      const corporateLink = (latestAmendmentLog as any)?.uuid
+        ? `http://localhost:3000/crt/amendment/${(latestAmendmentLog as any).uuid}`
+        : `http://localhost:3000/corporate/${corporateId}`;
 
       const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -329,9 +330,9 @@ export class ResendService {
     
     if (corporate.status === 'Pending 2nd Approval') {
       // Send to second approver
-      const secId = (corporate as { secondary_approver_id?: unknown }).secondary_approver_id;
+      const secUuid = (corporate as { secondary_approver_uuid?: unknown }).secondary_approver_uuid as string | undefined;
       const contacts = (corporate.contacts || []);
-      const byId = contacts.find(c => Number((c as { id?: unknown }).id) === Number(secId));
+      const byId = contacts.find(c => String((c as { id?: unknown }).id) === String(secUuid));
       const byRole = contacts.find(c => (c as { system_role?: string }).system_role === 'secondary_approver');
       const fallback = contacts.length > 1 ? contacts[1] : undefined;
       const secondary = byId || byRole || fallback;
@@ -349,7 +350,7 @@ export class ResendService {
     }
 
     const subject = `Amendment Rejected: ${corporate.company_name}`;
-    const corporateLink = `http://localhost:3000/corporate/${corporate.id}?mode=approve&step=2`;
+    const corporateLink = `http://localhost:3000/corporate/${(corporate as any).uuid ?? (corporate as any).id}?mode=approve&step=2`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <h2 style="color: #333;">Amendment Request Rejected</h2>
@@ -438,7 +439,7 @@ export class ResendService {
     const firstContact = corporate.contacts?.[0];
     const firstEmail = firstContact?.email;
     const secondary =
-      (corporate.contacts || []).find(c => (c as { id?: unknown }).id === (corporate as { secondary_approver_id?: unknown }).secondary_approver_id) ||
+      (corporate.contacts || []).find(c => String((c as { id?: unknown }).id) === String((corporate as { secondary_approver_uuid?: unknown }).secondary_approver_uuid)) ||
       (corporate.contacts || []).find(c => c.system_role === 'secondary_approver');
     const secondEmail = secondary?.email;
 
@@ -448,7 +449,7 @@ export class ResendService {
     const createdBy = `${firstApproverName}, ${secondApproverName}`;
 
     const subject = `Welcome! Your Corporate Account is Ready – ${corporate.company_name}`;
-    const portalLink = `http://localhost:3000/corporate/${corporate.id}`;
+    const portalLink = `http://localhost:3000/corporate/${(corporate as any).uuid ?? (corporate as any).id}`;
 
     const createEmailHtml = (userName: string) => `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">

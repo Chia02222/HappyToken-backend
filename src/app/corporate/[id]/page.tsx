@@ -6,10 +6,9 @@ import FormLayout from '../../../components/layout/FormLayout';
 import CorporateForm from '../../../components/forms/CorporateForm';
 import ECommercialTermsForm from '../../../components/forms/ECommercialTermsForm';
 import { CorporateDetails, CorporateStatus, Contact, LogEntry } from '../../../types';
-import { getCorporateById, createCorporate, updateCorporate, updateCorporateStatus, sendAmendmentEmail, sendEcommericialTermlink, sendAmendRejectEmail } from '../../../services/api';
+import { getCorporateById, createCorporate, updateCorporate, updateCorporateStatus, sendAmendmentEmail, sendEcommericialTermlink, sendAmendRejectEmail, getAmendmentRequestsByCorporate } from '../../../services/api';
 import SuccessModal from '../../../components/modals/SuccessModal';
 import ErrorMessageModal from '../../../components/modals/ErrorMessageModal';
-import AmendRequestModal from '../../../components/modals/AmendRequestModal';
 import { isRequired, isValidEmail, isValidPhone, isValidDateRange, isPositiveNumberString } from '../../../utils/validators';
 
 let clientSideIdCounter = 0;
@@ -88,7 +87,6 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
   const [shouldCloseOnSuccessClose, setShouldCloseOnSuccessClose] = useState(false);
   const [isErrorModalVisible, setIsErrorModalVisible] = useState(false);
   const [errorModalContent, setErrorModalContent] = useState('');
-  const [isAmendRequestModalVisible, setIsAmendRequestModalVisible] = useState(false);
 
   const scrollToField = (fieldId: string) => {
     if (typeof window === 'undefined') return;
@@ -356,33 +354,9 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
 
   const handleAmendRequest = () => {
     console.log('Amend Request clicked for corporate:', corporateId);
-    setIsAmendRequestModalVisible(true);
+    router.push(`/amendment/${corporateId}`);
   };
 
-  const handleSubmitAmendment = async (corporateId: string, requestedChanges: string, amendmentReason: string) => {
-    try {
-      // Create a detailed note for the investigation log with proper formatting for parsing
-      const amendmentNote = `Amendment Request Submitted<br>Requested Changes: ${requestedChanges}<br>Reason: ${amendmentReason}<br>Submitted by: ${formData.contacts?.[0]?.first_name || ''} ${formData.contacts?.[0]?.last_name || ''} (${formData.contacts?.[0]?.email || ''})`;
-
-      // Add to investigation log
-      await updateCorporateStatus(corporateId, 'Amendment Requested', amendmentNote);
-      
-      // Send email notification to CRT team (no body parameters needed)
-      await sendAmendmentEmail(corporateId);
-      
-      // Show success message
-      setSuccessModalContent({
-        title: 'Amendment Request Submitted',
-        message: 'Your amendment request has been submitted successfully and the CRT team has been notified via email.'
-      });
-      setIsSuccessModalVisible(true);
-      setIsAmendRequestModalVisible(false);
-    } catch (error) {
-      console.error('Failed to submit amendment request:', error);
-      setErrorModalContent('Failed to submit amendment request. Please try again.');
-      setIsErrorModalVisible(true);
-    }
-  };
 
   const getBaseTitle = () => {
     if (formMode === 'new' || formMode === 'edit') return 'New Corporate Account';
@@ -439,6 +413,49 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
       .trim();
   };
 
+  const getAmendRequester = (note?: string | null): string | null => {
+    if (!note) return null;
+    const m = note.match(/Submitted by:\s*([^<\n]+)/i);
+    return m?.[1]?.trim() || null;
+  };
+
+  const formatTimestamp = (ts?: string | null): string | null => {
+    if (!ts) return null;
+    try {
+      const d = new Date(ts);
+      return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return ts as string;
+    }
+  };
+
+  const viewAmendmentReview = async () => {
+    try {
+      const list = await getAmendmentRequestsByCorporate(String(corporateId));
+      const arr = Array.isArray(list) ? list : [];
+      if (!arr.length) {
+        setErrorModalContent('No amendment requests found for this corporate.');
+        setIsErrorModalVisible(true);
+        return;
+      }
+      const preferred = arr.find((x: any) => x.to_status === 'Amendment Requested');
+      const latest = preferred || [...arr].sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())[0];
+      if (latest?.id) {
+        router.push(`/crt/amendment/${latest.id}`);
+      } else {
+        setErrorModalContent('Unable to locate amendment review entry.');
+        setIsErrorModalVisible(true);
+      }
+    } catch (e) {
+      setErrorModalContent(e instanceof Error ? e.message : 'Failed to open amendment review.');
+      setIsErrorModalVisible(true);
+    }
+  };
+
+  const getApproverLevelFromStatus = (status?: string | null): 'first approval' | 'second approval' => {
+    return status === 'Pending 2nd Approval' ? 'second approval' : 'first approval';
+  };
+
   return (
     <FormLayout 
       title={formTitle}
@@ -450,47 +467,22 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="font-semibold mb-1">Amendment Requested</div>
+                <div className="text-xs text-orange-900 mb-1">
+                  {formatTimestamp(latestAmendLog?.timestamp)}
+                  {getAmendRequester(latestAmendLog?.note) && (
+                    <> • Submitted by: {getAmendRequester(latestAmendLog?.note)} ({getApproverLevelFromStatus(latestAmendLog?.from_status)})</>
+                  )}
+                </div>
                 <div className="text-sm whitespace-pre-wrap">{formatAmendNote(latestAmendLog?.note ?? undefined)}</div>
               </div>
               {(formMode !== 'approve' && formMode !== 'approve-second') && (
               <div className="flex items-center gap-2">
                 <button
-                  className="text-sm bg-ht-blue text-white px-3 py-2 rounded-md hover:bg-ht-blue-dark disabled:bg-ht-gray disabled:cursor-not-allowed"
-                  disabled={isAmendConfirming}
-                  onClick={async () => {
-                    setIsAmendConfirming(true);
-                    try {
-                      const prev = resolvePrevStatusForAmendment();
-                      await updateCorporateStatus(corporateId, prev, `Amendment approved by CRT; reverting to ${prev}.`);
-                      const approver = resolveApproverForStatus(prev);
-                      await sendEcommericialTermlink(corporateId, approver);
-                      setSuccessModalContent({
-                        title: 'Amendment Approved',
-                        message: `Reverted to ${prev}. Email sent to ${approver === 'second' ? 'second' : 'first'} approver.`,
-                      });
-                      setIsSuccessModalVisible(true);
-                      // Auto-refresh the page after successful processing
-                      setTimeout(() => {
-                        window.location.reload();
-                      }, 1000); // Refresh after 1 seconds
-                    } catch (e) {
-                      setErrorModalContent(`Failed to confirm amendment: ${e instanceof Error ? e.message : String(e)}`);
-                      setIsErrorModalVisible(true);
-                    } finally {
-                      setIsAmendConfirming(false);
-                    }
-                  }}
+                  type="button"
+                  onClick={viewAmendmentReview}
+                  className="text-sm bg-ht-blue text-white px-3 py-2 rounded-md hover:bg-ht-blue-dark focus:outline-none focus:ring-2 focus:ring-ht-blue"
                 >
-                  {isAmendConfirming ? 'Processing...' : 'Confirm'}
-                </button>
-                <button
-                  className="text-sm bg-red-600 text-white px-3 py-2 rounded-md hover:bg-red-700 disabled:bg-red-400 disabled:cursor-not-allowed"
-                  disabled={isAmendRejecting}
-                  onClick={() => {
-                    setIsAmendRejecting(true);
-                  }}
-                >
-                  {isAmendRejecting ? 'Processing...' : 'Reject'}
+                  View
                 </button>
               </div>
               )}
@@ -589,13 +581,6 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
             isOpen={isErrorModalVisible}
             onClose={() => setIsErrorModalVisible(false)}
             message={errorModalContent}
-        />
-        <AmendRequestModal
-            isOpen={isAmendRequestModalVisible}
-            onClose={() => setIsAmendRequestModalVisible(false)}
-            corporate={formData}
-            corporateId={corporateId}
-            onSubmitAmendment={handleSubmitAmendment}
         />
     </FormLayout>
   );

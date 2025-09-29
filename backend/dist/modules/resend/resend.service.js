@@ -66,9 +66,9 @@ let ResendService = class ResendService {
             return { success: false, message: 'Corporate not found.' };
         }
         const firstContact = corporate.contacts?.[0];
-        const secId = corporate.secondary_approver_id;
+        const secUuid = corporate.secondary_approver_uuid;
         const contacts = (corporate.contacts || []);
-        const byId = contacts.find(c => Number(c.id) === Number(secId));
+        const byId = contacts.find(c => String(c.id) === String(secUuid));
         const byRole = contacts.find(c => c.system_role === 'secondary_approver');
         const fallback = contacts.length > 1 ? contacts[1] : undefined;
         const secondary = byId || byRole || fallback;
@@ -85,9 +85,9 @@ let ResendService = class ResendService {
         if (!recipientEmail || recipientEmail === 'N/A' || recipientEmail === '') {
             return { success: false, message: 'Recipient email not found or is invalid for corporate.' };
         }
-        const sanitizedCorporateId = String(corporate.id).replace(/[^a-zA-Z0-9]/g, '');
+        const sanitizedCorporateId = String(corporate.uuid ?? corporate.id).replace(/[^a-zA-Z0-9-]/g, '');
         const mode = approver === 'first' ? 'approve' : 'approve-second';
-        const corporateFormLink = `http://localhost:3000/corporate/${corporate.id}?mode=${mode}&step=2`;
+        const corporateFormLink = `http://localhost:3000/corporate/${corporate.uuid ?? corporate.id}?mode=${mode}&step=2`;
         try {
             const response = await fetch('https://api.resend.com/emails', {
                 method: 'POST',
@@ -169,7 +169,8 @@ let ResendService = class ResendService {
                 return { success: false, message: 'Corporate not found.' };
             }
             const investigationLogs = await this.corporateService.getInvestigationLogs(corporateId);
-            const latestAmendmentLog = investigationLogs.find((log) => log.note != null && log.note.includes('Amendment Request Submitted'));
+            const latestAmendmentLog = investigationLogs.find((log) => log.to_status === 'Amendment Requested')
+                || investigationLogs.find((log) => log.note != null && log.note.includes('Amendment Request Submitted'));
             if (!latestAmendmentLog) {
                 return { success: false, message: 'No amendment request found in investigation logs.' };
             }
@@ -182,7 +183,9 @@ let ResendService = class ResendService {
             const submittedBy = submittedByMatch ? submittedByMatch[1].trim() : 'Unknown';
             const crtEmail = process.env.CRT_EMAIL || 'wanjun123@1utar.my';
             const subject = `Action Required: Amendment Request for ${corporate.company_name}`;
-            const corporateLink = `http://localhost:3000/corporate/${corporateId}`;
+            const corporateLink = latestAmendmentLog?.uuid
+                ? `http://localhost:3000/crt/amendment/${latestAmendmentLog.uuid}`
+                : `http://localhost:3000/corporate/${corporateId}`;
             const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #333;">Action Required: Amendment Request</h2>
@@ -293,9 +296,9 @@ let ResendService = class ResendService {
         let recipientEmail;
         let approverName;
         if (corporate.status === 'Pending 2nd Approval') {
-            const secId = corporate.secondary_approver_id;
+            const secUuid = corporate.secondary_approver_uuid;
             const contacts = (corporate.contacts || []);
-            const byId = contacts.find(c => Number(c.id) === Number(secId));
+            const byId = contacts.find(c => String(c.id) === String(secUuid));
             const byRole = contacts.find(c => c.system_role === 'secondary_approver');
             const fallback = contacts.length > 1 ? contacts[1] : undefined;
             const secondary = byId || byRole || fallback;
@@ -311,7 +314,7 @@ let ResendService = class ResendService {
             return { success: false, message: 'Recipient email not found for the appropriate approver.' };
         }
         const subject = `Amendment Rejected: ${corporate.company_name}`;
-        const corporateLink = `http://localhost:3000/corporate/${corporate.id}?mode=approve&step=2`;
+        const corporateLink = `http://localhost:3000/corporate/${corporate.uuid ?? corporate.id}?mode=approve&step=2`;
         const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <h2 style="color: #333;">Amendment Request Rejected</h2>
@@ -390,14 +393,14 @@ let ResendService = class ResendService {
         }
         const firstContact = corporate.contacts?.[0];
         const firstEmail = firstContact?.email;
-        const secondary = (corporate.contacts || []).find(c => c.id === corporate.secondary_approver_id) ||
+        const secondary = (corporate.contacts || []).find(c => String(c.id) === String(corporate.secondary_approver_uuid)) ||
             (corporate.contacts || []).find(c => c.system_role === 'secondary_approver');
         const secondEmail = secondary?.email;
         const firstApproverName = firstContact ? `${firstContact.first_name || ''} ${firstContact.last_name || ''}`.trim() : 'First Approver';
         const secondApproverName = secondary ? `${secondary.first_name || ''} ${secondary.last_name || ''}`.trim() : 'Second Approver';
         const createdBy = `${firstApproverName}, ${secondApproverName}`;
         const subject = `Welcome! Your Corporate Account is Ready – ${corporate.company_name}`;
-        const portalLink = `http://localhost:3000/corporate/${corporate.id}`;
+        const portalLink = `http://localhost:3000/corporate/${corporate.uuid ?? corporate.id}`;
         const createEmailHtml = (userName) => `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <h2 style="color: #333;">Welcome! Your Corporate Account is Ready</h2>

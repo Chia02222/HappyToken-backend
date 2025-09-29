@@ -132,13 +132,14 @@ export class SeedService {
         console.log(`✅ Created corporate: ${corporate.company_name}`);
 
         // Add sample contacts
-        if (corporate.id) {
+        const corpUuid = (corporate as any).uuid ?? (corporate as any).id;
+        if (corpUuid) {
                 
 
           // Add a second contact for Global Tech Inc.
           if (corporate.company_name === 'Global Tech Inc.') {
             await this.contactsService.addContact({
-              corporate_id: corporate.id,
+              corporate_uuid: corpUuid,
               salutation: 'Mr',
               first_name: 'John',
               last_name: 'Smith',
@@ -150,7 +151,7 @@ export class SeedService {
 
             // Add a sample subsidiary for Global Tech Inc.
             await this.subsidiariesService.addSubsidiary({
-              corporate_id: corporate.id,
+              corporate_uuid: corpUuid,
               company_name: 'Global Tech Solutions',
               reg_number: '202301010001',
               office_address1: '123 Tech Park',
@@ -164,11 +165,12 @@ export class SeedService {
             });
 
             // Add a sample investigation log for Global Tech Inc.
-            await this.corporateService.addInvestigationLog(String(corporate.id), {
+            await this.corporateService.addInvestigationLog(String(corpUuid), {
               timestamp: new Date().toISOString(),
               note: 'Initial review completed. No issues found.',
               from_status: 'Draft',
               to_status: 'Approved',
+              amendment_data: null,
             });
           }
         }

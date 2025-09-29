@@ -22,38 +22,38 @@ let SubsidiariesController = class SubsidiariesController {
     constructor(subsidiariesService) {
         this.subsidiariesService = subsidiariesService;
     }
-    async addSubsidiary(corporateId, subsidiaryData) {
-        return await this.subsidiariesService.addSubsidiary({ ...subsidiaryData, corporate_id: corporateId });
+    async addSubsidiary(corporateUuid, subsidiaryData) {
+        return await this.subsidiariesService.addSubsidiary({ ...subsidiaryData, corporate_uuid: corporateUuid });
     }
-    async updateSubsidiary(id, subsidiaryData) {
-        return await this.subsidiariesService.updateSubsidiary(Number(id), subsidiaryData);
+    async updateSubsidiary(uuid, subsidiaryData) {
+        return await this.subsidiariesService.updateSubsidiary(String(uuid), subsidiaryData);
     }
-    async deleteSubsidiary(id) {
-        return await this.subsidiariesService.deleteSubsidiary(Number(id));
+    async deleteSubsidiary(uuid) {
+        return await this.subsidiariesService.deleteSubsidiary(String(uuid));
     }
 };
 exports.SubsidiariesController = SubsidiariesController;
 __decorate([
-    (0, common_1.Post)(':corporateId'),
+    (0, common_1.Post)(':corporateUuid'),
     (0, common_1.UsePipes)(new zod_validation_pipe_1.ZodValidationPipe(subsidiary_dto_1.createSubsidiarySchema.omit({ corporate_id: true }))),
-    __param(0, (0, common_1.Param)('corporateId')),
+    __param(0, (0, common_1.Param)('corporateUuid')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], SubsidiariesController.prototype, "addSubsidiary", null);
 __decorate([
-    (0, common_1.Put)(':id'),
+    (0, common_1.Put)(':uuid'),
     (0, common_1.UsePipes)(new zod_validation_pipe_1.ZodValidationPipe(subsidiary_dto_1.updateSubsidiarySchema)),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('uuid')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, subsidiary_dto_1.UpdateSubsidiaryDto]),
     __metadata("design:returntype", Promise)
 ], SubsidiariesController.prototype, "updateSubsidiary", null);
 __decorate([
-    (0, common_1.Delete)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    (0, common_1.Delete)(':uuid'),
+    __param(0, (0, common_1.Param)('uuid')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)

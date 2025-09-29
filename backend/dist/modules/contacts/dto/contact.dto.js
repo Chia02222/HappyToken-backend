@@ -4,6 +4,7 @@ exports.updateContactSchema = exports.createContactSchema = exports.UpdateContac
 const mapped_types_1 = require("@nestjs/mapped-types");
 const zod_1 = require("zod");
 class BaseContactDto {
+    corporate_uuid;
     corporate_id;
     salutation;
     first_name;
@@ -22,7 +23,8 @@ class UpdateContactDto extends (0, mapped_types_1.PartialType)(BaseContactDto) {
 }
 exports.UpdateContactDto = UpdateContactDto;
 exports.createContactSchema = zod_1.z.object({
-    corporate_id: zod_1.z.number().int().positive(),
+    corporate_uuid: zod_1.z.string().uuid().optional(),
+    corporate_id: zod_1.z.number().int().positive().optional(),
     salutation: zod_1.z.string().min(1),
     first_name: zod_1.z.string().min(1),
     last_name: zod_1.z.string().min(1),
@@ -30,6 +32,9 @@ exports.createContactSchema = zod_1.z.object({
     email: zod_1.z.string().email(),
     company_role: zod_1.z.string().min(1),
     system_role: zod_1.z.string().min(1),
+}).refine((d) => Boolean(d.corporate_uuid || d.corporate_id), {
+    message: 'Either corporate_uuid or corporate_id is required',
+    path: ['corporate_uuid'],
 });
 exports.updateContactSchema = exports.createContactSchema.partial().extend({
     id: zod_1.z.number().int().positive().optional(),

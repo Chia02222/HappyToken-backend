@@ -1,14 +1,14 @@
 import { DatabaseService } from '../../database/database.service';
-import { CreateContactDto, UpdateContactDto } from './dto/contact.dto';
+import { UpdateContactDto } from './dto/contact.dto';
 export declare class ContactsService {
     private readonly dbService;
     constructor(dbService: DatabaseService);
     private get db();
-    addContact(contactData: CreateContactDto): Promise<{
-        id: number;
+    addContact(contactData: any): Promise<{
+        uuid: string;
         created_at: string;
         updated_at: string;
-        corporate_id: number;
+        corporate_uuid: string;
         salutation: string;
         first_name: string;
         last_name: string;
@@ -17,11 +17,11 @@ export declare class ContactsService {
         company_role: string;
         system_role: string;
     }>;
-    updateContact(id: number, contactData: UpdateContactDto): Promise<{
-        id: number;
+    updateContact(uuid: string, contactData: UpdateContactDto): Promise<{
+        uuid: string;
         created_at: string;
         updated_at: string;
-        corporate_id: number;
+        corporate_uuid: string;
         salutation: string;
         first_name: string;
         last_name: string;
@@ -30,7 +30,7 @@ export declare class ContactsService {
         company_role: string;
         system_role: string;
     }>;
-    deleteContact(id: number): Promise<{
+    deleteContact(uuid: string): Promise<{
         success: boolean;
     }>;
 }

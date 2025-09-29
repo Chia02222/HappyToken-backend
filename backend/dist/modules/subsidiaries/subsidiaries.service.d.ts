@@ -4,8 +4,10 @@ export declare class SubsidiariesService {
     private readonly dbService;
     constructor(dbService: DatabaseService);
     private get db();
-    addSubsidiary(subsidiaryData: CreateSubsidiaryDto): Promise<{
-        id: number;
+    addSubsidiary(subsidiaryData: CreateSubsidiaryDto | (CreateSubsidiaryDto & {
+        corporate_uuid?: string;
+    })): Promise<{
+        uuid: string;
         company_name: string;
         reg_number: string;
         office_address1: string;
@@ -18,10 +20,10 @@ export declare class SubsidiariesService {
         account_note: string | null;
         created_at: string;
         updated_at: string;
-        corporate_id: number;
+        corporate_uuid: string;
     }>;
-    updateSubsidiary(id: number, subsidiaryData: UpdateSubsidiaryDto): Promise<{
-        id: number;
+    updateSubsidiary(uuid: string, subsidiaryData: UpdateSubsidiaryDto): Promise<{
+        uuid: string;
         company_name: string;
         reg_number: string;
         office_address1: string;
@@ -34,9 +36,9 @@ export declare class SubsidiariesService {
         account_note: string | null;
         created_at: string;
         updated_at: string;
-        corporate_id: number;
+        corporate_uuid: string;
     }>;
-    deleteSubsidiary(id: number): Promise<{
+    deleteSubsidiary(uuid: string): Promise<{
         success: boolean;
     }>;
 }

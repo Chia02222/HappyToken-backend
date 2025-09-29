@@ -12,14 +12,26 @@ export async function migrateToLatest() {
 
   const sql = neon(connectionString);
 
-  console.log('🔄 Running SQL migrations...');
+  console.log('🔄 Resetting and migrating schema (UUID primary keys)...');
   
   try {
-    // Create corporates table
+    // Enable pgcrypto for gen_random_uuid()
+    await sql`CREATE EXTENSION IF NOT EXISTS pgcrypto`;
+
+    // Drop in FK order
+    console.log('🔄 Dropping existing tables (if any)...');
+    await sql`DROP TABLE IF EXISTS investigation_logs CASCADE`;
+    await sql`DROP TABLE IF EXISTS contacts CASCADE`;
+    // Safety: drop any legacy singular 'contact' table if present
+    await sql`DROP TABLE IF EXISTS contact CASCADE`;
+    await sql`DROP TABLE IF EXISTS subsidiaries CASCADE`;
+    await sql`DROP TABLE IF EXISTS corporates CASCADE`;
+
+    // Create corporates with UUID PK
     console.log('🔄 Creating corporates table...');
     await sql`
-      CREATE TABLE IF NOT EXISTS corporates (
-        id SERIAL PRIMARY KEY,
+      CREATE TABLE corporates (
+        uuid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         company_name VARCHAR(255) NOT NULL,
         reg_number VARCHAR(50) NOT NULL UNIQUE,
         status VARCHAR(50) NOT NULL,
@@ -54,18 +66,19 @@ export async function migrateToLatest() {
         second_approval_confirmation BOOLEAN DEFAULT false,
         cooling_period_start TIMESTAMP,
         cooling_period_end TIMESTAMP,
+        secondary_approver_uuid UUID,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
     `;
-    console.log('✅ Corporates table created successfully');
+    await sql`CREATE UNIQUE INDEX corporates_reg_number_uq ON corporates(reg_number)`;
 
-    // Create contacts table
+    // Create contacts (UUID PK), link via corporate_uuid
     console.log('🔄 Creating contacts table...');
     await sql`
-      CREATE TABLE IF NOT EXISTS contacts (
-        id SERIAL PRIMARY KEY,
-        corporate_id INTEGER NOT NULL REFERENCES corporates(id) ON DELETE CASCADE,
+      CREATE TABLE contacts (
+        uuid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        corporate_uuid UUID NOT NULL REFERENCES corporates(uuid) ON DELETE CASCADE,
         salutation VARCHAR(10) NOT NULL,
         first_name VARCHAR(100) NOT NULL,
         last_name VARCHAR(100) NOT NULL,
@@ -77,38 +90,18 @@ export async function migrateToLatest() {
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
     `;
-    console.log('✅ Contacts table created successfully');
+    await sql`CREATE UNIQUE INDEX contacts_uuid_uq ON contacts(uuid)`;
+    await sql`CREATE INDEX contacts_corporate_uuid_idx ON contacts(corporate_uuid)`;
 
-    // Add secondary_approver_id to corporates (SQL path uses INTEGER ids)
-    console.log('🔄 Adding secondary_approver_id to corporates...');
-    await sql`
-      ALTER TABLE corporates
-      ADD COLUMN IF NOT EXISTS secondary_approver_id INTEGER REFERENCES contacts(id) ON DELETE SET NULL
-    `;
-    console.log('✅ Column secondary_approver_id added to corporates');
+    // Add FK for secondary_approver_uuid now that contacts exists
+    await sql`ALTER TABLE corporates ADD CONSTRAINT corporates_secondary_approver_fk FOREIGN KEY (secondary_approver_uuid) REFERENCES contacts(uuid) ON DELETE SET NULL`;
 
-    // Optional backfill from latest secondary approver contact per corporate
-    console.log('🔄 Backfilling secondary_approver_id from contacts...');
-    await sql`
-      UPDATE corporates c
-      SET secondary_approver_id = sub.id
-      FROM (
-        SELECT DISTINCT ON (corporate_id) id, corporate_id
-        FROM contacts
-        WHERE system_role = 'secondary_approver'
-        ORDER BY corporate_id, created_at DESC
-      ) sub
-      WHERE c.secondary_approver_id IS NULL
-        AND c.id = sub.corporate_id
-    `;
-    console.log('✅ Backfill completed');
-
-    // Create subsidiaries table
+    // Create subsidiaries (UUID PK), link via corporate_uuid
     console.log('🔄 Creating subsidiaries table...');
     await sql`
-      CREATE TABLE IF NOT EXISTS subsidiaries (
-        id SERIAL PRIMARY KEY,
-        corporate_id INTEGER NOT NULL REFERENCES corporates(id) ON DELETE CASCADE,
+      CREATE TABLE subsidiaries (
+        uuid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        corporate_uuid UUID NOT NULL REFERENCES corporates(uuid) ON DELETE CASCADE,
         company_name VARCHAR(255) NOT NULL,
         reg_number VARCHAR(50) NOT NULL,
         office_address1 VARCHAR(255) NOT NULL,
@@ -123,24 +116,26 @@ export async function migrateToLatest() {
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
     `;
-    console.log('✅ Subsidiaries table created successfully');
+    await sql`CREATE UNIQUE INDEX subsidiaries_uuid_uq ON subsidiaries(uuid)`;
+    await sql`CREATE INDEX subsidiaries_corporate_uuid_idx ON subsidiaries(corporate_uuid)`;
 
-    // Create investigation_logs table
+    // Create investigation_logs with UUID PK, link via corporate_uuid
     console.log('🔄 Creating investigation_logs table...');
     await sql`
-      CREATE TABLE IF NOT EXISTS investigation_logs (
-        id SERIAL PRIMARY KEY,
-        corporate_id INTEGER NOT NULL REFERENCES corporates(id) ON DELETE CASCADE,
+      CREATE TABLE investigation_logs (
+        uuid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        corporate_uuid UUID NOT NULL REFERENCES corporates(uuid) ON DELETE CASCADE,
         timestamp VARCHAR(255) NOT NULL,
         note TEXT,
         from_status VARCHAR(50),
         to_status VARCHAR(50),
+        amendment_data JSONB,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
     `;
-    console.log('✅ Investigation logs table created successfully');
+    await sql`CREATE INDEX investigation_logs_corporate_uuid_idx ON investigation_logs(corporate_uuid)`;
 
-    console.log('✅ All migrations completed successfully');
+    console.log('✅ Schema reset and migration completed successfully');
   } catch (error) {
     console.error('❌ Failed to migrate:', error);
     process.exit(1);

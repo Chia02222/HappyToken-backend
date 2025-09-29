@@ -3,7 +3,8 @@ import { z, type ZodObject, type ZodRawShape } from 'zod';
 
 // Base DTO that explicitly defines properties from the `contacts` table
 export class BaseContactDto {
-    corporate_id: number;
+    corporate_uuid?: string;
+    corporate_id?: number; // legacy during transition
     salutation: string;
     first_name: string;
     last_name: string;
@@ -22,7 +23,8 @@ export class UpdateContactDto extends PartialType(BaseContactDto) {
 }
 
 export const createContactSchema = z.object({
-    corporate_id: z.number().int().positive(),
+    corporate_uuid: z.string().uuid().optional(),
+    corporate_id: z.number().int().positive().optional(),
     salutation: z.string().min(1),
     first_name: z.string().min(1),
     last_name: z.string().min(1),
@@ -30,6 +32,9 @@ export const createContactSchema = z.object({
     email: z.string().email(),
     company_role: z.string().min(1),
     system_role: z.string().min(1),
+}).refine((d) => Boolean(d.corporate_uuid || d.corporate_id), {
+  message: 'Either corporate_uuid or corporate_id is required',
+  path: ['corporate_uuid'],
 }) as ZodObject<ZodRawShape>;
 
 export const updateContactSchema = (createContactSchema as ZodObject<ZodRawShape>).partial().extend({

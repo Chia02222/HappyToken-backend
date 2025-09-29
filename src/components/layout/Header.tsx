@@ -1,36 +1,30 @@
+'use client';
 
 import React from 'react';
+import { Page } from '../../types';
 
 interface HeaderProps {
     userRole: 'admin' | 'client';
     onLogout?: () => void;
-    currentPage?: string;
+    currentPage: Page;
 }
 
 const Header: React.FC<HeaderProps> = ({ userRole, onLogout, currentPage }) => {
     return (
-        <header className="h-16 w-full bg-ht-blue flex items-center justify-between px-6">
-            <div className="flex items-center space-x-4">
-                {currentPage && (
-                    <div className="text-white text-lg font-semibold ">
-                        {currentPage}
-                    </div>
-                )}
-            </div>
-            <div className="flex items-center space-x-4">
-                <span className="text-white text-sm">
-                    {userRole === 'admin' ? 'Admin' : 'Client'}
-                </span>
+        <div className="bg-ht-blue shadow-sm p-4 flex justify-between items-center">
+            <h1 className="text-lg font-semibold text-white">{currentPage}</h1>
+            <div className="flex items-center gap-3">
+                <span className="text-white text-sm">{userRole === 'admin' ? 'Admin' : 'Client'}</span>
                 {onLogout && (
                     <button
                         onClick={onLogout}
-                        className="text-white hover:text-gray-200 text-sm px-3 py-1 rounded-md hover:bg-ht-blue-dark transition-colors"
+                        className="text-sm bg-white text-ht-blue px-3 py-1 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue"
                     >
                         Logout
                     </button>
                 )}
             </div>
-        </header>
+        </div>
     );
 };
 

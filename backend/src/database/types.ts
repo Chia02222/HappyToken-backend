@@ -22,7 +22,7 @@ export type CorporateStatus =
 export type CorporateSystemRole = 'admin' | 'user';
 
 export interface CorporateTable {
-  id: GeneratedAlways<number>;
+  uuid: GeneratedAlways<string>;
   company_name: string;
   reg_number: string;
   status: CorporateStatus;
@@ -57,14 +57,14 @@ export interface CorporateTable {
   second_approval_confirmation: boolean | null;
   cooling_period_start: string | null;
   cooling_period_end: string | null;
-  secondary_approver_id?: number | null;
+  secondary_approver_uuid: string | null;
   created_at: string;
   updated_at: string;
 }
 
 export interface ContactTable {
-  id: GeneratedAlways<number>;
-  corporate_id: number;
+  uuid: GeneratedAlways<string>;
+  corporate_uuid: string;
   salutation: string;
   first_name: string;
   last_name: string;
@@ -77,8 +77,8 @@ export interface ContactTable {
 }
 
 export interface SubsidiaryTable {
-  id: GeneratedAlways<number>;
-  corporate_id: number;
+  uuid: GeneratedAlways<string>;
+  corporate_uuid: string;
   company_name: string;
   reg_number: string;
   office_address1: string;
@@ -94,12 +94,13 @@ export interface SubsidiaryTable {
 }
 
 export interface InvestigationLogTable {
-  id: GeneratedAlways<number>;
-  corporate_id: number;
+  uuid: GeneratedAlways<string>;
+  corporate_uuid: string;
   timestamp: string;
   note: string | null;
   from_status: CorporateStatus | null;
   to_status: CorporateStatus | null;
+  amendment_data: any | null;
   created_at: string;
 }
 

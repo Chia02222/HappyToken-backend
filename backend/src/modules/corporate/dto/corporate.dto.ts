@@ -88,7 +88,14 @@ export const createCorporateSchema = z.object({
   city: z.string().min(1),
   state: z.string().min(1),
   country: z.string().min(1),
-  website: z.preprocess((v) => (v === '' ? null : v), z.string().url().nullable().optional()),
+  website: z.preprocess((v) => {
+    if (typeof v === 'string') {
+      const trimmed = v.trim();
+      if (trimmed === '' || trimmed.toUpperCase() === 'N/A') return null;
+      return trimmed;
+    }
+    return v;
+  }, z.string().url().nullable().optional()),
   account_note: z.string().nullable().optional(),
   billing_same_as_official: z.boolean(),
   billing_address1: z.string(),

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 export declare class BaseSubsidiaryDto {
-    corporate_id: number;
+    corporate_uuid?: string;
+    corporate_id?: number;
     company_name: string;
     reg_number: string;
     office_address1: string;
@@ -19,7 +20,8 @@ export declare class UpdateSubsidiaryDto extends UpdateSubsidiaryDto_base {
     id?: number;
 }
 export declare const createSubsidiarySchema: z.ZodObject<{
-    corporate_id: z.ZodNumber;
+    corporate_uuid: z.ZodOptional<z.ZodString>;
+    corporate_id: z.ZodOptional<z.ZodNumber>;
     company_name: z.ZodString;
     reg_number: z.ZodString;
     office_address1: z.ZodString;
@@ -32,7 +34,8 @@ export declare const createSubsidiarySchema: z.ZodObject<{
     account_note: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, z.core.$strip>;
 export declare const updateSubsidiarySchema: z.ZodObject<{
-    corporate_id: z.ZodOptional<z.ZodNumber>;
+    corporate_uuid: z.ZodOptional<z.ZodOptional<z.ZodString>>;
+    corporate_id: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
     company_name: z.ZodOptional<z.ZodString>;
     reg_number: z.ZodOptional<z.ZodString>;
     office_address1: z.ZodOptional<z.ZodString>;

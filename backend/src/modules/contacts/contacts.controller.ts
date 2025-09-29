@@ -7,25 +7,24 @@ import { ZodValidationPipe } from '../../common/zod-validation.pipe';
 export class ContactsController {
   constructor(private readonly contactsService: ContactsService) {}
 
-  @Post(':corporateId')
+  @Post(':corporateUuid')
   async addContact(
-    @Param('corporateId') corporateId: string,
+    @Param('corporateUuid') corporateUuid: string,
     @Body(new ZodValidationPipe(createContactSchema.omit({ corporate_id: true }))) contactData: Omit<CreateContactDto, 'corporate_id'>
   ) {
-    const corporateIdNum = Number(corporateId);
-    return await this.contactsService.addContact({ ...contactData, corporate_id: corporateIdNum });
+    return await this.contactsService.addContact({ ...contactData, corporate_uuid: corporateUuid });
   }
 
-  @Put(':id')
+  @Put(':uuid')
   async updateContact(
-    @Param('id') id: string,
+    @Param('uuid') uuid: string,
     @Body(new ZodValidationPipe(updateContactSchema)) contactData: UpdateContactDto
   ) {
-    return await this.contactsService.updateContact(Number(id), contactData);
+    return await this.contactsService.updateContact(uuid, contactData);
   }
 
-  @Delete(':id')
-  async deleteContact(@Param('id') id: string) {
-    return await this.contactsService.deleteContact(Number(id));
+  @Delete(':uuid')
+  async deleteContact(@Param('uuid') uuid: string) {
+    return await this.contactsService.deleteContact(uuid);
   }
 }

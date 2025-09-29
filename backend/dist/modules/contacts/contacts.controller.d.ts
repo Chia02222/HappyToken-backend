@@ -3,11 +3,11 @@ import { CreateContactDto, UpdateContactDto } from './dto/contact.dto';
 export declare class ContactsController {
     private readonly contactsService;
     constructor(contactsService: ContactsService);
-    addContact(corporateId: string, contactData: Omit<CreateContactDto, 'corporate_id'>): Promise<{
-        id: number;
+    addContact(corporateUuid: string, contactData: Omit<CreateContactDto, 'corporate_id'>): Promise<{
+        uuid: string;
         created_at: string;
         updated_at: string;
-        corporate_id: number;
+        corporate_uuid: string;
         salutation: string;
         first_name: string;
         last_name: string;
@@ -16,11 +16,11 @@ export declare class ContactsController {
         company_role: string;
         system_role: string;
     }>;
-    updateContact(id: string, contactData: UpdateContactDto): Promise<{
-        id: number;
+    updateContact(uuid: string, contactData: UpdateContactDto): Promise<{
+        uuid: string;
         created_at: string;
         updated_at: string;
-        corporate_id: number;
+        corporate_uuid: string;
         salutation: string;
         first_name: string;
         last_name: string;
@@ -29,7 +29,7 @@ export declare class ContactsController {
         company_role: string;
         system_role: string;
     }>;
-    deleteContact(id: string): Promise<{
+    deleteContact(uuid: string): Promise<{
         success: boolean;
     }>;
 }

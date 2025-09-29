@@ -86,7 +86,15 @@ exports.createCorporateSchema = zod_1.z.object({
     city: zod_1.z.string().min(1),
     state: zod_1.z.string().min(1),
     country: zod_1.z.string().min(1),
-    website: zod_1.z.preprocess((v) => (v === '' ? null : v), zod_1.z.string().url().nullable().optional()),
+    website: zod_1.z.preprocess((v) => {
+        if (typeof v === 'string') {
+            const trimmed = v.trim();
+            if (trimmed === '' || trimmed.toUpperCase() === 'N/A')
+                return null;
+            return trimmed;
+        }
+        return v;
+    }, zod_1.z.string().url().nullable().optional()),
     account_note: zod_1.z.string().nullable().optional(),
     billing_same_as_official: zod_1.z.boolean(),
     billing_address1: zod_1.z.string(),

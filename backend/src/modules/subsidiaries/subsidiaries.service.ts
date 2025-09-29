@@ -11,23 +11,23 @@ export class SubsidiariesService {
     return this.dbService.getDb();
   }
 
-  async addSubsidiary(subsidiaryData: CreateSubsidiaryDto) {
+  async addSubsidiary(subsidiaryData: CreateSubsidiaryDto | (CreateSubsidiaryDto & { corporate_uuid?: string })) {
     console.log('addSubsidiary called with:', subsidiaryData);
-    const { id: _id, ...insertData } = subsidiaryData as CreateSubsidiaryDto & { id?: number }; // Explicitly omit 'id'
+    const { id: _id, ...insertData } = subsidiaryData as any; // omit 'id'; accept uuid linkage
     const inserted = await this.db
       .insertInto('subsidiaries')
       .values({
-        ...insertData,
+        ...(insertData as any),
         created_at: sql`date_trunc('second', now())::timestamp(0)`,
         updated_at: sql`date_trunc('second', now())::timestamp(0)`,
-      })
+      } as any)
       .returningAll()
       .executeTakeFirst();
     return inserted!;
   }
 
-  async updateSubsidiary(id: number, subsidiaryData: UpdateSubsidiaryDto) {
-    console.log('updateSubsidiary called with:', { id, subsidiaryData });
+  async updateSubsidiary(uuid: string, subsidiaryData: UpdateSubsidiaryDto) {
+    console.log('updateSubsidiary called with:', { uuid, subsidiaryData });
     const { id: _subsidiaryId, ...updateData } = subsidiaryData;
     const updated = await this.db
       .updateTable('subsidiaries')
@@ -35,15 +35,15 @@ export class SubsidiariesService {
         ...updateData,
         updated_at: sql`date_trunc('second', now())::timestamp(0)`,
       })
-      .where('id', '=', id)
+      .where('uuid', '=', uuid)
       .returningAll()
       .executeTakeFirst();
     return updated!;
   }
 
-  async deleteSubsidiary(id: number) {
-    console.log('deleteSubsidiary called with id:', id);
-    await this.db.deleteFrom('subsidiaries').where('id', '=', id).execute();
+  async deleteSubsidiary(uuid: string) {
+    console.log('deleteSubsidiary called with uuid:', uuid);
+    await this.db.deleteFrom('subsidiaries').where('uuid', '=', uuid).execute();
     return { success: true };
   }
 }

@@ -1,6 +1,7 @@
 import { z, type ZodObject, type ZodRawShape } from 'zod';
 export declare class BaseContactDto {
-    corporate_id: number;
+    corporate_uuid?: string;
+    corporate_id?: number;
     salutation: string;
     first_name: string;
     last_name: string;
