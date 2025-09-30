@@ -82,7 +82,15 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
 
     const formatTimestamp = (timestamp: string) => {
         const date = new Date(timestamp);
-        return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+        return date.toLocaleString('en-US', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true,
+            timeZone: 'Asia/Kuala_Lumpur'
+        });
     };
 
     const orderedCorporates = React.useMemo(() => {

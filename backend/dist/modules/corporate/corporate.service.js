@@ -69,8 +69,8 @@ let CorporateService = class CorporateService {
             status: 'Draft',
             agreement_from: corporateBaseData.agreement_from === '' ? null : corporateBaseData.agreement_from,
             agreement_to: corporateBaseData.agreement_to === '' ? null : corporateBaseData.agreement_to,
-            created_at: (0, kysely_1.sql) `date_trunc('second', now())::timestamp(0)`,
-            updated_at: (0, kysely_1.sql) `date_trunc('second', now())::timestamp(0)`,
+            created_at: (0, kysely_1.sql) `date_trunc('second', now() AT TIME ZONE 'Asia/Kuala_Lumpur')::timestamp(0)`,
+            updated_at: (0, kysely_1.sql) `date_trunc('second', now() AT TIME ZONE 'Asia/Kuala_Lumpur')::timestamp(0)`,
         };
         const inserted = await this.db
             .insertInto('corporates')
@@ -123,7 +123,7 @@ let CorporateService = class CorporateService {
                     .updateTable('corporates')
                     .set({
                     secondary_approver_uuid: secondaryApproverUuid,
-                    updated_at: (0, kysely_1.sql) `date_trunc('second', now())::timestamp(0)`,
+                    updated_at: (0, kysely_1.sql) `date_trunc('second', now() AT TIME ZONE 'Asia/Kuala_Lumpur')::timestamp(0)`,
                 })
                     .where('uuid', '=', inserted.uuid)
                     .execute();
@@ -177,7 +177,7 @@ let CorporateService = class CorporateService {
                     .updateTable('corporates')
                     .set({
                     secondary_approver_uuid: secondaryApproverUuid,
-                    updated_at: (0, kysely_1.sql) `date_trunc('second', now())::timestamp(0)`,
+                    updated_at: (0, kysely_1.sql) `date_trunc('second', now() AT TIME ZONE 'Asia/Kuala_Lumpur')::timestamp(0)`,
                 })
                     .where('uuid', '=', id)
                     .execute();
@@ -188,7 +188,7 @@ let CorporateService = class CorporateService {
             ...sanitizedCorporateUpdate,
             agreement_from: corporateUpdateData.agreement_from === '' ? null : corporateUpdateData.agreement_from,
             agreement_to: corporateUpdateData.agreement_to === '' ? null : corporateUpdateData.agreement_to,
-            updated_at: (0, kysely_1.sql) `date_trunc('second', now())::timestamp(0)`,
+            updated_at: (0, kysely_1.sql) `date_trunc('second', now() AT TIME ZONE 'Asia/Kuala_Lumpur')::timestamp(0)`,
         };
         const updatedCorporate = await this.db
             .updateTable('corporates')
@@ -278,7 +278,7 @@ let CorporateService = class CorporateService {
                     from_status: logData.from_status ?? null,
                     to_status: logData.to_status ?? null,
                     amendment_data: logData.amendment_data ?? null,
-                    created_at: (0, kysely_1.sql) `date_trunc('second', now())::timestamp(0)`,
+                    created_at: (0, kysely_1.sql) `date_trunc('second', now() AT TIME ZONE 'Asia/Kuala_Lumpur')::timestamp(0)`,
                 })
                     .returningAll()
                     .executeTakeFirst();
@@ -316,7 +316,7 @@ let CorporateService = class CorporateService {
         const shouldLog = !(!note);
         if ((note || status !== oldStatus) && shouldLog) {
             await this.addInvestigationLog(id, {
-                timestamp: new Date().toISOString(),
+                timestamp: (0, kysely_1.sql) `(now() AT TIME ZONE 'Asia/Kuala_Lumpur')::text`,
                 note: note === undefined ? `Status changed from ${oldStatus} to ${status}` : note,
                 from_status: oldStatus,
                 to_status: status,
@@ -342,8 +342,8 @@ let CorporateService = class CorporateService {
                     await this.db
                         .updateTable('corporates')
                         .set({
-                        cooling_period_start: coolingPeriodStart.toISOString(),
-                        cooling_period_end: coolingPeriodEnd.toISOString(),
+                        cooling_period_start: (0, kysely_1.sql) `(${coolingPeriodStart} AT TIME ZONE 'Asia/Kuala_Lumpur')::text`,
+                        cooling_period_end: (0, kysely_1.sql) `(${coolingPeriodEnd} AT TIME ZONE 'Asia/Kuala_Lumpur')::text`,
                     })
                         .where('uuid', '=', id)
                         .execute();
@@ -390,7 +390,7 @@ let CorporateService = class CorporateService {
         return updatedCorporate;
     }
     async expireStaleCorporatesDaily() {
-        const thirtyDaysAgoIso = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        const thirtyDaysAgoIso = (0, kysely_1.sql) `(now() - interval '30 days' AT TIME ZONE 'Asia/Kuala_Lumpur')::text`;
         const stale = await this.db
             .selectFrom('corporates')
             .selectAll()
@@ -418,7 +418,7 @@ let CorporateService = class CorporateService {
             }
             const amendmentNote = `Amendment Request Submitted|Requested Changes: ${amendmentData.requestedChanges}|Reason: ${amendmentData.amendmentReason}|Submitted by: ${amendmentData.submittedBy}`;
             const inserted = await this.addInvestigationLog(corporateId, {
-                timestamp: new Date().toISOString(),
+                timestamp: (0, kysely_1.sql) `(now() AT TIME ZONE 'Asia/Kuala_Lumpur')::text`,
                 note: amendmentNote,
                 from_status: corporate.status,
                 to_status: 'Amendment Requested',
@@ -455,7 +455,7 @@ let CorporateService = class CorporateService {
                 ? `Amendment Approved|Reviewed by: CRT Team|Review Notes: ${reviewNotes || 'Approved'}`
                 : `Amendment Rejected|Reviewed by: CRT Team|Review Notes: ${reviewNotes || 'Rejected'}`;
             await this.addInvestigationLog(corporateId, {
-                timestamp: new Date().toISOString(),
+                timestamp: (0, kysely_1.sql) `(now() AT TIME ZONE 'Asia/Kuala_Lumpur')::text`,
                 note: statusNote,
                 from_status: 'Amendment Requested',
                 to_status: status === 'approved' ? 'Pending 1st Approval' : 'Pending 1st Approval',

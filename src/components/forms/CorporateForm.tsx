@@ -5,6 +5,8 @@ import SelectField from '../common/SelectField';
 import FormSection from '../common/FormSection';
 import { CorporateDetails, Contact, Subsidiary } from '../../types';
 import { corporateFormSchema } from '../../utils/corporateFormSchema';
+import { getMalaysiaDateString, handleDateInputChange } from '../../utils/validators';
+import { countries, getStatesForCountry, getStatesWithNA, getStateFieldLabel, getUniqueCallingCodes } from '../../data/countries';
 
 interface CorporateFormProps {
     onCloseForm: () => void;
@@ -17,9 +19,6 @@ interface CorporateFormProps {
     formMode: 'new' | 'edit' | 'approve' | 'approve-second';
 }
 
-const malaysianStates = [
-    'Johor', 'Kedah', 'Kelantan', 'Melaka', 'Negeri Sembilan', 'Pahang', 'Penang', 'Perak', 'Perlis', 'Sabah', 'Sarawak', 'Selangor', 'Terengganu', 'W.P. Kuala Lumpur', 'W.P. Labuan', 'W.P. Putrajaya'
-];
 
 const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep, formData, setFormData, onSaveCorporate, generateClientSideId, onValidationError, formMode = 'new'}) => {
 
@@ -80,16 +79,33 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
             const { checked } = e.target as HTMLInputElement;
             setFormData(prev => ({ ...prev, [name]: checked }));
         } else {
-            setFormData(prev => ({ ...prev, [name]: value }));
+            setFormData(prev => {
+                const newData = { ...prev, [name]: value };
+                // Clear state when country changes
+                if (name === 'country') {
+                    newData.state = '';
+                } else if (name === 'billing_country') {
+                    newData.billing_state = '';
+                }
+                return newData;
+            });
         }
     };
     
     const handleSubsidiaryChange = (index: number, event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = event.target;
         setFormData(prev => {
-            const newSubsidiaries = prev.subsidiaries.map((sub: Subsidiary, i: number) => 
-                i === index ? { ...sub, [name]: value } : sub
-            );
+            const newSubsidiaries = prev.subsidiaries.map((sub: Subsidiary, i: number) => {
+                if (i === index) {
+                    const updatedSub = { ...sub, [name]: value };
+                    // Clear state when country changes for subsidiary
+                    if (name === 'country') {
+                        updatedSub.state = '';
+                    }
+                    return updatedSub;
+                }
+                return sub;
+            });
             return { ...prev, subsidiaries: newSubsidiaries };
         });
     };
@@ -146,9 +162,10 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                     first_name: '',
                     last_name: '',
                     contact_number: '',
+                    contact_prefix: '+60',
                     email: '',
                     company_role: '',
-                    system_role: '',
+                    system_role: 'user',
                 },
             ],
         }));
@@ -175,14 +192,14 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                     <InputField id="office_address2" label="Office Address 2" name="office_address2" value={formData.office_address2 ??  null} onChange={handleChange} />
                     <InputField id="postcode" label="Postcode" name="postcode" value={formData.postcode} onChange={handleChange} required error={errors.postcode} />
                     <InputField id="city" label="City" name="city" value={formData.city} onChange={handleChange} required error={errors.city} />
-                    <SelectField id="state" label="State" name="state" value={formData.state} onChange={handleChange} required>
-                        <option value="">Select State</option>
-                        {malaysianStates.map((state: string) => <option key={state} value={state}>{state}</option>)}
-                    </SelectField>
                     <SelectField id="country" label="Country" name="country" value={formData.country} onChange={handleChange} required>
-                         <option>Malaysia</option>
-                         <option>Singapore</option>
+                        <option value="">Select Country</option>
+                        {countries.map((country) => <option key={country.name} value={country.name}>{country.name}</option>)}
                     </SelectField>
+                <SelectField id="state" label={getStateFieldLabel(formData.country)} name="state" value={formData.state} onChange={handleChange} required>
+                    <option value="">Select {getStateFieldLabel(formData.country)}</option>
+                    {getStatesWithNA(formData.country).map((state: string) => <option key={state} value={state}>{state}</option>)}
+                </SelectField>
                     <div className="md:col-span-2">
                         <InputField id="website" label="Website" name="website" value={formData.website as string} onChange={handleChange} />
                     </div>
@@ -206,13 +223,13 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                                 <InputField id={`sub-office_address2-${sub.id}`} label="Office Address 2" name="office_address2" value={sub.office_address2 ?? null} onChange={(e) => handleSubsidiaryChange(index, e)} />
                                 <InputField id={`sub-postcode-${sub.id}`} label="Postcode" name="postcode" value={sub.postcode} onChange={(e) => handleSubsidiaryChange(index, e)} required />
                                 <InputField id={`sub-city-${sub.id}`} label="City" name="city" value={sub.city} onChange={(e) => handleSubsidiaryChange(index, e)} required />
-                                <SelectField id={`sub-state-${sub.id}`} label="State" name="state" value={sub.state} onChange={(e) => handleSubsidiaryChange(index, e)} required>
-                                    <option value="">Select State</option>
-                                    {malaysianStates.map((state: string) => <option key={state} value={state}>{state}</option>)}
-                                </SelectField>
                                 <SelectField id={`sub-country-${sub.id}`} label="Country" name="country" value={sub.country} onChange={(e) => handleSubsidiaryChange(index, e)} required>
-                                    <option>Malaysia</option>
-                                    <option>Singapore</option>
+                                    <option value="">Select Country</option>
+                                    {countries.map((country) => <option key={country.name} value={country.name}>{country.name}</option>)}
+                                </SelectField>
+                                <SelectField id={`sub-state-${sub.id}`} label={getStateFieldLabel(sub.country)} name="state" value={sub.state} onChange={(e) => handleSubsidiaryChange(index, e)} required>
+                                    <option value="">Select {getStateFieldLabel(sub.country)}</option>
+                                    {getStatesWithNA(sub.country).map((state: string) => <option key={state} value={state}>{state}</option>)}
                                 </SelectField>
                                 <div className="md:col-span-2">
                                     <InputField id={`sub-website-${sub.id}`} label="Website" name="website" value={sub.website ?? null} onChange={(e) => handleSubsidiaryChange(index, e)} />
@@ -253,18 +270,24 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                              <div>
                                 <label className="block text-xs font-medium text-gray-700 mb-1">*Contact Number</label>
                                 <div className="flex">
-                                    <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">+60</span>
+                                    <select 
+                                        className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm focus:ring-ht-blue focus:border-ht-blue"
+                                        value={contact.contact_prefix || '+60'}
+                                        onChange={e => handleContactChange(index, { target: { name: 'contact_prefix', value: e.target.value } } as React.ChangeEvent<HTMLSelectElement>)}
+                                    >
+                    {getUniqueCallingCodes().map((item) => (
+                        <option key={item.code} value={item.code}>
+                            {item.code}
+                        </option>
+                    ))}
+                                    </select>
                                     <input type="text" id={`contact-number-${contact.id}`} name="contact_number" value={contact.contact_number} onChange={e => handleContactChange(index, e)} className={`flex-1 block w-full rounded-none rounded-r-md border p-2 text-sm focus:ring-ht-blue bg-white dark:bg-white ${errors[`contact-number-${contact.id}`] ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-ht-blue'}`} />
                                 </div>
                                 {errors[`contact-number-${contact.id}`] && <p className="mt-1 text-xs text-red-600">{errors[`contact-number-${contact.id}`]}</p>}
                             </div>
                             <InputField id={`contact-email-${contact.id}`} label="Email Address" name="email" value={contact.email} onChange={e => handleContactChange(index, e)} required type="email" error={errors[`contact-email-${contact.id}`]} />
-                            <SelectField id={`contact-company_role-${contact.id}`} label="Company Role" name="company_role" value={contact.company_role} onChange={e => handleContactChange(index, e)} required>
-                                <option>Select Role</option>
-                            </SelectField>
-                             <SelectField id={`contact-system_role-${contact.id}`} label="System Role" name="system_role" value={contact.system_role} onChange={e => handleContactChange(index, e)} required>
-                                <option>Select Role</option>
-                            </SelectField>
+                            <InputField id={`contact-company_role-${contact.id}`} label="Company Role" name="company_role" value={contact.company_role} onChange={e => handleContactChange(index, e)} required />
+                            <InputField id={`contact-system_role-${contact.id}`} label="System Role" name="system_role" value={contact.system_role || 'user'} onChange={e => handleContactChange(index, e)} required disabled={(contact.system_role || 'user') === 'user'} />
                         </div>
                     </div>
                 ))}
@@ -286,8 +309,14 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                         <InputField id="billing_address2" label="Office Address 2" name="billing_address2" value={formData.billing_address2 as string} onChange={handleChange} />
                         <InputField id="billing_postcode" label="Postcode" name="billing_postcode" value={formData.billing_postcode as string} onChange={handleChange} required error={errors.billing_postcode} />
                         <InputField id="billing_city" label="City" name="billing_city" value={formData.billing_city as string} onChange={handleChange} required error={errors.billing_city} />
-                        <InputField id="billing_state" label="State" name="billing_state" value={formData.billing_state as string} onChange={handleChange} required error={errors.billing_state} />
-                        <InputField id="billing_country" label="Country" name="billing_country" value={formData.billing_country as string} onChange={handleChange} required error={errors.billing_country} />
+                        <SelectField id="billing_country" label="Country" name="billing_country" value={formData.billing_country as string} onChange={handleChange} required error={errors.billing_country}>
+                            <option value="">Select Country</option>
+                            {countries.map((country) => <option key={country.name} value={country.name}>{country.name}</option>)}
+                        </SelectField>
+                        <SelectField id="billing_state" label={getStateFieldLabel(formData.billing_country as string)} name="billing_state" value={formData.billing_state as string} onChange={handleChange} required error={errors.billing_state}>
+                            <option value="">Select {getStateFieldLabel(formData.billing_country as string)}</option>
+                            {getStatesWithNA(formData.billing_country as string).map((state: string) => <option key={state} value={state}>{state}</option>)}
+                        </SelectField>
                     </div>
                 )}
             </FormSection>
@@ -304,9 +333,9 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                     <div className="md:col-span-2">
                         <label className="block text-xs font-medium text-gray-700 mb-1">Agreement Duration</label>
                         <div className="flex items-center space-x-2">
-                           <InputField id="agreementFrom" label="" name="agreement_from" value={(formData.agreement_from ? String(formData.agreement_from).slice(0,10) : '')} onChange={handleChange} type="date" required min={new Date().toISOString().split('T')[0]} error={errors.agreementFrom} />
+                           <InputField id="agreementFrom" label="" name="agreement_from" value={(formData.agreement_from ? String(formData.agreement_from).slice(0,10) : '')} onChange={(e) => handleChange({ target: { name: 'agreement_from', value: handleDateInputChange(e.target.value) } } as React.ChangeEvent<HTMLInputElement>)} type="date" required min={getMalaysiaDateString()} error={errors.agreementFrom} />
                            <span className="text-gray-500">to</span>
-                           <InputField id="agreementTo" label="" name="agreement_to" value={(formData.agreement_to ? String(formData.agreement_to).slice(0,10) : '')} onChange={handleChange} type="date" required min={(formData.agreement_from ? String(formData.agreement_from).slice(0,10) : new Date().toISOString().split('T')[0])} error={errors.agreementTo} />
+                           <InputField id="agreementTo" label="" name="agreement_to" value={(formData.agreement_to ? String(formData.agreement_to).slice(0,10) : '')} onChange={(e) => handleChange({ target: { name: 'agreement_to', value: handleDateInputChange(e.target.value) } } as React.ChangeEvent<HTMLInputElement>)} type="date" required min={(formData.agreement_from ? String(formData.agreement_from).slice(0,10) : getMalaysiaDateString())} error={errors.agreementTo} />
                         </div>
                     </div>
                     

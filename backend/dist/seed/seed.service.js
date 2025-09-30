@@ -15,6 +15,7 @@ const corporate_service_1 = require("../modules/corporate/corporate.service");
 const database_service_1 = require("../database/database.service");
 const contacts_service_1 = require("../modules/contacts/contacts.service");
 const subsidiaries_service_1 = require("../modules/subsidiaries/subsidiaries.service");
+const kysely_1 = require("kysely");
 let SeedService = class SeedService {
     corporateService;
     dbService;
@@ -164,7 +165,7 @@ let SeedService = class SeedService {
                             account_note: 'Subsidiary for software development',
                         });
                         await this.corporateService.addInvestigationLog(String(corpUuid), {
-                            timestamp: new Date().toISOString(),
+                            timestamp: (0, kysely_1.sql) `(now() AT TIME ZONE 'Asia/Kuala_Lumpur')::text`,
                             note: 'Initial review completed. No issues found.',
                             from_status: 'Draft',
                             to_status: 'Approved',

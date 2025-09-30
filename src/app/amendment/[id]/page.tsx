@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import FormLayout from '../../../components/layout/FormLayout';
 import AmendmentRequestForm from '@/components/forms/AmendmentRequestForm';
 import SuccessModal from '../../../components/modals/SuccessModal';
-import { getCorporateById, createAmendmentRequest } from '@/services/api';
+import { getCorporateById, createAmendmentRequest, getAmendmentRequestsByCorporate } from '@/services/api';
 
 interface CorporateData {
   id: string;
@@ -25,7 +25,9 @@ interface CorporateData {
 const AmendmentRequestPage: React.FC = () => {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const corporateId = params.id as string;
+  const mode = searchParams.get('mode') as 'approve' | 'approve-second' | null;
   
   const [corporateData, setCorporateData] = useState<CorporateData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,8 +58,11 @@ const AmendmentRequestPage: React.FC = () => {
 
   const handleSave = async (amendmentData: any) => {
     try {
-      // Send minimal payload; backend computes changed_fields and reads corporate for originals
-      const minimalPayload = { amendedData: amendmentData.amendedData };
+      // Send both snapshots so view pages can use original_data/amended_data directly
+      const minimalPayload = {
+        originalData: amendmentData.originalData,
+        amendedData: amendmentData.amendedData
+      };
       const result = await createAmendmentRequest(corporateId, minimalPayload);
       const newId = result?.amendmentId ? String(result.amendmentId) : null;
       if (newId) setCreatedAmendmentId(newId);
@@ -71,7 +76,12 @@ const AmendmentRequestPage: React.FC = () => {
   };
 
   const handleCancel = () => {
-    router.push(`/corporate/${corporateId}`);
+    // For approvers, redirect back to ECommercialTermsForm
+    if (mode === 'approve' || mode === 'approve-second') {
+      router.push(`/corporate/${corporateId}?mode=${mode}&step=2`);
+    } else {
+      router.push(`/corporate/${corporateId}`);
+    }
   };
 
   if (loading) {
@@ -131,12 +141,49 @@ const AmendmentRequestPage: React.FC = () => {
       />
       <SuccessModal
         isOpen={successOpen}
-        onClose={() => {
+        onClose={async () => {
           setSuccessOpen(false);
+          
+          // For approvers, redirect to Amendment View-only page
+          if (mode === 'approve' || mode === 'approve-second') {
+            if (createdAmendmentId) {
+              router.push(`/amendment/view/${createdAmendmentId}`);
+            } else {
+              try {
+                const amendments = await getAmendmentRequestsByCorporate(corporateId);
+                if (amendments && amendments.length > 0) {
+                  const latestAmendment = amendments[amendments.length - 1];
+                  router.push(`/amendment/view/${latestAmendment.id}`);
+                } else {
+                  router.push(`/corporate/${corporateId}?mode=${mode}&step=2`);
+                }
+              } catch (error) {
+                router.push(`/corporate/${corporateId}?mode=${mode}&step=2`);
+              }
+            }
+            return;
+          }
+          
+          // For non-approvers, redirect to CRT amendment page
           if (createdAmendmentId) {
             router.push(`/crt/amendment/${createdAmendmentId}`);
           } else {
-            router.push(`/corporate/${corporateId}?step=2`);
+            // If no amendment ID was captured, try to fetch the latest amendment request
+            try {
+              const amendments = await getAmendmentRequestsByCorporate(corporateId);
+              if (amendments && amendments.length > 0) {
+                // Get the most recent amendment request
+                const latestAmendment = amendments[amendments.length - 1];
+                router.push(`/crt/amendment/${latestAmendment.id}`);
+              } else {
+                // Fallback: redirect to corporate page
+                router.push(`/corporate/${corporateId}?step=2`);
+              }
+            } catch (error) {
+              console.error('Error fetching amendment requests:', error);
+              // Fallback: redirect to corporate page
+              router.push(`/corporate/${corporateId}?step=2`);
+            }
           }
         }}
         title={successTitle}

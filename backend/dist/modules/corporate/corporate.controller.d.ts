@@ -1,11 +1,13 @@
 import { CorporateService } from './corporate.service';
 import { ResendService } from '../resend/resend.service';
+import { PdfService } from './pdf.service';
 import { InvestigationLogTable } from '../../database/types';
 import { CreateCorporateWithRelationsDto, UpdateCorporateDto } from './dto/corporate.dto';
 export declare class CorporateController {
     private readonly corporateService;
     private readonly resendService;
-    constructor(corporateService: CorporateService, resendService: ResendService);
+    private readonly pdfService;
+    constructor(corporateService: CorporateService, resendService: ResendService, pdfService: PdfService);
     findAll(): Promise<{
         uuid: string;
         company_name: string;
@@ -125,6 +127,7 @@ export declare class CorporateController {
         created_at: string;
         updated_at: string;
     } | null>;
+    getCorporatePdf(id: string, res: any): Promise<void>;
     create(corporateData: CreateCorporateWithRelationsDto & {
         investigation_log?: InvestigationLogTable;
         id?: string;

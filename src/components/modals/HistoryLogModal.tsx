@@ -15,6 +15,19 @@ interface HistoryLogModalProps {
 const HistoryLogModal: React.FC<HistoryLogModalProps> = ({ isOpen, onClose, corporate, onSave }) => {
     const [logNote, setLogNote] = useState('');
 
+    // Date formatting utility
+    const formatDateTime = (date: Date): string => {
+        return date.toLocaleString('en-US', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true,
+            timeZone: 'Asia/Kuala_Lumpur'
+        });
+    };
+
     useEffect(() => {
         if (!isOpen) {
             setLogNote('');
@@ -37,9 +50,9 @@ const HistoryLogModal: React.FC<HistoryLogModalProps> = ({ isOpen, onClose, corp
                 {/* History Section */}
                 <div className="max-h-64 overflow-y-auto pr-2 space-y-4 border rounded-md p-3 bg-gray-50">
                     {corporate.investigation_log && corporate.investigation_log.length > 0 ? (
-                        [...corporate.investigation_log].map((log) => (
-                            <div key={log.id} className="p-3 border rounded-md bg-white shadow-sm">
-                                <p className="text-xs text-gray-500 mb-1">{log.timestamp}</p>
+                        [...corporate.investigation_log].map((log, index) => (
+                            <div key={log.id || `log-${index}-${log.timestamp}`} className="p-3 border rounded-md bg-white shadow-sm">
+                                <p className="text-xs text-gray-500 mb-1">{formatDateTime(new Date(log.timestamp))}</p>
                                 {log.from_status && log.to_status ? (
                                     <p className="text-sm font-semibold text-ht-gray-dark">
                                         Status changed from <StatusBadge status={log.from_status} /> to <StatusBadge status={log.to_status} />

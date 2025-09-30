@@ -426,6 +426,19 @@ let ResendService = class ResendService {
         const sendTo = async (to, userName) => {
             if (!to)
                 return { success: false };
+            let attachments;
+            try {
+                const pdfResp = await fetch(`http://localhost:3001/corporates/${corporate.uuid ?? corporate.id}/pdf`);
+                if (pdfResp.ok) {
+                    const arrayBuf = await pdfResp.arrayBuffer();
+                    const base64 = Buffer.from(arrayBuf).toString('base64');
+                    const filename = `${(corporate.company_name || 'Corporate').replace(/[^a-zA-Z0-9 _.-]/g, '-')} - Happy Token.pdf`;
+                    attachments = [{ filename, content: base64 }];
+                }
+            }
+            catch (e) {
+                console.warn('PDF attach skipped:', e);
+            }
             const resp = await fetch('https://api.resend.com/emails', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
@@ -433,7 +446,8 @@ let ResendService = class ResendService {
                     from: SENDER_EMAIL,
                     to,
                     subject,
-                    html: createEmailHtml(userName)
+                    html: createEmailHtml(userName),
+                    attachments
                 })
             });
             return { ok: resp.ok, data: await resp.json() };

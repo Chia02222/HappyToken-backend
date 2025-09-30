@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
@@ -9,7 +10,7 @@ import { CorporateDetails, CorporateStatus, Contact, LogEntry } from '../../../t
 import { getCorporateById, createCorporate, updateCorporate, updateCorporateStatus, sendAmendmentEmail, sendEcommericialTermlink, sendAmendRejectEmail, getAmendmentRequestsByCorporate } from '../../../services/api';
 import SuccessModal from '../../../components/modals/SuccessModal';
 import ErrorMessageModal from '../../../components/modals/ErrorMessageModal';
-import { isRequired, isValidEmail, isValidPhone, isValidDateRange, isPositiveNumberString } from '../../../utils/validators';
+import { isRequired, isValidEmail, isValidPhone, isValidDateRange, isPositiveNumberString, getMalaysiaDateString, handleDateInputChange } from '../../../utils/validators';
 
 let clientSideIdCounter = 0;
 const generateClientSideId = (): string => {
@@ -42,7 +43,7 @@ const INITIAL_CORPORATE_FORM_DATA: CorporateDetails = {
             contact_number: '',
             email: '',
             company_role: '',
-            system_role: '',
+            system_role: 'user',
         },
     ],
     billing_same_as_official: true,
@@ -291,27 +292,73 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
       let savedCorporateId = corporateId;
 
       if (corporateId && corporateId !== 'new') {
+        console.log('Updating existing corporate:', corporateId);
         await updateCorporate(corporateId, dataToSend);
       } else {
-        const newCorporate = await createCorporate(dataToSend);
-        savedCorporateId = newCorporate.id;
+        console.log('Creating new corporate with data:', dataToSend);
+        try {
+          const newCorporate = await createCorporate(dataToSend);
+          console.log('New corporate created:', newCorporate);
+          savedCorporateId = newCorporate.uuid;
+          console.log('Assigned savedCorporateId:', savedCorporateId);
+        } catch (error) {
+          console.error('Failed to create corporate:', error);
+          throw error;
+        }
       }
+
+      console.log('Final savedCorporateId before email check:', savedCorporateId);
+      console.log('Action:', action);
 
       if (action === 'sent' && savedCorporateId) {
         // Send email to first approver and update status via backend
         try {
-          await sendEcommericialTermlink(savedCorporateId);
-          setSuccessModalContent({ title: 'Sent', message: 'Email sent to the first approver and status updated to Pending 1st Approval.' });
+          console.log('Sending email to first approver for corporate ID:', savedCorporateId);
+          
+          // First, let's verify the corporate was created and has contact info
+          const corporate = await getCorporateById(savedCorporateId);
+          if (!corporate || !corporate.contacts || corporate.contacts.length === 0) {
+            throw new Error('Corporate not found or has no contacts');
+          }
+          
+          const firstContact = corporate.contacts[0];
+          if (!firstContact.email || firstContact.email === 'N/A' || firstContact.email === '') {
+            throw new Error('Primary contact email is missing or invalid');
+          }
+          
+          console.log('Primary contact email:', firstContact.email);
+          
+          // Send the email
+          const result = await sendEcommericialTermlink(savedCorporateId);
+          console.log('Email send result:', result);
+          
+          // Check if the result indicates success
+          if (result && result.success === false) {
+            throw new Error(result.message || 'Email sending failed');
+          }
+          
+          setSuccessModalContent({ 
+            title: 'Sent', 
+            message: 'Email sent to the first approver and status updated to Pending 1st Approval.' 
+          });
           setShouldCloseOnSuccessClose(true);
           setIsSuccessModalVisible(true);
           return;
         } catch (err) {
+          console.error('Error sending email to first approver:', err);
           const msg = err instanceof Error ? err.message : String(err);
-          setErrorModalContent(`Failed to send for approval: ${msg}`);
+          setErrorModalContent(`Failed to send for approval: ${msg}. The corporate data has been saved but the email could not be sent. Please check the email configuration or contact information and try again.`);
           setIsErrorModalVisible(true);
           return;
         }
       } else if (formMode === 'approve' && action === 'submit' && savedCorporateId) {
+        // Persist secondary approver/contact changes before moving to second approval
+        try {
+          await updateCorporate(savedCorporateId, dataToSend as any);
+        } catch (e) {
+          console.warn('Non-fatal: failed to persist secondary approver before status update', e);
+        }
+
         await updateCorporateStatus(savedCorporateId, 'Pending 2nd Approval', 'First approval completed.');
         try {
           await sendEcommericialTermlink(savedCorporateId, 'second');
@@ -321,8 +368,18 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
           setIsErrorModalVisible(true);
           return;
         }
+        // Redirect to second approval mode so the secondary approver section is active
+        router.push(`/corporate/${savedCorporateId}?mode=approve-second&step=2`);
+        return;
       } else if (formMode === 'approve-second' && action === 'submit' && savedCorporateId) {
         await updateCorporateStatus(savedCorporateId, 'Cooling Period', 'Second approval completed.');
+        setSuccessModalContent({ 
+          title: 'Second Approval Completed', 
+          message: 'The agreement has been fully approved and is now in the cooling period.' 
+        });
+        setIsSuccessModalVisible(true);
+        setShouldCloseOnSuccessClose(true);
+        return;
       }
 
       if (action === 'save') {
@@ -404,13 +461,45 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
   const [isAmendConfirming, setIsAmendConfirming] = React.useState(false);
   const [isRejectingAmendment, setIsRejectingAmendment] = React.useState(false);
   const [amendRejectReason, setAmendRejectReason] = React.useState('');
+  const [hasPendingAmendment, setHasPendingAmendment] = React.useState<boolean>(false);
+
+  // Determine if there is still an active pending amendment request for this corporate
+  useEffect(() => {
+    const checkPendingAmendment = async () => {
+      try {
+        if (!corporateId) return;
+        const list = await getAmendmentRequestsByCorporate(String(corporateId));
+        const arr = Array.isArray(list) ? list : [];
+        const withData = arr.filter((x: any) => {
+          const data = (x && (x.amendment_data || x.amendmentData || null));
+          if (!data || typeof data !== 'object') return false;
+          return Object.keys(data).length > 0;
+        });
+        const pending = withData.some((x: any) => x.to_status === 'Amendment Requested');
+        setHasPendingAmendment(pending);
+      } catch (e) {
+        // Fail-closed: if we cannot confirm, hide notice by default
+        setHasPendingAmendment(false);
+      }
+    };
+    checkPendingAmendment();
+  }, [corporateId, formData.status, latestAmendLog?.timestamp]);
 
   const formatAmendNote = (note?: string) => {
     if (!note) return 'An amendment has been requested.';
-    return note
-      .replace(/Amendment Request Submitted<br>?/i, '')
-      .replace(/<br>/g, '\n')
+    // Normalize HTML breaks to newlines first
+    let cleaned = String(note).replace(/<br\s*\/?>(?=\s|$)/gi, '\n');
+    // Remove common boilerplate phrases and submitted-by lines
+    cleaned = cleaned
+      // Remove variants of "Amendment request submitted"
+      .replace(/\bAmendment\s+Request\s+Submitted\b[:.!\s]*/gi, '')
+      .replace(/\bAmendment\s+request\s+submitted\b[:.!\s]*/gi, '')
+      // Remove any lines that start with "Submitted by: ..."
+      .replace(/^\s*Submitted\s+by:\s*.*$/gim, '')
+      // Collapse multiple blank lines
+      .replace(/\n{2,}/g, '\n')
       .trim();
+    return cleaned;
   };
 
   const getAmendRequester = (note?: string | null): string | null => {
@@ -419,11 +508,71 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
     return m?.[1]?.trim() || null;
   };
 
+  const getSubmittedByName = (): string | null => {
+    try {
+      const prevStatus = latestAmendLog?.from_status;
+      const contacts = (formData.contacts || []) as Contact[];
+
+      const formatName = (first?: string, last?: string, email?: string | null) => {
+        const name = [first || '', last || ''].join(' ').trim();
+        return name || (email || null);
+      };
+
+      if (prevStatus === 'Pending 2nd Approval') {
+        const byRole = contacts.find(c => c.system_role === 'secondary_approver');
+        const byId = contacts.find(c => String(c.id) === String((formData as any).secondary_approver_id));
+        const chosen = byRole || byId;
+        if (chosen) return formatName(chosen.first_name, chosen.last_name, chosen.email);
+        const sa = (formData as any).secondary_approver as (Partial<Contact> | undefined);
+        if (sa) return formatName(sa.first_name as string, sa.last_name as string, sa.email as string);
+        return null;
+      }
+
+      // Default to first approver (primary contact) for other statuses including Pending 1st Approval
+      const primary = contacts[0];
+      if (primary) return formatName(primary.first_name, primary.last_name, primary.email);
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  const getSubmittedByRole = (): string | null => {
+    try {
+      const prevStatus = latestAmendLog?.from_status;
+      const contacts = (formData.contacts || []) as Contact[];
+
+      if (prevStatus === 'Pending 2nd Approval') {
+        const byRole = contacts.find(c => c.system_role === 'secondary_approver');
+        const byId = contacts.find(c => String(c.id) === String((formData as any).secondary_approver_id));
+        const chosen = byRole || byId;
+        if (chosen?.company_role) return chosen.company_role;
+        const sa = (formData as any).secondary_approver as (Partial<Contact> | undefined);
+        if (sa && (sa.company_role as string)) return sa.company_role as string;
+        return 'Secondary Approver';
+      }
+
+      const primary = contacts[0];
+      if (primary?.company_role) return primary.company_role;
+      return 'First Approver';
+    } catch {
+      return null;
+    }
+  };
+
   const formatTimestamp = (ts?: string | null): string | null => {
     if (!ts) return null;
     try {
       const d = new Date(ts);
-      return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+      return d.toLocaleString('en-US', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'Asia/Kuala_Lumpur'
+      });
     } catch {
       return ts as string;
     }
@@ -438,10 +587,31 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
         setIsErrorModalVisible(true);
         return;
       }
-      const preferred = arr.find((x: any) => x.to_status === 'Amendment Requested');
-      const latest = preferred || [...arr].sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())[0];
+
+      // Only consider entries that actually carry amendment data
+      const withData = arr.filter((x: any) => {
+        const data = (x && (x.amendment_data || x.amendmentData || null));
+        if (!data) return false;
+        if (typeof data !== 'object') return false;
+        return Object.keys(data).length > 0;
+      });
+
+      if (!withData.length) {
+        setErrorModalContent('No amendment entries with data found for this corporate.');
+        setIsErrorModalVisible(true);
+        return;
+      }
+
+      const preferred = withData.find((x: any) => x.to_status === 'Amendment Requested');
+      const latest = preferred || [...withData].sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())[0];
       if (latest?.id) {
-        router.push(`/crt/amendment/${latest.id}`);
+        // For approvers, redirect to view-only page
+        if (formMode === 'approve' || formMode === 'approve-second') {
+          router.push(`/amendment/view/${latest.id}`);
+        } else {
+          // For CRT users, redirect to full review page
+          router.push(`/crt/amendment/${latest.id}`);
+        }
       } else {
         setErrorModalContent('Unable to locate amendment review entry.');
         setIsErrorModalVisible(true);
@@ -460,22 +630,24 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
     <FormLayout 
       title={formTitle}
       showAmendRequestButton={formStep === 2 && (formMode === 'approve' || formMode === 'approve-second')}
+      amendRequestDisabled={String(formData.status) === 'Amendment Requested'}
       onAmendRequest={handleAmendRequest}
     >
-        {(formData.status === 'Amendment Requested') && (
+        {(formData.status === 'Amendment Requested' && hasPendingAmendment) && (
           <div className="w-full mb-4 p-4 border border-orange-300 bg-orange-50 text-orange-800 rounded">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="font-semibold mb-1">Amendment Requested</div>
                 <div className="text-xs text-orange-900 mb-1">
                   {formatTimestamp(latestAmendLog?.timestamp)}
-                  {getAmendRequester(latestAmendLog?.note) && (
-                    <> • Submitted by: {getAmendRequester(latestAmendLog?.note)} ({getApproverLevelFromStatus(latestAmendLog?.from_status)})</>
-                  )}
                 </div>
+                {getSubmittedByName() && (
+                  <div className="text-xs text-orange-900 mb-2">
+                    Amendment request submitted by: {getSubmittedByName()} {getSubmittedByRole() ? `(${getSubmittedByRole()})` : ''}
+                  </div>
+                )}
                 <div className="text-sm whitespace-pre-wrap">{formatAmendNote(latestAmendLog?.note ?? undefined)}</div>
               </div>
-              {(formMode !== 'approve' && formMode !== 'approve-second') && (
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -485,7 +657,6 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
                   View
                 </button>
               </div>
-              )}
             </div>
           </div>
         )}
@@ -566,17 +737,23 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
             />
         )}
         <SuccessModal
-            isOpen={isSuccessModalVisible}
-        onClose={() => {
-          setIsSuccessModalVisible(false);
-          if (shouldCloseOnSuccessClose) {
-            setShouldCloseOnSuccessClose(false);
-            handleCloseCorporateForm();
-          }
-        }}
-            title={successModalContent.title}
-            message={successModalContent.message}
-        />
+          isOpen={isSuccessModalVisible}
+          onClose={() => {
+            setIsSuccessModalVisible(false);
+            if (shouldCloseOnSuccessClose) {
+              setShouldCloseOnSuccessClose(false);
+              if (formMode === 'approve' || formMode === 'approve-second') {
+                // For approvers, refresh the page instead of closing
+                window.location.reload();
+              } else {
+                // For other modes, close the form
+                handleCloseCorporateForm();
+              }
+            }
+          }}
+          title={successModalContent.title}
+          message={successModalContent.message}
+      />
         <ErrorMessageModal
             isOpen={isErrorModalVisible}
             onClose={() => setIsErrorModalVisible(false)}

@@ -16,20 +16,34 @@ exports.CorporateController = void 0;
 const common_1 = require("@nestjs/common");
 const corporate_service_1 = require("./corporate.service");
 const resend_service_1 = require("../resend/resend.service");
+const pdf_service_1 = require("./pdf.service");
+const pdf_template_1 = require("./pdf.template");
 const corporate_dto_1 = require("./dto/corporate.dto");
 const zod_validation_pipe_1 = require("../../common/zod-validation.pipe");
 let CorporateController = class CorporateController {
     corporateService;
     resendService;
-    constructor(corporateService, resendService) {
+    pdfService;
+    constructor(corporateService, resendService, pdfService) {
         this.corporateService = corporateService;
         this.resendService = resendService;
+        this.pdfService = pdfService;
     }
     async findAll() {
         return await this.corporateService.findAll();
     }
     async findById(id) {
         return await this.corporateService.findById(id);
+    }
+    async getCorporatePdf(id, res) {
+        const corp = await this.corporateService.findById(id);
+        if (!corp)
+            throw new common_1.HttpException('Not found', common_1.HttpStatus.NOT_FOUND);
+        const html = (0, pdf_template_1.buildAgreementHtml)(corp);
+        const pdf = await this.pdfService.renderAgreementPdf(html);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${(corp.company_name || 'Corporate').replace(/[^a-zA-Z0-9 _.-]/g, '-')} - Happy Token.pdf"`);
+        res.end(Buffer.from(pdf));
     }
     async create(corporateData) {
         const { investigation_log: _investigation_log, id: _id, ...corporateDataWithoutLogAndId } = corporateData;
@@ -105,6 +119,14 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], CorporateController.prototype, "findById", null);
+__decorate([
+    (0, common_1.Get)(':id/pdf'),
+    __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
+    __param(1, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], CorporateController.prototype, "getCorporatePdf", null);
 __decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)(new zod_validation_pipe_1.ZodValidationPipe(corporate_dto_1.createCorporateSchema))),
@@ -221,6 +243,7 @@ __decorate([
 exports.CorporateController = CorporateController = __decorate([
     (0, common_1.Controller)('corporates'),
     __metadata("design:paramtypes", [corporate_service_1.CorporateService,
-        resend_service_1.ResendService])
+        resend_service_1.ResendService,
+        pdf_service_1.PdfService])
 ], CorporateController);
 //# sourceMappingURL=corporate.controller.js.map

@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import FormLayout from '../../../../components/layout/FormLayout';
-import SuccessModal from '../../../../components/modals/SuccessModal';
-import { getAmendmentById, updateAmendmentStatus, updateCorporateStatus, sendEcommericialTermlink, sendAmendRejectEmail, getCorporateById } from '@/services/api';
+import { getAmendmentById, getCorporateById } from '@/services/api';
 
 interface AmendmentData {
   id: string;
@@ -17,7 +16,7 @@ interface AmendmentData {
   created_at: string;
 }
 
-const CRTAmendmentReviewPage: React.FC = () => {
+const AmendmentViewPage: React.FC = () => {
   const params = useParams();
   const router = useRouter();
   const amendmentId = params.id as string;
@@ -25,12 +24,6 @@ const CRTAmendmentReviewPage: React.FC = () => {
   const [amendmentData, setAmendmentData] = useState<AmendmentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [successOpen, setSuccessOpen] = useState(false);
-  const [successTitle, setSuccessTitle] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  const [rejectOpen, setRejectOpen] = useState(false);
-  const [rejectReason, setRejectReason] = useState('');
   const [originalCorporate, setOriginalCorporate] = useState<any | null>(null);
   const [isOriginalLoading, setIsOriginalLoading] = useState<boolean>(false);
 
@@ -62,62 +55,12 @@ const CRTAmendmentReviewPage: React.FC = () => {
         setOriginalCorporate(corp);
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to load corporate data for comparison');
-      }
-      finally {
+      } finally {
         setIsOriginalLoading(false);
       }
     };
     fetchOriginal();
   }, [amendmentData?.corporate_id]);
-
-  const handleApprove = async () => {
-    if (!amendmentData) return;
-    try {
-      setIsProcessing(true);
-      await updateAmendmentStatus(amendmentData.corporate_id, amendmentId, 'approved', 'Amendment approved by CRT team');
-      // Revert to previous status and notify the appropriate approver
-      const prev = amendmentData.from_status || 'Pending 1st Approval';
-      await updateCorporateStatus(amendmentData.corporate_id, prev, `Amendment approved by CRT; reverting to ${prev}.`);
-      const approver: 'first' | 'second' = prev === 'Pending 2nd Approval' ? 'second' : 'first';
-      try { await sendEcommericialTermlink(amendmentData.corporate_id, approver); } catch {}
-      setAmendmentData(prevState => prevState ? { ...prevState, amendment_data: { ...prevState.amendment_data, status: 'approved' } } : prevState);
-      setSuccessTitle('Amendment Approved');
-      setSuccessMessage(`Reverted to ${prev}. Email sent to the ${approver === 'second' ? 'second' : 'first'} approver.`);
-      setSuccessOpen(true);
-    } catch (err) {
-      console.error('Error approving amendment:', err);
-      setSuccessTitle('Action Failed');
-      setSuccessMessage('Failed to approve amendment. Please try again.');
-      setSuccessOpen(true);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleDeclineSubmit = async () => {
-    if (!amendmentData || !rejectReason.trim()) return;
-    try {
-      setIsProcessing(true);
-      await updateAmendmentStatus(amendmentData.corporate_id, amendmentId, 'rejected', rejectReason.trim());
-      const prev = amendmentData.from_status || 'Pending 1st Approval';
-      await updateCorporateStatus(amendmentData.corporate_id, prev, `Amendment rejected by CRT: ${rejectReason.trim()}`);
-      try { await sendAmendRejectEmail(amendmentData.corporate_id, rejectReason.trim()); } catch {}
-      setAmendmentData(prevState => prevState ? { ...prevState, amendment_data: { ...prevState.amendment_data, status: 'rejected' } } : prevState);
-      setRejectOpen(false);
-      setRejectReason('');
-      setSuccessTitle('Amendment Rejected');
-      setSuccessMessage(`Reverted to ${prev}. Rejection email sent to the appropriate approver.`);
-      setSuccessOpen(true);
-    } catch (err) {
-      console.error('Error declining amendment:', err);
-      setRejectOpen(false);
-      setSuccessTitle('Action Failed');
-      setSuccessMessage('Failed to decline amendment. Please try again.');
-      setSuccessOpen(true);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
 
   const Field: React.FC<{ label: string; value: any; highlight?: boolean }> = ({ label, value, highlight }) => (
     <div className={`p-3 rounded-md ${highlight ? 'bg-amber-50' : ''}`}>
@@ -246,7 +189,7 @@ const CRTAmendmentReviewPage: React.FC = () => {
             <h2 className="text-lg font-semibold text-red-900 mb-2">Error</h2>
             <p className="text-red-700 mb-4">{error}</p>
             <button
-              onClick={() => router.push('/crt')}
+              onClick={() => router.push('/')}
               className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
             >
               Go Back
@@ -264,7 +207,7 @@ const CRTAmendmentReviewPage: React.FC = () => {
           <h2 className="text-lg font-semibold text-gray-900 mb-2">Amendment Not Found</h2>
           <p className="text-gray-600 mb-4">The requested amendment could not be found.</p>
           <button
-            onClick={() => router.push('/crt')}
+            onClick={() => router.push('/')}
             className="px-4 py-2 bg-ht-blue text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-ht-blue"
           >
             Go Back
@@ -311,6 +254,7 @@ const CRTAmendmentReviewPage: React.FC = () => {
 
     const deepMerge = (base: any, patch: any): any => {
       if (Array.isArray(base) && Array.isArray(patch)) {
+        // If array provided in delta, take it as authoritative
         return patch;
       }
       if (base && typeof base === 'object' && patch && typeof patch === 'object') {
@@ -339,11 +283,21 @@ const CRTAmendmentReviewPage: React.FC = () => {
   const { original: original_data, amended: amended_data } = buildViewPair();
 
   return (
-    <FormLayout title="CRT Amendment Review">
+    <FormLayout title="Amendment View">
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-[1600px] mx-auto">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Amendment Review</h1>
-          <p className="text-sm text-gray-600 mb-6">Left: Original • Right: Amendment</p>
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Amendment Comparison</h1>
+              <p className="text-sm text-gray-600">Left: Original • Right: Amendment</p>
+            </div>
+            <button
+              onClick={() => router.back()}
+              className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
+            >
+              Back
+            </button>
+          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div>
@@ -369,64 +323,20 @@ const CRTAmendmentReviewPage: React.FC = () => {
             </div>
           </div>
 
-          {status === 'pending' && (
-            <div className="flex justify-end items-center pt-6 mt-6 space-x-3">
-              <button
-                onClick={() => setRejectOpen(true)}
-                disabled={isProcessing}
-                className="text-sm bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:bg-red-300 disabled:cursor-not-allowed"
-              >
-                {isProcessing ? 'Processing…' : 'Decline'}
-              </button>
-              <button
-                onClick={handleApprove}
-                disabled={isProcessing}
-                className="text-sm bg-ht-blue text-white px-4 py-2 rounded-md hover:bg-ht-blue-dark focus:outline-none focus:ring-2 focus:ring-ht-blue disabled:bg-ht-gray disabled:cursor-not-allowed"
-              >
-                {isProcessing ? 'Processing…' : 'Approve'}
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-      {/* Reject Modal */}
-      {rejectOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/30" onClick={() => setRejectOpen(false)}></div>
-          <div className="relative bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-base font-semibold">Reject Amendment</h3>
-              <button className="text-gray-500 text-xl" onClick={() => setRejectOpen(false)}>×</button>
-            </div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Reason</label>
-            <textarea
-              className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-ht-blue focus:border-ht-blue"
-              rows={4}
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-              placeholder="Enter reason for rejecting the amendment..."
-            />
-            <div className="flex justify-end gap-2 mt-4">
-              <button className="text-sm px-3 py-2 rounded-md border" onClick={() => setRejectOpen(false)}>Cancel</button>
-              <button
-                className="text-sm bg-red-600 text-white px-3 py-2 rounded-md hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed"
-                disabled={!rejectReason.trim() || isProcessing}
-                onClick={handleDeclineSubmit}
-              >
-                {isProcessing ? 'Processing…' : 'Submit Rejection'}
-              </button>
-            </div>
+          {/* Status Display */}
+          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mt-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Amendment Status</h3>
+            <p className="text-sm text-gray-600">
+              This amendment request is currently {status}. 
+              {status === 'pending' && ' It is awaiting review by the CRT team.'}
+              {status === 'approved' && ' It has been approved and the changes have been applied.'}
+              {status === 'rejected' && ' It has been declined by the CRT team.'}
+            </p>
           </div>
         </div>
-      )}
-      <SuccessModal
-        isOpen={successOpen}
-        onClose={() => setSuccessOpen(false)}
-        title={successTitle}
-        message={successMessage}
-      />
+      </div>
     </FormLayout>
   );
 };
 
-export default CRTAmendmentReviewPage;
+export default AmendmentViewPage;

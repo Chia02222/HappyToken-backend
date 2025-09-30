@@ -11,9 +11,10 @@ interface SelectFieldProps {
     children: React.ReactNode;
     className?: string;
     error?: string;
+    disabled?: boolean;
 }
 
-const SelectField: React.FC<SelectFieldProps> = ({ label, name, id, value, onChange, required = false, children, className, error }) => (
+const SelectField: React.FC<SelectFieldProps> = ({ label, name, id, value, onChange, required = false, children, className, error, disabled = false }) => (
     <div className={className}>
         <label htmlFor={id || name} className="block text-xs font-medium text-gray-700 mb-1">
             {required && <span className="text-red-500">*</span>}{label}
@@ -23,7 +24,8 @@ const SelectField: React.FC<SelectFieldProps> = ({ label, name, id, value, onCha
             name={name}
             value={value ?? ''}
             onChange={onChange}
-            className={`w-full border ${error ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm p-2 text-sm focus:ring-ht-blue focus:border-ht-blue bg-white dark:bg-white`}
+            disabled={disabled}
+            className={`w-full ${disabled ? 'border-0' : `border ${error ? 'border-red-500' : 'border-gray-300'}`} rounded-md shadow-sm p-2 text-sm focus:ring-ht-blue focus:border-ht-blue ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white dark:bg-white'}`}
         >
             {children}
         </select>

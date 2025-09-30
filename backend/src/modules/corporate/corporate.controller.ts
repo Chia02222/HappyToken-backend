@@ -1,6 +1,8 @@
-import { Controller, Get, Post, Put, Delete, Patch, Body, Param, HttpException, HttpStatus, Query, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Patch, Body, Param, HttpException, HttpStatus, Query, ParseUUIDPipe, Res } from '@nestjs/common';
 import { CorporateService } from './corporate.service';
 import { ResendService } from '../resend/resend.service';
+import { PdfService } from './pdf.service';
+import { buildAgreementHtml } from './pdf.template';
 import { InvestigationLogTable } from '../../database/types';
 import { CreateCorporateWithRelationsDto, UpdateCorporateDto, createCorporateSchema, updateCorporateSchema, updateStatusSchema, investigationLogSchema } from './dto/corporate.dto';
 import { ZodValidationPipe } from '../../common/zod-validation.pipe';
@@ -10,6 +12,7 @@ export class CorporateController {
   constructor(
     private readonly corporateService: CorporateService,
     private readonly resendService: ResendService,
+    private readonly pdfService: PdfService,
   ) {}
 
   @Get()
@@ -20,6 +23,17 @@ export class CorporateController {
   @Get(':id')
   async findById(@Param('id', new ParseUUIDPipe()) id: string) {
     return await this.corporateService.findById(id);
+  }
+
+  @Get(':id/pdf')
+  async getCorporatePdf(@Param('id', new ParseUUIDPipe()) id: string, @Res() res: any) {
+    const corp = await this.corporateService.findById(id);
+    if (!corp) throw new HttpException('Not found', HttpStatus.NOT_FOUND);
+    const html = buildAgreementHtml(corp);
+    const pdf = await this.pdfService.renderAgreementPdf(html);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${(corp.company_name || 'Corporate').replace(/[^a-zA-Z0-9 _.-]/g,'-')} - Happy Token.pdf"`);
+    res.end(Buffer.from(pdf));
   }
 
   @Post()

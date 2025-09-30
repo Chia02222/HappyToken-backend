@@ -23,6 +23,7 @@ export interface Contact {
   first_name: string;
   last_name: string;
   contact_number: string;
+  contact_prefix?: string;
   email: string;
   company_role: string;
   system_role: string;
@@ -95,6 +96,7 @@ export interface CorporateDetails extends Corporate {
         system_role?: string;
         email?: string;
         contact_number?: string;
+        contact_prefix?: string;
     };
     contacts: Contact[];
     subsidiaries: Subsidiary[];

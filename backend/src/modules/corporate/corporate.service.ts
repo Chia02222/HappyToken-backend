@@ -74,8 +74,8 @@ export class CorporateService {
       status: 'Draft',
       agreement_from: corporateBaseData.agreement_from === '' ? null : corporateBaseData.agreement_from,
       agreement_to: corporateBaseData.agreement_to === '' ? null : corporateBaseData.agreement_to,
-      created_at: sql`date_trunc('second', now())::timestamp(0)` as unknown as string,
-      updated_at: sql`date_trunc('second', now())::timestamp(0)` as unknown as string,
+      created_at: sql`date_trunc('second', now() AT TIME ZONE 'Asia/Kuala_Lumpur')::timestamp(0)` as unknown as string,
+      updated_at: sql`date_trunc('second', now() AT TIME ZONE 'Asia/Kuala_Lumpur')::timestamp(0)` as unknown as string,
     };
 
     const inserted = await this.db
@@ -137,7 +137,7 @@ export class CorporateService {
           .updateTable('corporates')
           .set({
             secondary_approver_uuid: secondaryApproverUuid,
-            updated_at: sql`date_trunc('second', now())::timestamp(0)` as unknown as string,
+            updated_at: sql`date_trunc('second', now() AT TIME ZONE 'Asia/Kuala_Lumpur')::timestamp(0)` as unknown as string,
           })
           .where('uuid', '=', (inserted as any).uuid)
           .execute();
@@ -208,7 +208,7 @@ export class CorporateService {
           .updateTable('corporates')
           .set({
             secondary_approver_uuid: secondaryApproverUuid,
-            updated_at: sql`date_trunc('second', now())::timestamp(0)` as unknown as string,
+            updated_at: sql`date_trunc('second', now() AT TIME ZONE 'Asia/Kuala_Lumpur')::timestamp(0)` as unknown as string,
           })
           .where('uuid', '=', id)
           .execute();
@@ -222,7 +222,7 @@ export class CorporateService {
       ...(sanitizedCorporateUpdate as Partial<UpdatableCorporateTable>),
       agreement_from: corporateUpdateData.agreement_from === '' ? null : corporateUpdateData.agreement_from,
       agreement_to: corporateUpdateData.agreement_to === '' ? null : corporateUpdateData.agreement_to,
-      updated_at: sql`date_trunc('second', now())::timestamp(0)` as unknown as string,
+      updated_at: sql`date_trunc('second', now() AT TIME ZONE 'Asia/Kuala_Lumpur')::timestamp(0)` as unknown as string,
     };
 
     const updatedCorporate = await this.db
@@ -315,7 +315,7 @@ export class CorporateService {
             from_status: logData.from_status ?? null,
             to_status: logData.to_status ?? null,
             amendment_data: logData.amendment_data ?? null,
-            created_at: sql`date_trunc('second', now())::timestamp(0)` as unknown as string,
+            created_at: sql`date_trunc('second', now() AT TIME ZONE 'Asia/Kuala_Lumpur')::timestamp(0)` as unknown as string,
           })
           .returningAll()
           .executeTakeFirst();
@@ -355,7 +355,7 @@ export class CorporateService {
 
     if ((note || status !== oldStatus) && shouldLog) {
       await this.addInvestigationLog(id, {
-        timestamp: new Date().toISOString(),
+        timestamp: sql`(now() AT TIME ZONE 'Asia/Kuala_Lumpur')::text` as unknown as string,
         note: note === undefined ? `Status changed from ${oldStatus} to ${status}` : note,
         from_status: oldStatus as CorporateStatus,
         to_status: status as CorporateStatus,
@@ -384,8 +384,8 @@ export class CorporateService {
           await this.db
             .updateTable('corporates')
             .set({
-              cooling_period_start: coolingPeriodStart.toISOString(),
-              cooling_period_end: coolingPeriodEnd.toISOString(),
+              cooling_period_start: sql`(${coolingPeriodStart} AT TIME ZONE 'Asia/Kuala_Lumpur')::text` as unknown as string,
+              cooling_period_end: sql`(${coolingPeriodEnd} AT TIME ZONE 'Asia/Kuala_Lumpur')::text` as unknown as string,
             })
             .where('uuid', '=', id)
             .execute();
@@ -440,7 +440,7 @@ export class CorporateService {
 
   @Cron(CronExpression.EVERY_DAY_AT_1AM)
   async expireStaleCorporatesDaily() {
-    const thirtyDaysAgoIso = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const thirtyDaysAgoIso = sql`(now() - interval '30 days' AT TIME ZONE 'Asia/Kuala_Lumpur')::text` as unknown as string;
     const stale = await this.db
       .selectFrom('corporates')
       .selectAll()
@@ -478,7 +478,7 @@ export class CorporateService {
       const amendmentNote = `Amendment Request Submitted|Requested Changes: ${amendmentData.requestedChanges}|Reason: ${amendmentData.amendmentReason}|Submitted by: ${amendmentData.submittedBy}`;
       
       const inserted = await this.addInvestigationLog(corporateId, {
-        timestamp: new Date().toISOString(),
+        timestamp: sql`(now() AT TIME ZONE 'Asia/Kuala_Lumpur')::text` as unknown as string,
         note: amendmentNote,
         from_status: corporate.status,
         to_status: 'Amendment Requested',
@@ -524,7 +524,7 @@ export class CorporateService {
         : `Amendment Rejected|Reviewed by: CRT Team|Review Notes: ${reviewNotes || 'Rejected'}`;
 
       await this.addInvestigationLog(corporateId, {
-        timestamp: new Date().toISOString(),
+        timestamp: sql`(now() AT TIME ZONE 'Asia/Kuala_Lumpur')::text` as unknown as string,
         note: statusNote,
         from_status: 'Amendment Requested',
         to_status: status === 'approved' ? 'Pending 1st Approval' : 'Pending 1st Approval',

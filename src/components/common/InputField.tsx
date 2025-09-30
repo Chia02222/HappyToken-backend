@@ -13,9 +13,10 @@ interface InputFieldProps {
     error?: string;
     min?: string;
     max?: string;
+    disabled?: boolean;
 }
 
-const InputField: React.FC<InputFieldProps> = ({ label, name, id, value, onChange, required = false, type = 'text', placeholder = '', error, min, max }) => (
+const InputField: React.FC<InputFieldProps> = ({ label, name, id, value, onChange, required = false, type = 'text', placeholder = '', error, min, max, disabled = false }) => (
     <div>
         {label && (
             <label htmlFor={id || name} className="block text-xs font-medium text-gray-700 mb-1">
@@ -31,7 +32,8 @@ const InputField: React.FC<InputFieldProps> = ({ label, name, id, value, onChang
             placeholder={placeholder}
             min={min}
             max={max}
-            className={`w-full border ${error ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm p-2 text-sm focus:ring-ht-blue focus:border-ht-blue bg-white dark:bg-white`}
+            disabled={disabled}
+            className={`w-full ${disabled ? 'border-0' : `border ${error ? 'border-red-500' : 'border-gray-300'}`} rounded-md shadow-sm p-2 text-sm focus:ring-ht-blue focus:border-ht-blue ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white dark:bg-white'}`}
         />
         {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>

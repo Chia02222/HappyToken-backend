@@ -4,6 +4,7 @@ import { CorporateStatus } from '../database/types';
 import { DatabaseService } from '../database/database.service';
 import { ContactsService } from '../modules/contacts/contacts.service';
 import { SubsidiariesService } from '../modules/subsidiaries/subsidiaries.service';
+import { sql } from 'kysely';
 
 @Injectable()
 export class SeedService {
@@ -166,7 +167,7 @@ export class SeedService {
 
             // Add a sample investigation log for Global Tech Inc.
             await this.corporateService.addInvestigationLog(String(corpUuid), {
-              timestamp: new Date().toISOString(),
+              timestamp: sql`(now() AT TIME ZONE 'Asia/Kuala_Lumpur')::text` as unknown as string,
               note: 'Initial review completed. No issues found.',
               from_status: 'Draft',
               to_status: 'Approved',

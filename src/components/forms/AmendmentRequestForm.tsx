@@ -614,7 +614,7 @@ const AmendmentRequestForm: React.FC<AmendmentRequestFormProps> = ({
                   type="date"
                   value={(formData.agreement_from ? String(formData.agreement_from).slice(0,10) : '')}
                   onChange={handleChange}
-                  min={new Date().toISOString().split('T')[0]}
+                  min={new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' })}
                 />
                 <span className="text-gray-500">to</span>
                 <InputField
@@ -624,7 +624,7 @@ const AmendmentRequestForm: React.FC<AmendmentRequestFormProps> = ({
                   type="date"
                   value={(formData.agreement_to ? String(formData.agreement_to).slice(0,10) : '')}
                   onChange={handleChange}
-                  min={(formData.agreement_from ? String(formData.agreement_from).slice(0,10) : new Date().toISOString().split('T')[0])}
+                  min={(formData.agreement_from ? String(formData.agreement_from).slice(0,10) : new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' }))}
                 />
               </div>
             </div>
