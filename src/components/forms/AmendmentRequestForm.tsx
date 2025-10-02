@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import InputField from '../common/InputField';
 import SelectField from '../common/SelectField';
 import FormSection from '../common/FormSection';
+import DisplayField from '../common/DisplayField';
 import { Subsidiary } from '../../types';
 
 interface AmendmentRequestFormProps {
@@ -77,6 +78,7 @@ const AmendmentRequestForm: React.FC<AmendmentRequestFormProps> = ({
   onCancel
 }) => {
   const router = useRouter();
+  const draftKey = React.useMemo(() => `amendment:draft:${corporateId}`, [corporateId]);
   const [formData, setFormData] = useState<FormData>({
     company_name: originalData?.company_name || '',
     reg_number: originalData?.reg_number || '',
@@ -123,6 +125,37 @@ const AmendmentRequestForm: React.FC<AmendmentRequestFormProps> = ({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Per-section edit toggles
+  const [editCompany, setEditCompany] = useState(false);
+  const [editContacts, setEditContacts] = useState(false);
+  const [editTax, setEditTax] = useState(false);
+  const [editCommercial, setEditCommercial] = useState(false);
+
+  // Draft helpers
+  const saveDraft = React.useCallback(() => {
+    try {
+      const payload = JSON.stringify(formData);
+      localStorage.setItem(draftKey, payload);
+    } catch {}
+  }, [draftKey, formData]);
+
+  const clearDraft = React.useCallback(() => {
+    try { localStorage.removeItem(draftKey); } catch {}
+  }, [draftKey]);
+
+  // Hydrate draft on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        setFormData(prev => ({ ...prev, ...parsed }));
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftKey]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -278,6 +311,7 @@ const AmendmentRequestForm: React.FC<AmendmentRequestFormProps> = ({
       };
 
       await onSave(amendmentData);
+      clearDraft();
     } catch (error) {
       console.error('Error saving amendment request:', error);
       setErrors({ submit: 'Failed to save amendment request. Please try again.' });
@@ -299,8 +333,26 @@ const AmendmentRequestForm: React.FC<AmendmentRequestFormProps> = ({
     <div className="space-y-6">
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* 1. Company Information & Official Address */}
-        <FormSection title="Company Information & Official Address">
+        <FormSection
+          title="Company Information & Official Address"
+          rightAction={
+            <button
+              type="button"
+              onClick={async () => {
+                if (editCompany) { saveDraft(); }
+                setEditCompany(!editCompany);
+              }}
+              className={editCompany
+                ? "text-sm px-4 py-2 rounded-md bg-ht-blue text-white hover:bg-ht-blue-dark border border-ht-blue"
+                : "text-sm px-4 py-2 rounded-md bg-white text-gray-700 hover:bg-gray-50 border"}
+            >
+              {editCompany ? 'Save' : 'Edit'}
+            </button>
+          }
+        >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+            {editCompany ? (
+            <>
             <InputField
               id="company_name"
               label="Company Name"
@@ -365,6 +417,20 @@ const AmendmentRequestForm: React.FC<AmendmentRequestFormProps> = ({
               value={formData.website}
               onChange={handleChange}
             />
+            </>
+            ) : (
+            <>
+              <DisplayField label="Company Name" value={formData.company_name} borderless />
+              <DisplayField label="Official Registration Number" value={formData.reg_number} borderless />
+              <DisplayField label="Office Address 1" value={formData.office_address1} borderless />
+              <DisplayField label="Office Address 2" value={formData.office_address2} borderless />
+              <DisplayField label="Postcode" value={formData.postcode} borderless />
+              <DisplayField label="City" value={formData.city} borderless />
+              <DisplayField label="State" value={formData.state} borderless />
+              <DisplayField label="Country" value={formData.country} borderless />
+              <DisplayField label="Website" value={formData.website} borderless />
+            </>
+            )}
           </div>
         </FormSection>
 
@@ -407,7 +473,23 @@ const AmendmentRequestForm: React.FC<AmendmentRequestFormProps> = ({
         </FormSection>
 
         {/* 2. Contact Person */}
-        <FormSection title="Contact Person">
+        <FormSection
+          title="Contact Person"
+          rightAction={
+            <button
+              type="button"
+              onClick={async () => {
+                if (editContacts) { saveDraft(); }
+                setEditContacts(!editContacts);
+              }}
+              className={editContacts
+                ? "text-sm px-4 py-2 rounded-md bg-ht-blue text-white hover:bg-ht-blue-dark border border-ht-blue"
+                : "text-sm px-4 py-2 rounded-md bg-white text-gray-700 hover:bg-gray-50 border"}
+            >
+              {editContacts ? 'Save' : 'Edit'}
+            </button>
+          }
+        >
           {formData.contacts.map((contact, index) => (
             <div key={contact.id} className={index > 0 ? "mt-6 pt-6 border-t" : ""}>
               {formData.contacts.length > 1 && (
@@ -423,6 +505,8 @@ const AmendmentRequestForm: React.FC<AmendmentRequestFormProps> = ({
                 </div>
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                {editContacts ? (
+                <>
                 <SelectField
                   id={`salutation_${index}`}
                   label="Salutation"
@@ -501,6 +585,19 @@ const AmendmentRequestForm: React.FC<AmendmentRequestFormProps> = ({
                 >
                   <option>Select Role</option>
                 </SelectField>
+                </>
+                ) : (
+                <>
+              <DisplayField label="Salutation" value={contact.salutation} borderless />
+                  <div></div>
+              <DisplayField label="First Name" value={contact.first_name} borderless />
+              <DisplayField label="Last Name" value={contact.last_name} borderless />
+              <DisplayField label="Contact Number" value={contact.contact_number} borderless />
+              <DisplayField label="Email Address" value={contact.email} borderless />
+              <DisplayField label="Company Role" value={contact.company_role} borderless />
+              <DisplayField label="System Role" value={contact.system_role} borderless />
+                </>
+                )}
               </div>
             </div>
           ))}
@@ -579,8 +676,26 @@ const AmendmentRequestForm: React.FC<AmendmentRequestFormProps> = ({
         </FormSection>
 
         {/* 5. Tax Information */}
-        <FormSection title="Tax Information">
+        <FormSection
+          title="Tax Information"
+          rightAction={
+            <button
+              type="button"
+              onClick={async () => {
+                if (editTax) { saveDraft(); }
+                setEditTax(!editTax);
+              }}
+              className={editTax
+                ? "text-sm px-4 py-2 rounded-md bg-ht-blue text-white hover:bg-ht-blue-dark border border-ht-blue"
+                : "text-sm px-4 py-2 rounded-md bg-white text-gray-700 hover:bg-gray-50 border"}
+            >
+              {editTax ? 'Save' : 'Edit'}
+            </button>
+          }
+        >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+            {editTax ? (
+            <>
             <InputField
               id="company_tin"
               label="Company TIN"
@@ -597,15 +712,40 @@ const AmendmentRequestForm: React.FC<AmendmentRequestFormProps> = ({
               value={formData.sst_number}
               onChange={handleChange}
             />
+            </>
+            ) : (
+            <>
+              <DisplayField label="Company TIN" value={formData.company_tin} borderless />
+              <DisplayField label="SST Number" value={formData.sst_number} borderless />
+            </>
+            )}
           </div>
         </FormSection>
 
         {/* 6. Commercial Terms */}
-        <FormSection title="Commercial Terms">
+        <FormSection
+          title="Commercial Terms"
+          rightAction={
+            <button
+              type="button"
+              onClick={async () => {
+                if (editCommercial) { saveDraft(); }
+                setEditCommercial(!editCommercial);
+              }}
+              className={editCommercial
+                ? "text-sm px-4 py-2 rounded-md bg-ht-blue text-white hover:bg-ht-blue-dark border border-ht-blue"
+                : "text-sm px-4 py-2 rounded-md bg-white text-gray-700 hover:bg-gray-50 border"}
+            >
+              {editCommercial ? 'Save' : 'Edit'}
+            </button>
+          }
+        >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
             <div className="md:col-span-2">
               <label className="block text-xs font-medium text-gray-700 mb-1">Agreement Duration</label>
               <div className="flex items-center space-x-2">
+                {editCommercial ? (
+                <>
                 <InputField
                   id="agreementFrom"
                   label=""
@@ -625,35 +765,71 @@ const AmendmentRequestForm: React.FC<AmendmentRequestFormProps> = ({
                   onChange={handleChange}
                   min={(formData.agreement_from ? String(formData.agreement_from).slice(0,10) : new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' }))}
                 />
+                </>
+                ) : (
+                <>
+                  <DisplayField label="" value={formData.agreement_from ? String(formData.agreement_from).slice(0,10) : ''} borderless />
+                  <span className="text-gray-500">to</span>
+                  <DisplayField label="" value={formData.agreement_to ? String(formData.agreement_to).slice(0,10) : ''} borderless />
+                </>
+                )}
               </div>
             </div>
 
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Credit Limit</label>
               <div className="flex items-center">
-                <span className="inline-flex items-center px-3 h-[38px] rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">MYR</span>
-                <InputField id="creditLimit" label="" name="credit_limit" value={formData.credit_limit ?? ''} onChange={handleChange} />
+                {editCommercial ? (
+                  <>
+                    <span className="inline-flex items-center px-3 h-[38px] rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">MYR</span>
+                    <InputField id="creditLimit" label="" name="credit_limit" value={formData.credit_limit ?? ''} onChange={handleChange} />
+                  </>
+                ) : (
+                  <DisplayField label="" value={formData.credit_limit ?? ''} borderless />
+                )}
               </div>
             </div>
 
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Credit Terms</label>
               <div className="flex items-center">
-                <InputField id="creditTerms" label="" name="credit_terms" value={formData.credit_terms ?? ''} onChange={handleChange} />
+                {editCommercial ? (
+                  <InputField id="creditTerms" label="" name="credit_terms" value={formData.credit_terms ?? ''} onChange={handleChange} />
+                ) : (
+                  <DisplayField label="" value={formData.credit_terms ?? ''} borderless />
+                )}
                 <span className="ml-2 text-gray-500">days from invoice date</span>
               </div>
             </div>
 
-            <InputField id="transactionFee" label="Transaction Fees Rate (% based on total purchased amount)" name="transaction_fee" value={formData.transaction_fee ?? ''} onChange={handleChange} />
-            <InputField id="latePaymentInterest" label="Late Payment Interest (% per 14 days)" name="late_payment_interest" value={formData.late_payment_interest ?? ''} onChange={handleChange} />
+            {editCommercial ? (
+              <InputField id="transactionFee" label="Transaction Fees Rate (% based on total purchased amount)" name="transaction_fee" value={formData.transaction_fee ?? ''} onChange={handleChange} />
+            ) : (
+              <DisplayField label="Transaction Fees Rate" value={formData.transaction_fee} borderless />
+            )}
+            {editCommercial ? (
+              <InputField id="latePaymentInterest" label="Late Payment Interest (% per 14 days)" name="late_payment_interest" value={formData.late_payment_interest ?? ''} onChange={handleChange} />
+            ) : (
+              <DisplayField label="Late Payment Interest" value={formData.late_payment_interest} borderless />
+            )}
 
-            <InputField id="whiteLabelingFee" label="White Labeling Fee (*only when request) (% based on total purchased amount)" name="white_labeling_fee" value={formData.white_labeling_fee ?? ''} onChange={handleChange} />
+            {editCommercial ? (
+              <InputField id="whiteLabelingFee" label="White Labeling Fee (*only when request) (% based on total purchased amount)" name="white_labeling_fee" value={formData.white_labeling_fee ?? ''} onChange={handleChange} />
+            ) : (
+              <DisplayField label="White Labeling Fee" value={formData.white_labeling_fee} borderless />
+            )}
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Custom Feature Request Fee (*only when request)</label>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Custom Feature Request Fee</label>
               <div className="flex items-center">
-                <span className="inline-flex items-center px-3 h-[38px] rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">MYR</span>
-                <InputField id="custom_feature_fee" label="" name="custom_feature_fee" value={formData.custom_feature_fee ?? ''} onChange={handleChange} />
+                {editCommercial ? (
+                  <>
+                    <span className="inline-flex items-center px-3 h-[38px] rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">MYR</span>
+                    <InputField id="custom_feature_fee" label="" name="custom_feature_fee" value={formData.custom_feature_fee ?? ''} onChange={handleChange} />
+                  </>
+                ) : (
+                  <DisplayField label="" value={formData.custom_feature_fee} borderless />
+                )}
               </div>
             </div>
           </div>

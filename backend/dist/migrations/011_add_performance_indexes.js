@@ -7,7 +7,7 @@ async function up(db) {
     console.log('🔄 Adding performance indexes...');
     await (0, kysely_1.sql) `CREATE INDEX IF NOT EXISTS corporates_status_idx ON corporates(status)`.execute(db);
     await (0, kysely_1.sql) `CREATE INDEX IF NOT EXISTS corporates_updated_at_idx ON corporates(updated_at)`.execute(db);
-    await (0, kysely_1.sql) `CREATE INDEX IF NOT EXISTS corporates_featured_idx ON corporates(featured)`.execute(db);
+    await (0, kysely_1.sql) `CREATE INDEX IF NOT EXISTS corporates_pinned_idx ON corporates(pinned)`.execute(db);
     await (0, kysely_1.sql) `CREATE INDEX IF NOT EXISTS corporates_created_at_idx ON corporates(created_at)`.execute(db);
     await (0, kysely_1.sql) `CREATE INDEX IF NOT EXISTS corporates_status_updated_at_idx ON corporates(status, updated_at)`.execute(db);
     await (0, kysely_1.sql) `CREATE INDEX IF NOT EXISTS investigation_logs_to_status_idx ON investigation_logs(to_status)`.execute(db);
@@ -24,7 +24,7 @@ async function down(db) {
     console.log('🔄 Removing performance indexes...');
     await (0, kysely_1.sql) `DROP INDEX IF EXISTS corporates_status_idx`.execute(db);
     await (0, kysely_1.sql) `DROP INDEX IF EXISTS corporates_updated_at_idx`.execute(db);
-    await (0, kysely_1.sql) `DROP INDEX IF EXISTS corporates_featured_idx`.execute(db);
+    await (0, kysely_1.sql) `DROP INDEX IF EXISTS corporates_pinned_idx`.execute(db);
     await (0, kysely_1.sql) `DROP INDEX IF EXISTS corporates_created_at_idx`.execute(db);
     await (0, kysely_1.sql) `DROP INDEX IF EXISTS corporates_status_updated_at_idx`.execute(db);
     await (0, kysely_1.sql) `DROP INDEX IF EXISTS investigation_logs_to_status_idx`.execute(db);

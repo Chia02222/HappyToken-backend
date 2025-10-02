@@ -155,11 +155,11 @@ export class CorporateController {
     return await this.resendService.sendAmendRejectEmail(id, body.note);
   }
 
-  @Put(':id/featured')
-  async updateFeaturedStatus(
+  @Put(':id/pinned')
+  async updatePinnedStatus(
     @Param('id', new ParseUUIDPipe()) id: string,
-    @Body() body: { featured: boolean }
+    @Body() body: { pinned: boolean }
   ) {
-    return await this.corporateService.updateFeaturedStatus(id, body.featured);
+    return await this.corporateService.updatePinnedStatus(id, body.pinned);
   }
 }

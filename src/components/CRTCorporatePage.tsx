@@ -6,7 +6,7 @@ import StatusBadge from './common/StatusBadge';
 import ChangeStatusModal from './modals/ChangeStatusModal';
 import CopyLinkModal from './modals/CopyLinkModal';
 import EllipsisMenu from './common/EllipsisMenu';
-import { updateCorporateFeatured } from '../services/api';
+import { updateCorporatePinned } from '../services/api';
 
 interface CorporatePageProps {
     onAddNew: () => void;
@@ -61,13 +61,13 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
         setIsCopyLinkModalVisible(true);
     };
 
-    const handleFeatureToggle = async (corporateId: string, currentFeatured: boolean) => {
+    const handlePinToggle = async (corporateId: string, currentPinned: boolean) => {
         try {
-            await updateCorporateFeatured(corporateId, !currentFeatured);
+            await updateCorporatePinned(corporateId, !currentPinned);
             // Refresh the corporates list to get updated data
             fetchCorporates();
         } catch (error) {
-            console.error('Error updating featured status:', error);
+            console.error('Error updating pinned status:', error);
         }
     };
 
@@ -124,12 +124,12 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
     };
 
     const orderedCorporates = React.useMemo(() => {
-        const featured: typeof corporates = [];
+        const pinnedList: typeof corporates = [];
         const rest: typeof corporates = [];
         for (const c of corporates) {
-            if (c.featured) featured.push(c); else rest.push(c);
+            if ((c as any).pinned) pinnedList.push(c); else rest.push(c);
         }
-        return [...featured, ...rest];
+        return [...pinnedList, ...rest];
     }, [corporates]);
 
     return (
@@ -184,7 +184,7 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
                             ) : orderedCorporates.map((corporate) => (
                                 <tr
                                     key={corporate.id || corporate.reg_number}
-                                    className={`${corporate.featured ? 'bg-ht-blue-light hover:bg-ht-blue-light' : 'hover:bg-gray-50'} cursor-pointer`}
+                                    className={`${(corporate as any).pinned ? 'bg-ht-blue-light hover:bg-ht-blue-light' : 'hover:bg-gray-50'} cursor-pointer`}
                                     onClick={() => onView(corporate)}
                                 >
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
@@ -236,8 +236,8 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
                                                     onClick: () => onSendEcommericialTermlink(corporate.id),
                                                 },
                                                 {
-                                                    label: corporate.featured ? 'Unfeature' : 'Feature',
-                                                    onClick: () => handleFeatureToggle(corporate.id, corporate.featured),
+                                                    label: (corporate as any).pinned ? 'Unpin' : 'Pin',
+                                                    onClick: () => handlePinToggle(corporate.id, (corporate as any).pinned),
                                                 },
                                                 {
                                                     label: 'Delete',

@@ -67,7 +67,7 @@ const INITIAL_CORPORATE_FORM_DATA: CorporateDetails = {
     agreed_to_commercial_terms: false,
     first_approval_confirmation: false,
     second_approval_confirmation: false,
-    featured: false,
+    pinned: false,
     investigation_log: [],
 };
 
@@ -190,16 +190,22 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
         return;
       }
       if (formStep >= 2) {
-        if (!isValidDateRange(formData.agreement_from, formData.agreement_to)) {
-          setErrorModalContent('Agreement date range is invalid.');
-          setIsErrorModalVisible(true);
-          scrollToField('agreementFrom');
-          return;
+        // Only validate dates if provided
+        if (formData.agreement_from || formData.agreement_to) {
+          if (!isValidDateRange(formData.agreement_from, formData.agreement_to)) {
+            setErrorModalContent('Agreement date range is invalid.');
+            setIsErrorModalVisible(true);
+            scrollToField('agreementFrom');
+            return;
+          }
         }
-        if (!isPositiveNumberString(formData.credit_limit) || !isPositiveNumberString(formData.custom_feature_fee)) {
+        // Only validate numeric strings if provided
+        const needsCreditLimitCheck = formData.credit_limit != null && String(formData.credit_limit).trim() !== '';
+        const needsCustomFeeCheck = formData.custom_feature_fee != null && String(formData.custom_feature_fee).trim() !== '';
+        if ((needsCreditLimitCheck && !isPositiveNumberString(formData.credit_limit)) || (needsCustomFeeCheck && !isPositiveNumberString(formData.custom_feature_fee))) {
           setErrorModalContent('Amounts must be valid non-negative numbers.');
           setIsErrorModalVisible(true);
-          scrollToField(!isPositiveNumberString(formData.credit_limit) ? 'credit_limit' : 'custom_feature_fee');
+          scrollToField(!(isPositiveNumberString(formData.credit_limit)) ? 'credit_limit' : 'custom_feature_fee');
           return;
         }
       }

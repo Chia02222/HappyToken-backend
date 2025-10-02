@@ -105,17 +105,6 @@ const PrintCorporateAgreementPage: React.FC = () => {
       });
     }
 
-    if (corp.status === 'Pending 1st Approval' || corp.status === 'Approved') {
-      // For First Approval Requested, always show CRT Team as the actor
-      const approvalSubmitterInfo = 'Submitted by: CRT Team';
-      
-      logs.push({
-        timestamp: formatDateTime(new Date(corp.updated_at || now)),
-        action: 'First Approval Requested',
-        details: 'Agreement submitted to first approver for review\n' + approvalSubmitterInfo,
-      });
-    }
-
     // Process all status changes from investigation log
     if (corp.investigation_log) {
       // Sort investigation logs by timestamp (oldest first, most recent at bottom)
@@ -294,17 +283,6 @@ const PrintCorporateAgreementPage: React.FC = () => {
               submittedByRole: submitter.role,
             };
           }
-          // Do not push immediately; we'll add a single consolidated entry after the loop
-        } else if (
-          log.note && /registration link sent\s*to\s*(?:2nd|second) approver/i.test(log.note)
-        ) {
-          // For Second Approval Requested, always show CRT Team as the actor
-          const actor = 'Submitted by: CRT Team';
-          logs.push({
-            timestamp: formatDateTime(new Date(log.timestamp)),
-            action: 'Second Approval Requested',
-            details: 'Registration link sent to second approver.\n' + actor,
-          });
         } else if (log.to_status === 'Pending 2nd Approval' || (log.note && log.note.toLowerCase().includes('first approval'))) {
           // Only show Submitted by for First Approval Granted
           const base = (log.note || 'First approval completed');
@@ -583,8 +561,8 @@ const PrintCorporateAgreementPage: React.FC = () => {
             });
             
             // Sort by timestamp (latest first)
-            const sortedComparisons = comparisons.sort((a, b) => 
-              new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+          const sortedComparisons = comparisons.sort((a, b) => 
+              new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
             );
             
             setAmendmentComparisons(sortedComparisons);
@@ -706,183 +684,7 @@ const PrintCorporateAgreementPage: React.FC = () => {
       </div>
 
 
-      {/* All Amendment Comparisons with Timestamps */}
-      {amendmentComparisons.length > 0 && (
-        <>
-          <h2 className="text-sm font-semibold mt-4 mb-1 page-break-before">Amendment History</h2>
-          <div className="text-xs text-gray-600 mb-4">All amendment requests with timestamps (latest first)</div>
-          
-          {amendmentComparisons.map((comparison, index) => (
-            <div key={comparison.id} className="mb-8 border border-gray-300 rounded-lg p-4">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900">Amendment #{index + 1}</h3>
-                    <div className="text-xs text-gray-600 mt-1">
-                      <div><strong>Timestamp:</strong> {formatDateTime(new Date(comparison.timestamp))}</div>
-                      <div><strong>Status:</strong> <span className={`px-2 py-1 rounded text-xs ${
-                        comparison.status === 'approved' ? 'bg-green-100 text-green-800' :
-                        comparison.status === 'rejected' || comparison.status === 'declined' ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>{comparison.status === 'rejected' ? 'declined' : comparison.status}</span></div>
-                      <div><strong>Decision:</strong> <span className="font-medium">{comparison.decision}</span></div>
-                      <div><strong>Note:</strong> {comparison.note}</div>
-                    </div>
-                </div>
-              </div>
-
-              {/* Basic Corporate Information */}
-              <div className="grid grid-cols-2 gap-8 text-sm mb-6">
-                {/* Left (Original) */}
-                <div className="pr-4 border-r border-gray-300">
-                  <div className="font-medium mb-1">Original</div>
-                  <div className="space-y-1">
-                    {fields.map(f => (
-                      <div key={f.key}>
-                        <span className="font-medium">{f.label}:</span> {fmt(comparison.original?.[f.key], f.format)}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                {/* Right (Amended) */}
-                <div className="pl-4">
-                  <div className="font-medium mb-1">Amended</div>
-                  <div className="space-y-1">
-                    {fields.map(f => (
-                      <div key={f.key}>
-                        <span className="font-medium">{f.label}:</span> <span className={changed(comparison.original, comparison.amended, f.key) ? 'font-bold text-red-600' : ''}>{fmt(comparison.amended?.[f.key], f.format)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Contacts Comparison */}
-              <div className="mb-6">
-                <h4 className="text-sm font-semibold mb-2">Contacts Comparison</h4>
-                <div className="grid grid-cols-2 gap-8 text-sm">
-                  <div className="pr-4 border-r border-gray-300">
-                    <div className="font-medium mb-2">Original Contacts</div>
-                    <div className="space-y-2">
-                      {comparison.original?.contacts?.map((contact: any, contactIndex: number) => (
-                        <div key={contactIndex} className="border border-gray-200 rounded p-2">
-                          <div className="font-medium text-xs">
-                            {contact.system_role === 'secondary_approver' ? 'Secondary Approver' : 
-                             contactIndex === 0 ? 'Primary Contact' : `Contact ${contactIndex + 1}`}
-                          </div>
-                          <div className="text-xs space-y-1">
-                            <div><span className="font-medium">Name:</span> {`${contact.first_name || ''} ${contact.last_name || ''}`.trim()}</div>
-                            <div><span className="font-medium">Role:</span> {contact.company_role || ''}</div>
-                            <div><span className="font-medium">Email:</span> {contact.email || ''}</div>
-                          </div>
-                        </div>
-                      )) || <div className="text-gray-500 italic text-xs">No contacts</div>}
-                    </div>
-                  </div>
-                  <div className="pl-4">
-                    <div className="font-medium mb-2">Amended Contacts</div>
-                    <div className="space-y-2">
-                      {comparison.amended?.contacts?.map((contact: any, contactIndex: number) => {
-                        const originalContact = comparison.original?.contacts?.[contactIndex];
-                        const hasFirstNameChange = originalContact && originalContact.first_name !== contact.first_name;
-                        const hasLastNameChange = originalContact && originalContact.last_name !== contact.last_name;
-                        const hasRoleChange = originalContact && originalContact.company_role !== contact.company_role;
-                        const hasEmailChange = originalContact && originalContact.email !== contact.email;
-                        
-                        return (
-                          <div key={contactIndex} className="border border-gray-200 rounded p-2">
-                            <div className="font-medium text-xs">
-                              {contact.system_role === 'secondary_approver' ? 'Secondary Approver' : 
-                               contactIndex === 0 ? 'Primary Contact' : `Contact ${contactIndex + 1}`}
-                            </div>
-                            <div className="text-xs space-y-1">
-                              <div>
-                                <span className="font-medium">Name:</span> 
-                                <span className={hasFirstNameChange ? 'font-bold text-red-600' : ''}>{contact.first_name || ''}</span>
-                                <span> </span>
-                                <span className={hasLastNameChange ? 'font-bold text-red-600' : ''}>{contact.last_name || ''}</span>
-                              </div>
-                              <div><span className="font-medium">Role:</span> <span className={hasRoleChange ? 'font-bold text-red-600' : ''}>{contact.company_role || ''}</span></div>
-                              <div><span className="font-medium">Email:</span> <span className={hasEmailChange ? 'font-bold text-red-600' : ''}>{contact.email || ''}</span></div>
-                            </div>
-                          </div>
-                        );
-                      }) || <div className="text-gray-500 italic text-xs">No contacts</div>}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Subsidiaries Comparison */}
-              <div className="mb-6">
-                <h4 className="text-sm font-semibold mb-2">Subsidiaries Comparison</h4>
-                <div className="grid grid-cols-2 gap-8 text-sm">
-                  <div className="pr-4 border-r border-gray-300">
-                    <div className="font-medium mb-2">Original Subsidiaries</div>
-                    <div className="space-y-2">
-                      {comparison.original?.subsidiaries?.map((subsidiary: any, subIndex: number) => (
-                        <div key={subIndex} className="border border-gray-200 rounded p-2">
-                          <div className="font-medium text-xs">Subsidiary {subIndex + 1}</div>
-                          <div className="text-xs space-y-1">
-                            <div><span className="font-medium">Name:</span> {subsidiary.company_name || ''}</div>
-                            <div><span className="font-medium">Reg No:</span> {subsidiary.reg_number || ''}</div>
-                            <div><span className="font-medium">Address:</span> {`${subsidiary.address1 || ''}${subsidiary.address2 ? `, ${subsidiary.address2}` : ''}`}</div>
-                          </div>
-                        </div>
-                      )) || <div className="text-gray-500 italic text-xs">No subsidiaries</div>}
-                    </div>
-                  </div>
-                  <div className="pl-4">
-                    <div className="font-medium mb-2">Amended Subsidiaries</div>
-                    <div className="space-y-2">
-                      {comparison.amended?.subsidiaries?.map((subsidiary: any, subIndex: number) => {
-                        const originalSubsidiary = comparison.original?.subsidiaries?.[subIndex];
-                        const hasNameChange = originalSubsidiary && originalSubsidiary.company_name !== subsidiary.company_name;
-                        const hasRegChange = originalSubsidiary && originalSubsidiary.reg_number !== subsidiary.reg_number;
-                        const hasAddress1Change = originalSubsidiary && originalSubsidiary.address1 !== subsidiary.address1;
-                        const hasAddress2Change = originalSubsidiary && originalSubsidiary.address2 !== subsidiary.address2;
-                        const hasCityChange = originalSubsidiary && originalSubsidiary.city !== subsidiary.city;
-                        const hasStateChange = originalSubsidiary && originalSubsidiary.state !== subsidiary.state;
-                        const hasPostcodeChange = originalSubsidiary && originalSubsidiary.postcode !== subsidiary.postcode;
-                        const hasCountryChange = originalSubsidiary && originalSubsidiary.country !== subsidiary.country;
-                        
-                        return (
-                          <div key={subIndex} className="border border-gray-200 rounded p-2">
-                            <div className="font-medium text-xs">Subsidiary {subIndex + 1}</div>
-                            <div className="text-xs space-y-1">
-                              <div><span className="font-medium">Name:</span> <span className={hasNameChange ? 'font-bold text-red-600' : ''}>{subsidiary.company_name || ''}</span></div>
-                              <div><span className="font-medium">Reg No:</span> <span className={hasRegChange ? 'font-bold text-red-600' : ''}>{subsidiary.reg_number || ''}</span></div>
-                              <div>
-                                <span className="font-medium">Address:</span> 
-                                <span className={hasAddress1Change ? 'font-bold text-red-600' : ''}>{subsidiary.address1 || ''}</span>
-                                {subsidiary.address2 && (
-                                  <>
-                                    <span>, </span>
-                                    <span className={hasAddress2Change ? 'font-bold text-red-600' : ''}>{subsidiary.address2}</span>
-                                  </>
-                                )}
-                              </div>
-                              <div>
-                                <span className="font-medium">City:</span> <span className={hasCityChange ? 'font-bold text-red-600' : ''}>{subsidiary.city || ''}</span>
-                                <span> </span>
-                                <span className="font-medium">State:</span> <span className={hasStateChange ? 'font-bold text-red-600' : ''}>{subsidiary.state || ''}</span>
-                              </div>
-                              <div>
-                                <span className="font-medium">Postcode:</span> <span className={hasPostcodeChange ? 'font-bold text-red-600' : ''}>{subsidiary.postcode || ''}</span>
-                                <span> </span>
-                                <span className="font-medium">Country:</span> <span className={hasCountryChange ? 'font-bold text-red-600' : ''}>{subsidiary.country || ''}</span>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      }) || <div className="text-gray-500 italic text-xs">No subsidiaries</div>}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </>
-      )}
+      
 
       <h2 className="text-sm font-semibold mt-4 mb-2 page-break-before">Generic Terms & Conditions</h2>
       <div className="text-sm leading-relaxed space-y-4">
@@ -1058,6 +860,177 @@ const PrintCorporateAgreementPage: React.FC = () => {
           <div className="text-gray-500 italic">No timeline entries available.</div>
         )}
       </div>
+
+      {/* All Amendment Comparisons with Timestamps (moved under Appendix: Process Timeline) */}
+      {amendmentComparisons.length > 0 && (
+        <>
+          <h2 className="text-sm font-semibold mt-4 mb-1 page-break-before">Amendment History</h2>
+          <div className="text-xs text-gray-600 mb-4">All amendment requests with timestamps (oldest first)</div>
+          {amendmentComparisons.map((comparison, index) => (
+            <div key={comparison.id} className="mb-8 border border-gray-300 rounded-lg p-4">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900">Amendment #{index + 1}</h3>
+                  <div className="text-xs text-gray-600 mt-1">
+                    <div><strong>Timestamp:</strong> {formatDateTime(new Date(comparison.timestamp))}</div>
+                    <div><strong>Status:</strong> <span className={`px-2 py-1 rounded text-xs ${comparison.status === 'approved' ? 'bg-green-100 text-green-800' : comparison.status === 'rejected' || comparison.status === 'declined' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}`}>{comparison.status === 'rejected' ? 'declined' : comparison.status}</span></div>
+                    <div><strong>Decision:</strong> <span className="font-medium">{comparison.decision}</span></div>
+                    <div><strong>Note:</strong> {comparison.note}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Basic Corporate Information */}
+              <div className="grid grid-cols-2 gap-8 text-sm mb-6">
+                {/* Left (Original) */}
+                <div className="pr-4 border-r border-gray-300">
+                  <div className="font-medium mb-1">Original</div>
+                  <div className="space-y-1">
+                    {fields.map(f => (
+                      <div key={f.key}>
+                        <span className="font-medium">{f.label}:</span> {fmt(comparison.original?.[f.key], f.format)}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Right (Amended) */}
+                <div className="pl-4">
+                  <div className="font-medium mb-1">Amended</div>
+                  <div className="space-y-1">
+                    {fields.map(f => (
+                      <div key={f.key}>
+                        <span className="font-medium">{f.label}:</span> <span className={changed(comparison.original, comparison.amended, f.key) ? 'font-bold text-red-600' : ''}>{fmt(comparison.amended?.[f.key], f.format)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Contacts Comparison */}
+              <div className="mb-6">
+                <h4 className="text-sm font-semibold mb-2">Contacts Comparison</h4>
+                <div className="grid grid-cols-2 gap-8 text-sm">
+                  <div className="pr-4 border-r border-gray-300">
+                    <div className="font-medium mb-2">Original Contacts</div>
+                    <div className="space-y-2">
+                      {comparison.original?.contacts?.map((contact: any, contactIndex: number) => (
+                        <div key={contactIndex} className="border border-gray-200 rounded p-2">
+                          <div className="font-medium text-xs">
+                            {contact.system_role === 'secondary_approver' ? 'Secondary Approver' : contactIndex === 0 ? 'Primary Contact' : `Contact ${contactIndex + 1}`}
+                          </div>
+                          <div className="text-xs space-y-1">
+                            <div><span className="font-medium">Name:</span> {`${contact.first_name || ''} ${contact.last_name || ''}`.trim()}</div>
+                            <div><span className="font-medium">Role:</span> {contact.company_role || ''}</div>
+                            <div><span className="font-medium">Email:</span> {contact.email || ''}</div>
+                          </div>
+                        </div>
+                      )) || <div className="text-gray-500 italic text-xs">No contacts</div>}
+                    </div>
+                  </div>
+                  <div className="pl-4">
+                    <div className="font-medium mb-2">Amended Contacts</div>
+                    <div className="space-y-2">
+                      {comparison.amended?.contacts?.map((contact: any, contactIndex: number) => {
+                        const originalContact = comparison.original?.contacts?.[contactIndex];
+                        const hasFirstNameChange = originalContact && originalContact.first_name !== contact.first_name;
+                        const hasLastNameChange = originalContact && originalContact.last_name !== contact.last_name;
+                        const hasRoleChange = originalContact && originalContact.company_role !== contact.company_role;
+                        const hasEmailChange = originalContact && originalContact.email !== contact.email;
+
+                        return (
+                          <div key={contactIndex} className="border border-gray-200 rounded p-2">
+                            <div className="font-medium text-xs">
+                              {contact.system_role === 'secondary_approver' ? 'Secondary Approver' : contactIndex === 0 ? 'Primary Contact' : `Contact ${contactIndex + 1}`}
+                            </div>
+                            <div className="text-xs space-y-1">
+                              <div>
+                                <span className="font-medium">Name:</span>
+                                <span className={hasFirstNameChange ? 'font-bold text-red-600' : ''}>{contact.first_name || ''}</span>
+                                <span> </span>
+                                <span className={hasLastNameChange ? 'font-bold text-red-600' : ''}>{contact.last_name || ''}</span>
+                              </div>
+                              <div><span className="font-medium">Role:</span> <span className={hasRoleChange ? 'font-bold text-red-600' : ''}>{contact.company_role || ''}</span></div>
+                              <div><span className="font-medium">Email:</span> <span className={hasEmailChange ? 'font-bold text-red-600' : ''}>{contact.email || ''}</span></div>
+                            </div>
+                          </div>
+                        );
+                      }) || <div className="text-gray-500 italic text-xs">No contacts</div>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Subsidiaries Comparison */}
+              <div className="mb-6">
+                <h4 className="text-sm font-semibold mb-2">Subsidiaries Comparison</h4>
+                <div className="grid grid-cols-2 gap-8 text-sm">
+                  <div className="pr-4 border-r border-gray-300">
+                    <div className="font-medium mb-2">Original Subsidiaries</div>
+                    <div className="space-y-2">
+                      {comparison.original?.subsidiaries?.map((subsidiary: any, subIndex: number) => (
+                        <div key={subIndex} className="border border-gray-200 rounded p-2">
+                          <div className="font-medium text-xs">Subsidiary {subIndex + 1}</div>
+                          <div className="text-xs space-y-1">
+                            <div><span className="font-medium">Name:</span> {subsidiary.company_name || ''}</div>
+                            <div><span className="font-medium">Reg No:</span> {subsidiary.reg_number || ''}</div>
+                            <div><span className="font-medium">Address:</span> {`${subsidiary.address1 || ''}${subsidiary.address2 ? `, ${subsidiary.address2}` : ''}`}</div>
+                          </div>
+                        </div>
+                      )) || <div className="text-gray-500 italic text-xs">No subsidiaries</div>}
+                    </div>
+                  </div>
+                  <div className="pl-4">
+                    <div className="font-medium mb-2">Amended Subsidiaries</div>
+                    <div className="space-y-2">
+                      {comparison.amended?.subsidiaries?.map((subsidiary: any, subIndex: number) => {
+                        const originalSubsidiary = comparison.original?.subsidiaries?.[subIndex];
+                        const hasNameChange = originalSubsidiary && originalSubsidiary.company_name !== subsidiary.company_name;
+                        const hasRegChange = originalSubsidiary && originalSubsidiary.reg_number !== subsidiary.reg_number;
+                        const hasAddress1Change = originalSubsidiary && originalSubsidiary.address1 !== subsidiary.address1;
+                        const hasAddress2Change = originalSubsidiary && originalSubsidiary.address2 !== subsidiary.address2;
+                        const hasCityChange = originalSubsidiary && originalSubsidiary.city !== subsidiary.city;
+                        const hasStateChange = originalSubsidiary && originalSubsidiary.state !== subsidiary.state;
+                        const hasPostcodeChange = originalSubsidiary && originalSubsidiary.postcode !== subsidiary.postcode;
+                        const hasCountryChange = originalSubsidiary && originalSubsidiary.country !== subsidiary.country;
+
+                        return (
+                          <div key={subIndex} className="border border-gray-200 rounded p-2">
+                            <div className="font-medium text-xs">Subsidiary {subIndex + 1}</div>
+                            <div className="text-xs space-y-1">
+                              <div><span className="font-medium">Name:</span> <span className={hasNameChange ? 'font-bold text-red-600' : ''}>{subsidiary.company_name || ''}</span></div>
+                              <div><span className="font-medium">Reg No:</span> <span className={hasRegChange ? 'font-bold text-red-600' : ''}>{subsidiary.reg_number || ''}</span></div>
+                              <div>
+                                <span className="font-medium">Address:</span>
+                                <span className={hasAddress1Change ? 'font-bold text-red-600' : ''}>{subsidiary.address1 || ''}</span>
+                                {subsidiary.address2 && (
+                                  <>
+                                    <span>, </span>
+                                    <span className={hasAddress2Change ? 'font-bold text-red-600' : ''}>{subsidiary.address2}</span>
+                                  </>
+                                )}
+                              </div>
+                              <div>
+                                <span className="font-medium">City:</span> <span className={hasCityChange ? 'font-bold text-red-600' : ''}>{subsidiary.city || ''}</span>
+                                <span> </span>
+                                <span className="font-medium">State:</span> <span className={hasStateChange ? 'font-bold text-red-600' : ''}>{subsidiary.state || ''}</span>
+                              </div>
+                              <div>
+                                <span className="font-medium">Postcode:</span> <span className={hasPostcodeChange ? 'font-bold text-red-600' : ''}>{subsidiary.postcode || ''}</span>
+                                <span> </span>
+                                <span className="font-medium">Country:</span> <span className={hasCountryChange ? 'font-bold text-red-600' : ''}>{subsidiary.country || ''}</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }) || <div className="text-gray-500 italic text-xs">No subsidiaries</div>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </>
+      )}
 
       <style jsx global>{`
         @media print {

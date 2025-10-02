@@ -1,12 +1,15 @@
 import { z } from 'zod';
 
-// Positive number stored as string in form fields
-const positiveNumString = z
-  .string()
-  .trim()
-  .min(1, 'This field is required')
+// Optional positive number stored as string in form fields
+const positiveNumStringOptional = z
+  .union([z.string().trim().length(0), z.string().trim()])
+  .optional()
+  .nullable()
   .refine((v) => {
-    const normalized = v.replace(/,/g, '');
+    if (v == null) return true;
+    const val = String(v).trim();
+    if (val.length === 0) return true;
+    const normalized = val.replace(/,/g, '');
     const num = Number(normalized);
     return !Number.isNaN(num) && num >= 0;
   }, 'Must be a positive number');
@@ -52,17 +55,20 @@ export const corporateFormSchema = z
     company_tin: z.string().trim().min(1, 'Company TIN is required'),
     sst_number: z.string().optional().nullable(),
 
-    // Commercial Terms
-    agreement_from: z.string().trim().min(1, 'Agreement start date is required'),
-    agreement_to: z.string().trim().min(1, 'Agreement end date is required'),
-    credit_limit: positiveNumString,
-    credit_terms: positiveNumString,
-    transaction_fee: positiveNumString,
-    late_payment_interest: positiveNumString,
-    white_labeling_fee: positiveNumString,
-    custom_feature_fee: positiveNumString,
+    // Commercial Terms (optional)
+    agreement_from: z.string().trim().optional().nullable(),
+    agreement_to: z.string().trim().optional().nullable(),
+    credit_limit: positiveNumStringOptional,
+    credit_terms: positiveNumStringOptional,
+    transaction_fee: positiveNumStringOptional,
+    late_payment_interest: positiveNumStringOptional,
+    white_labeling_fee: positiveNumStringOptional,
+    custom_feature_fee: positiveNumStringOptional,
   })
-  .refine((d) => new Date(d.agreement_from) <= new Date(d.agreement_to), {
+  .refine((d) => {
+    if (!d.agreement_from || !d.agreement_to) return true;
+    return new Date(d.agreement_from) <= new Date(d.agreement_to);
+  }, {
     message: 'End date must be on or after start date',
     path: ['agreement_to'],
   })

@@ -204,13 +204,13 @@ export const updateAmendmentStatus = async (corporateId: string, amendmentId: st
     return handleResponse(response);
 };
 
-export const updateCorporateFeatured = async (id: string, featured: boolean) => {
-    const response = await fetch(`${API_BASE_URL}/corporates/${id}/featured`, {
+export const updateCorporatePinned = async (id: string, pinned: boolean) => {
+    const response = await fetch(`${API_BASE_URL}/corporates/${id}/pinned`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ featured }),
+        body: JSON.stringify({ pinned }),
     });
     return handleResponse(response);
 };

@@ -44,7 +44,7 @@ export interface CorporateTable {
     cooling_period_start: string | null;
     cooling_period_end: string | null;
     secondary_approver_uuid: string | null;
-    featured: boolean;
+    pinned: boolean;
     created_at: string;
     updated_at: string;
 }

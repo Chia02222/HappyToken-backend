@@ -48,7 +48,7 @@ export declare class CorporateService {
         cooling_period_start: string | null;
         cooling_period_end: string | null;
         secondary_approver_uuid: string | null;
-        featured: boolean;
+        pinned: boolean;
         created_at: string;
         updated_at: string;
     }[]>;
@@ -128,7 +128,7 @@ export declare class CorporateService {
         cooling_period_start: string | null;
         cooling_period_end: string | null;
         secondary_approver_uuid: string | null;
-        featured: boolean;
+        pinned: boolean;
         created_at: string;
         updated_at: string;
     } | null>;
@@ -169,7 +169,7 @@ export declare class CorporateService {
         cooling_period_start: string | null;
         cooling_period_end: string | null;
         secondary_approver_uuid: string | null;
-        featured: boolean;
+        pinned: boolean;
         created_at: string;
         updated_at: string;
     }>;
@@ -249,7 +249,7 @@ export declare class CorporateService {
         cooling_period_start: string | null;
         cooling_period_end: string | null;
         secondary_approver_uuid: string | null;
-        featured: boolean;
+        pinned: boolean;
         created_at: string;
         updated_at: string;
     } | null>;
@@ -343,7 +343,7 @@ export declare class CorporateService {
         cooling_period_start: string | null;
         cooling_period_end: string | null;
         secondary_approver_uuid: string | null;
-        featured: boolean;
+        pinned: boolean;
         created_at: string;
         updated_at: string;
     } | null>;
@@ -423,7 +423,7 @@ export declare class CorporateService {
         cooling_period_start: string | null;
         cooling_period_end: string | null;
         secondary_approver_uuid: string | null;
-        featured: boolean;
+        pinned: boolean;
         created_at: string;
         updated_at: string;
     } | null>;
@@ -457,7 +457,7 @@ export declare class CorporateService {
         to_status: CorporateStatus | null;
         amendment_data: any;
     } | undefined>;
-    updateFeaturedStatus(corporateId: string, featured: boolean): Promise<{
+    updatePinnedStatus(corporateId: string, pinned: boolean): Promise<{
         success: boolean;
         message: string;
     }>;

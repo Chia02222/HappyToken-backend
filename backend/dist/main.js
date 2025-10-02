@@ -35,12 +35,15 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 require("reflect-metadata");
 const core_1 = require("@nestjs/core");
+const express_1 = require("express");
 const app_module_1 = require("./app.module");
 const dotenv = __importStar(require("dotenv"));
 async function bootstrap() {
     dotenv.config();
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     app.enableCors();
+    app.use((0, express_1.json)({ limit: '1mb' }));
+    app.use((0, express_1.urlencoded)({ extended: true, limit: '1mb' }));
     await app.listen(process.env.PORT ?? 3001);
 }
 bootstrap();

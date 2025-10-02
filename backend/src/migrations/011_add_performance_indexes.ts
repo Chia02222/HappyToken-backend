@@ -6,7 +6,7 @@ export async function up(db: Kysely<unknown>): Promise<void> {
   // Add indexes for frequently queried fields in corporates table
   await sql`CREATE INDEX IF NOT EXISTS corporates_status_idx ON corporates(status)`.execute(db);
   await sql`CREATE INDEX IF NOT EXISTS corporates_updated_at_idx ON corporates(updated_at)`.execute(db);
-  await sql`CREATE INDEX IF NOT EXISTS corporates_featured_idx ON corporates(featured)`.execute(db);
+  await sql`CREATE INDEX IF NOT EXISTS corporates_pinned_idx ON corporates(pinned)`.execute(db);
   await sql`CREATE INDEX IF NOT EXISTS corporates_created_at_idx ON corporates(created_at)`.execute(db);
   
   // Composite index for status + updated_at (common query pattern)
@@ -37,7 +37,7 @@ export async function down(db: Kysely<unknown>): Promise<void> {
   // Remove corporates indexes
   await sql`DROP INDEX IF EXISTS corporates_status_idx`.execute(db);
   await sql`DROP INDEX IF EXISTS corporates_updated_at_idx`.execute(db);
-  await sql`DROP INDEX IF EXISTS corporates_featured_idx`.execute(db);
+  await sql`DROP INDEX IF EXISTS corporates_pinned_idx`.execute(db);
   await sql`DROP INDEX IF EXISTS corporates_created_at_idx`.execute(db);
   await sql`DROP INDEX IF EXISTS corporates_status_updated_at_idx`.execute(db);
   
@@ -57,3 +57,4 @@ export async function down(db: Kysely<unknown>): Promise<void> {
 
   console.log('✅ Performance indexes removed successfully');
 }
+

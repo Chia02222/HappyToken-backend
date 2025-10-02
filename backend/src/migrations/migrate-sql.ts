@@ -67,7 +67,7 @@ export async function migrateToLatest() {
         cooling_period_start TIMESTAMP,
         cooling_period_end TIMESTAMP,
         secondary_approver_uuid UUID,
-        featured BOOLEAN NOT NULL DEFAULT false,
+        pinned BOOLEAN NOT NULL DEFAULT false,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
@@ -142,7 +142,7 @@ export async function migrateToLatest() {
 
     await sql`CREATE INDEX corporates_status_idx ON corporates(status)`;
     await sql`CREATE INDEX corporates_updated_at_idx ON corporates(updated_at)`;
-    await sql`CREATE INDEX corporates_featured_idx ON corporates(featured)`;
+    await sql`CREATE INDEX corporates_pinned_idx ON corporates(pinned)`;
     await sql`CREATE INDEX corporates_created_at_idx ON corporates(created_at)`;
 
     await sql`CREATE INDEX corporates_status_updated_at_idx ON corporates(status, updated_at)`;

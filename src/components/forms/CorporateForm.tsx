@@ -333,9 +333,9 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                     <div className="md:col-span-2">
                         <label className="block text-xs font-medium text-gray-700 mb-1">Agreement Duration</label>
                         <div className="flex items-center space-x-2">
-                           <InputField id="agreementFrom" label="" name="agreement_from" value={formData.agreement_from ? formData.agreement_from.split('T')[0] : ''} onChange={(e) => handleChange({ target: { name: 'agreement_from', value: e.target.value } } as React.ChangeEvent<HTMLInputElement>)} type="date" required min={getMalaysiaDateString()} error={errors.agreementFrom} />
+                           <InputField id="agreementFrom" label="" name="agreement_from" value={formData.agreement_from ? formData.agreement_from.split('T')[0] : ''} onChange={(e) => handleChange({ target: { name: 'agreement_from', value: e.target.value } } as React.ChangeEvent<HTMLInputElement>)} type="date" min={getMalaysiaDateString()} error={errors.agreementFrom} />
                            <span className="text-gray-500">to</span>
-                           <InputField id="agreementTo" label="" name="agreement_to" value={formData.agreement_to ? formData.agreement_to.split('T')[0] : ''} onChange={(e) => handleChange({ target: { name: 'agreement_to', value: e.target.value } } as React.ChangeEvent<HTMLInputElement>)} type="date" required min={(formData.agreement_from ? formData.agreement_from.split('T')[0] : getMalaysiaDateString())} error={errors.agreementTo} />
+                           <InputField id="agreementTo" label="" name="agreement_to" value={formData.agreement_to ? formData.agreement_to.split('T')[0] : ''} onChange={(e) => handleChange({ target: { name: 'agreement_to', value: e.target.value } } as React.ChangeEvent<HTMLInputElement>)} type="date" min={(formData.agreement_from ? formData.agreement_from.split('T')[0] : getMalaysiaDateString())} error={errors.agreementTo} />
                         </div>
                     </div>
                     
@@ -343,27 +343,27 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                         <label className="block text-xs font-medium text-gray-700 mb-1">Credit Limit</label>
                         <div className="flex items-center">
                              <span className="inline-flex items-center px-3 h-[38px] rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">MYR</span>
-                            <InputField id="creditLimit" label="" name="credit_limit" value={formData.credit_limit ?? null} onChange={handleChange} required error={errors.creditLimit} />
+                            <InputField id="creditLimit" label="" name="credit_limit" value={formData.credit_limit ?? null} onChange={handleChange} error={errors.creditLimit} />
                         </div>
                     </div>
 
                     <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">Credit Terms</label>
                         <div className="flex items-center">
-                           <InputField id="creditTerms" label="" name="credit_terms" value={formData.credit_terms ?? null} onChange={handleChange} required error={errors.creditTerms} />
+                           <InputField id="creditTerms" label="" name="credit_terms" value={formData.credit_terms ?? null} onChange={handleChange} error={errors.creditTerms} />
                            <span className="ml-2 text-gray-500">days from invoice date</span>
                         </div>
                     </div>
                     
-                    <InputField id="transactionFee" label="Transaction Fees Rate (% based on total purchased amount)" name="transaction_fee" value={formData.transaction_fee ?? null} onChange={handleChange} required error={errors.transactionFee} />
-                    <InputField id="latePaymentInterest" label="Late Payment Interest (% per 14 days)" name="late_payment_interest" value={formData.late_payment_interest ?? null} onChange={handleChange} required error={errors.latePaymentInterest} />
+                    <InputField id="transactionFee" label="Transaction Fees Rate (% based on total purchased amount)" name="transaction_fee" value={formData.transaction_fee ?? null} onChange={handleChange} error={errors.transactionFee} />
+                    <InputField id="latePaymentInterest" label="Late Payment Interest (% per 14 days)" name="late_payment_interest" value={formData.late_payment_interest ?? null} onChange={handleChange} error={errors.latePaymentInterest} />
                     
-                    <InputField id="whiteLabelingFee" label="White Labeling Fee (*only when request) (% based on total purchased amount)" name="white_labeling_fee" value={formData.white_labeling_fee ?? null} onChange={handleChange} required error={errors.whiteLabelingFee} />
+                    <InputField id="whiteLabelingFee" label="White Labeling Fee (*only when request) (% based on total purchased amount)" name="white_labeling_fee" value={formData.white_labeling_fee ?? null} onChange={handleChange} error={errors.whiteLabelingFee} />
                      <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">Custom Feature Request Fee (*only when request)</label>
                         <div className="flex items-center">
                              <span className="inline-flex items-center px-3 h-[38px] rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">MYR</span>
-                            <InputField id="custom_feature_fee" label="" name="custom_feature_fee" value={formData.custom_feature_fee ?? null} onChange={handleChange} required error={errors.custom_feature_fee} />
+                            <InputField id="custom_feature_fee" label="" name="custom_feature_fee" value={formData.custom_feature_fee ?? null} onChange={handleChange} error={errors.custom_feature_fee} />
                         </div>
                 </div>
                 </div>

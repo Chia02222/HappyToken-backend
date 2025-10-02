@@ -382,19 +382,6 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
             });
         }
 
-        if (formData.status === 'Pending 1st Approval' || formData.status === 'Approved') {
-            // For First Approval Requested, always show CRT Team as the actor
-            const approvalSubmitterInfo = 'Submitted by: CRT Team';
-            
-            logs.push({
-                timestamp: formatDateTime(new Date(formData.updated_at || now)),
-                action: 'First Approval Requested',
-                details: 'Agreement submitted to first approver for review\n' + approvalSubmitterInfo,
-                status: 'completed'
-            });
-        }
-
-
         // Process all status changes from investigation log
         if (formData.investigation_log) {
             // Sort investigation logs by timestamp (oldest first, most recent at bottom)
@@ -539,18 +526,6 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                             submittedByRole: submitter.role,
                         };
                     }
-                    // Do not push immediately; we'll add a single consolidated entry after the loop
-                } else if (
-                    log.note && /registration link sent\s*to\s*(?:2nd|second) approver/i.test(log.note)
-                ) {
-                    // For Second Approval Requested, always show CRT Team as the actor
-                    const actor = 'Submitted by: CRT Team';
-                    logs.push({
-                        timestamp: formatDateTime(new Date(log.timestamp)),
-                        action: 'Second Approval Requested',
-                        details: 'Registration link sent to second approver.\n' + actor,
-                        status: 'completed'
-                    });
                 } else if (log.to_status === 'Pending 2nd Approval' || (log.note && log.note.toLowerCase().includes('first approval'))) {
                     // Only show Submitted by for First Approval Granted
                     const submitterInfo = getSubmitterInfo(log.note || '');
@@ -674,7 +649,7 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
             logs.push({
                 timestamp: formatDateTime(new Date(formData.updated_at || now)),
                 action: 'Account Created',
-                details: 'Account created successfully.\nConfirmation email sent with attached full-form PDF.\nSubmitted by: CRT Team',
+                details: 'Account created successfully.\nConfirmation email sent with attached full-form PDF.',
                 status: 'completed'
             });
         }
@@ -958,10 +933,6 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                                 <div>
                                     <span className="font-medium text-gray-700">Agreement Title:</span>
                                     <p className="text-gray-900">{agreementDetails.title}</p>
-                                </div>
-                                <div>
-                                    <span className="font-medium text-gray-700">Date of Execution:</span>
-                                    <p className="text-gray-900">{agreementDetails.executionDate}</p>
                                 </div>
                                 <div>
                                     <span className="font-medium text-gray-700">Effective Date:</span>

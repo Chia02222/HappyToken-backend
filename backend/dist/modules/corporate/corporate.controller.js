@@ -106,8 +106,8 @@ let CorporateController = class CorporateController {
     async sendAmendRejectEmail(id, body) {
         return await this.resendService.sendAmendRejectEmail(id, body.note);
     }
-    async updateFeaturedStatus(id, body) {
-        return await this.corporateService.updateFeaturedStatus(id, body.featured);
+    async updatePinnedStatus(id, body) {
+        return await this.corporateService.updatePinnedStatus(id, body.pinned);
     }
 };
 exports.CorporateController = CorporateController;
@@ -246,13 +246,13 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], CorporateController.prototype, "sendAmendRejectEmail", null);
 __decorate([
-    (0, common_1.Put)(':id/featured'),
+    (0, common_1.Put)(':id/pinned'),
     __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
-], CorporateController.prototype, "updateFeaturedStatus", null);
+], CorporateController.prototype, "updatePinnedStatus", null);
 exports.CorporateController = CorporateController = __decorate([
     (0, common_1.Controller)('corporates'),
     __metadata("design:paramtypes", [corporate_service_1.CorporateService,

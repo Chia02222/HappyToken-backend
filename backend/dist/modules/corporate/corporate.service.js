@@ -69,7 +69,7 @@ let CorporateService = class CorporateService {
             status: 'Draft',
             agreement_from: corporateBaseData.agreement_from === '' ? null : corporateBaseData.agreement_from,
             agreement_to: corporateBaseData.agreement_to === '' ? null : corporateBaseData.agreement_to,
-            featured: false,
+            pinned: false,
             created_at: (0, kysely_1.sql) `date_trunc('second', now() AT TIME ZONE 'Asia/Kuala_Lumpur')::timestamp(0)`,
             updated_at: (0, kysely_1.sql) `date_trunc('second', now() AT TIME ZONE 'Asia/Kuala_Lumpur')::timestamp(0)`,
         };
@@ -529,17 +529,17 @@ let CorporateService = class CorporateService {
             throw error;
         }
     }
-    async updateFeaturedStatus(corporateId, featured) {
+    async updatePinnedStatus(corporateId, pinned) {
         try {
             await this.db
                 .updateTable('corporates')
-                .set({ featured })
+                .set({ pinned })
                 .where('uuid', '=', corporateId)
                 .execute();
-            return { success: true, message: `Corporate ${featured ? 'featured' : 'unfeatured'} successfully` };
+            return { success: true, message: `Corporate ${pinned ? 'pinned' : 'unpinned'} successfully` };
         }
         catch (error) {
-            console.error('Error updating featured status:', error);
+            console.error('Error updating pinned status:', error);
             throw error;
         }
     }
