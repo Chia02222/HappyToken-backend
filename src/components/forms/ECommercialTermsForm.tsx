@@ -15,7 +15,7 @@ import SuccessModal from '../modals/SuccessModal';
 
 import { CorporateDetails, Contact, CorporateStatus } from '../../types';
 import { getAmendmentRequestsByCorporate } from '../../services/api';
-import { countries, getStatesWithNA, getStateFieldLabel, getUniqueCallingCodes } from '../../data/countries';
+import {  getUniqueCallingCodes } from '../../data/countries';
 
 // Timestamp Log Data Structures
 interface LogEntry {
@@ -23,6 +23,7 @@ interface LogEntry {
     action: string;
     details: string;
     status: 'completed' | 'pending' | 'rejected' | 'draft';
+    amendmentId?: string; // Add this field for direct ID matching
 }
 
 interface AgreementDetails {
@@ -63,17 +64,23 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
     const [isTimelineOpen, setIsTimelineOpen] = React.useState(false);
     const [isRejecting, setIsRejecting] = React.useState(false);
     const [isRejectSuccessModalOpen, setIsRejectSuccessModalOpen] = React.useState(false);
-    const [latestAmendmentId, setLatestAmendmentId] = React.useState<string | null>(null);
+    const [amendmentRequests, setAmendmentRequests] = React.useState<Array<{
+        id: string;
+        timestamp: string;
+        created_at: string;
+        to_status: string;
+    }>>([]);
 
     const handlePrint = () => {
         try {
             if (formData?.id && formData.id !== 'new') {
-                router.push(`/corporate/${formData.id}/pdf`);
+                const url = `/corporate/${formData.id}/pdf`;
+                window.open(url, '_blank', 'noopener,noreferrer');
                 return;
             }
             const originalTitle = document.title;
             const safeName = (formData.company_name || 'Corporate').replace(/[/\\:*?"<>|]/g, '-');
-            document.title = `${safeName} - Happy Token`;
+            document.title = `${safeName} - Happie Token`;
             window.print();
             setTimeout(() => { document.title = originalTitle; }, 0);
         } catch (e) {
@@ -81,11 +88,56 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
         }
     };
 
+    // Map timeline entry to specific amendment request ID
+    const getAmendmentIdForTimelineEntry = (timelineEntry: LogEntry): string | null => {
+        if (timelineEntry.action !== 'Amendment Requested') return null;
+        
+        // Use the amendment ID directly from the timeline entry if available
+        if (timelineEntry.amendmentId) {
+            return timelineEntry.amendmentId;
+        }
+        
+        // Fallback to timestamp matching if amendment ID is not available
+        const matchingAmendment = amendmentRequests.find(amendment => {
+            // Match by timestamp (within 1 minute tolerance)
+            const timelineTime = new Date(timelineEntry.timestamp).getTime();
+            const amendmentTime = new Date(amendment.timestamp).getTime();
+            const timeDiff = Math.abs(timelineTime - amendmentTime);
+            return timeDiff < 60000; // 1 minute tolerance
+        });
+        
+        return matchingAmendment?.id || null;
+    };
+
+    // Get amendment number for display (1st, 2nd, 3rd, etc.)
+    const getAmendmentNumber = (timelineEntry: LogEntry): number => {
+        if (timelineEntry.action !== 'Amendment Requested') return 0;
+        
+        // Count how many amendment requests occurred before this one
+        const timelineTime = new Date(timelineEntry.timestamp).getTime();
+        const earlierAmendments = amendmentRequests.filter(amendment => {
+            const amendmentTime = new Date(amendment.timestamp).getTime();
+            return amendmentTime < timelineTime;
+        });
+        
+        return earlierAmendments.length + 1;
+    };
+
     // Form read-only logic - make form read-only in edit mode, cooling period, or approved/rejected status
     const isCoolingPeriod = formData.status === 'Cooling Period';
     const isApprovedOrRejected = formData.status === 'Approved' || formData.status === 'Rejected';
     const isEditMode = formMode === 'edit';
-    const isReadOnly = isEditMode || isCoolingPeriod || isApprovedOrRejected;
+    const isReadOnly = isCoolingPeriod || isApprovedOrRejected;
+    
+    // Disable approve/reject buttons when status is Amendment Requested and mode is approve/approve-second
+    const isAmendmentRequested = formData.status === 'Amendment Requested';
+    const isApproveMode = formMode === 'approve' || formMode === 'approve-second';
+    const shouldDisableApproveReject = isAmendmentRequested && isApproveMode;
+    
+    // For approve-second mode, fields should be editable but without borders
+    const isApproveSecondMode = formMode === 'approve-second';
+    const isPendingSecondApproval = formData.status === 'Pending 2nd Approval';
+    const shouldHideApproveRejectButtons = isPendingSecondApproval && formMode === 'approve';
     
     // Logic to determine when to show display-only fields
     const shouldShowDisplayOnly = isCoolingPeriod || isApprovedOrRejected;
@@ -93,9 +145,9 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
     const primaryContact = formData.contacts?.[0] || {};
     const otherContacts = formData.contacts?.slice(1) || [];
 
-    // Resolve latest amendment request id for this corporate (with data)
+    // Fetch all amendment requests for this corporate
     React.useEffect(() => {
-        const fetchLatestAmendment = async () => {
+        const fetchAllAmendments = async () => {
             try {
                 if (!formData?.id) return;
                 const list = await getAmendmentRequestsByCorporate(String(formData.id));
@@ -105,15 +157,21 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                     if (!data || typeof data !== 'object') return false;
                     return Object.keys(data).length > 0;
                 });
-                if (!withData.length) { setLatestAmendmentId(null); return; }
-                const preferred = withData.find((x: any) => x.to_status === 'Amendment Requested');
-                const latest = preferred || [...withData].sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())[0];
-                setLatestAmendmentId(latest?.id ? String(latest.id) : null);
+                
+                // Store all amendment requests with their metadata
+                const amendmentData = withData.map((x: any) => ({
+                    id: String(x.id),
+                    timestamp: x.timestamp || x.created_at,
+                    created_at: x.created_at,
+                    to_status: x.to_status
+                })).sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
+                
+                setAmendmentRequests(amendmentData);
             } catch {
-                setLatestAmendmentId(null);
+                setAmendmentRequests([]);
             }
         };
-        fetchLatestAmendment();
+        fetchAllAmendments();
     }, [formData?.id, formData?.status]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -129,7 +187,6 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
         const { name, value, type } = e.target;
         const checked = 'checked' in e.target ? e.target.checked : false;
         const sanitizedValue = typeof value === 'string' ? value.replace(/'/g, '') : value; // Remove single quotes
-        console.log('handleSecondaryApproverChange - name:', name, 'value:', sanitizedValue, 'checked:', checked);
         setFormData(prev => ({
             ...prev,
             secondary_approver: {
@@ -192,6 +249,23 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
         contact_prefix: '+60',
     };
     const isSecondaryFromList = secondary_approver.use_existing_contact;
+
+    // Check if secondary approver data exists and has meaningful content
+    const hasSecondaryApproverData = React.useMemo(() => {
+        const sa = secondary_approver;
+        return sa && (
+            (sa.first_name && sa.first_name.trim()) ||
+            (sa.last_name && sa.last_name.trim()) ||
+            (sa.email && sa.email.trim() && sa.email !== 'N/A') ||
+            (sa.company_role && sa.company_role.trim()) ||
+            (sa.contact_number && sa.contact_number.trim())
+        );
+    }, [secondary_approver]);
+
+    // For approve-second mode, if secondary approver data exists, show it in display-only mode
+    const shouldShowSecondaryAsDisplayOnly = (formMode === 'approve-second' && hasSecondaryApproverData) || 
+                                           shouldShowDisplayOnly || 
+                                           formData.status === 'Pending 2nd Approval';
     const validateSecondaryApprover = (): boolean => {
         if (!(formMode === 'approve' || formMode === 'approve-second')) {
             // No validation required in new/edit modes
@@ -269,7 +343,7 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
         const agreementDetails: AgreementDetails = {
             title: "Commercial Services Agreement",
             executionDate: formatDateTime(now),
-            effectiveDate: formData.agreement_from ? formatDateTime(new Date(formData.agreement_from)) : 'TBD',
+            effectiveDate: formData.agreement_from ? String(formData.agreement_from) : 'TBD',
             referenceId: (formData.id ? `HT-${String(formData.id)}` : (formData.created_at ? `HT-${new Date(formData.created_at as string).getTime()}` : 'HT-PENDING')),
             digitalSignatureStatus: getDigitalSignatureStatus()
         };
@@ -308,13 +382,13 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
             });
         }
 
-        if (formData.status === 'Pending 1st Approval' || formData.status === 'Approved' || formData.status === 'Rejected') {
-            // For Sent for Approval, always show CRT Team as the actor
+        if (formData.status === 'Pending 1st Approval' || formData.status === 'Approved') {
+            // For First Approval Requested, always show CRT Team as the actor
             const approvalSubmitterInfo = 'Submitted by: CRT Team';
             
             logs.push({
                 timestamp: formatDateTime(new Date(formData.updated_at || now)),
-                action: 'Sent for Approval',
+                action: 'First Approval Requested',
                 details: 'Agreement submitted to first approver for review\n' + approvalSubmitterInfo,
                 status: 'completed'
             });
@@ -359,100 +433,34 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
             };
 
             sortedLogs.forEach(log => {
-                // Debug: Log the actual data we're working with
-                console.log('Processing log:', {
-                    timestamp: log.timestamp,
-                    to_status: log.to_status,
-                    note: log.note,
-                    from_status: log.from_status
-                });
+
                 
+
                 // Extract submitter information from log note
                 const getSubmitterInfo = (note: string): string => {
                     if (!note) return '';
                     
-                    // Try multiple patterns to find submitter information
-                    let submitterInfo = '';
-                    let companyRole = '';
-                    
-                    // Pattern 1: "Submitted by: Name (Role)"
-                    const submitterWithRoleMatch = note.match(/Submitted by:\s*([^(]+)\s*\(([^)]+)\)/i);
-                    if (submitterWithRoleMatch) {
-                        submitterInfo = submitterWithRoleMatch[1].trim();
-                        companyRole = submitterWithRoleMatch[2].trim();
-                        return `Submitted by: ${submitterInfo} (${companyRole})`;
+                    // If the note already contains "Submitted by:", return empty to avoid duplication
+                    if (/Submitted by:/i.test(note)) {
+                        return '';
                     }
                     
-                    // Pattern 2: "Submitted by: Name" with separate role extraction
+                    // Only extract if not already present
                     const submitterMatch = note.match(/Submitted by:\s*([^<\n,]+)/i);
-                    if (submitterMatch) {
-                        submitterInfo = submitterMatch[1].trim();
-                        
-                        // Try to find company role in the same note
-                        const rolePatterns = [
-                            /company_role[:\s]*([^<\n,]+)/i,
-                            /role[:\s]*([^<\n,]+)/i,
-                            /position[:\s]*([^<\n,]+)/i,
-                            /title[:\s]*([^<\n,]+)/i
-                        ];
-                        
-                        for (const pattern of rolePatterns) {
-                            const roleMatch = note.match(pattern);
-                            if (roleMatch) {
-                                companyRole = roleMatch[1].trim();
-                                break;
-                            }
-                        }
-                        
-                        if (companyRole) {
-                            return `Submitted by: ${submitterInfo} (${companyRole})`;
-                        } else {
-                            return `Submitted by: ${submitterInfo}`;
-                        }
-                    }
-                    
-                    // Pattern 3: Look for name and role in separate parts of the note
-                    const nameMatch = note.match(/(?:Name|Submitted by|User)[:\s]*([^<\n,]+)/i);
-                    const roleMatch = note.match(/(?:Role|Position|Title|Company Role)[:\s]*([^<\n,]+)/i);
-                    
-                    if (nameMatch && roleMatch) {
-                        submitterInfo = nameMatch[1].trim();
-                        companyRole = roleMatch[1].trim();
-                        return `Submitted by: ${submitterInfo} (${companyRole})`;
-                    }
-                    
-                    // If no submitter info found in the note, try to use primary contact as fallback
-                    if (!submitterInfo && primaryContact.first_name && primaryContact.last_name) {
-                        const fullName = `${primaryContact.first_name} ${primaryContact.last_name}`.trim();
-                        const role = primaryContact.company_role || 'Contact';
-                        return `Submitted by: ${fullName} (${role})`;
-                    }
-                    
-                    return '';
-                };
-
-                // Helper to transform "Submitted by:" -> "Approved by:" when used for approval events
-                const toApprovedBy = (info: string): string => {
-                    if (!info) return '';
-                    return info.replace(/Submitted by:/i, 'Approved by:');
+                    return submitterMatch ? `Submitted by: ${submitterMatch[1].trim()}` : '';
                 };
 
                 // Amendment Approved by CRT -> revert to previous status
                 if (
-                    (log.note && /amendment\s+approved\s+by\s+crt/i.test(log.note)) ||
-                    (log.from_status === 'Amendment Requested' && (log.to_status === 'Pending 1st Approval' || log.to_status === 'Pending 2nd Approval'))
+                    (log.note && /amendment\s+approved\s+by\s+crt\s+team/i.test(log.note)) ||
+                    (log.from_status === 'Amendment Requested' && (log.to_status === 'Pending 1st Approval' || log.to_status === 'Pending 2nd Approval') && log.note && /approved/i.test(log.note))
                 ) {
                     const target = log.to_status;
                     const notified = target === 'Pending 2nd Approval' ? 'Second Approver' : 'First Approver';
-                    // Reuse submitter derivation from previous status (who originally submitted before this step)
-                    const submitterInfo = deriveSubmitterFromPrevStatus(target);
-                    const submitterLine = submitterInfo.name
-                        ? `Submitted by: ${submitterInfo.name}${submitterInfo.role ? ` (${submitterInfo.role})` : ''}`
-                        : '';
                     const details = [
                         `Reverted to: ${target}`,
                         `Notified: ${notified}`,
-                        submitterLine,
+                        `Submitted by: CRT Team`,
                     ].filter(Boolean).join('\n');
                     logs.push({
                         timestamp: formatDateTime(new Date(log.timestamp)),
@@ -460,12 +468,37 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                         details,
                         status: 'completed'
                     });
+                } else if (
+                    (log.note && /amendment\s+declined\s+by\s+crt\s+team/i.test(log.note)) ||
+                    (log.from_status === 'Amendment Requested' && (log.to_status === 'Pending 1st Approval' || log.to_status === 'Pending 2nd Approval') && log.note && /declined/i.test(log.note))
+                ) {
+                    const target = log.to_status;
+                    const notified = target === 'Pending 2nd Approval' ? 'Second Approver' : 'First Approver';
+                    
+                    // Extract reason from the note
+                    const reasonMatch = log.note.match(/Reason:\s*([^)]+)/i);
+                    const reason = reasonMatch ? reasonMatch[1].trim() : 'No reason provided';
+                    
+                    const details = [
+                        `Reverted to: ${target}`,
+                        `Reason: ${reason}`,
+                        `Notified: ${notified}`,
+                        `Submitted by: CRT Team`,
+                    ].filter(Boolean).join('\n');
+                    
+                    logs.push({
+                        timestamp: formatDateTime(new Date(log.timestamp)),
+                        action: 'Amendment Declined',
+                        details,
+                        status: 'rejected'
+                    });
                 } else if (log.to_status === 'Rejected' || (log.note && log.note.toLowerCase().includes('reject'))) {
                     // Parse reason and reviewer from various note formats
                     const note = log.note || '';
                     let reason = '';
                     let reviewer = '';
                     const isPreferred = /rejected\s+by/i.test(note);
+                    
                     // Pattern: "Amendment Rejected|Reviewed by: CRT Team|Review Notes: nononono"
                     const reviewNotesMatch = note.match(/Review\s*Notes:\s*([^|\n]+)/i);
                     if (reviewNotesMatch) {
@@ -475,17 +508,25 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                     if (reviewedByMatch) {
                         reviewer = reviewedByMatch[1].trim();
                     }
-                    // Pattern: "Amendment rejected by CRT: nononono"
+                    
+                    // Pattern: "Amendment declined by CRT Team (Reason: XXXX)"
                     if (!reason) {
-                        const crtMatch = note.match(/rejected\s+by\s+[^:]+:\s*([^\n]+)/i);
-                        if (crtMatch) reason = crtMatch[1].trim();
+                        const crtTeamMatch = note.match(/amendment\s+declined\s+by\s+crt\s+team\s*\(reason:\s*([^)]+)\)/i);
+                        if (crtTeamMatch) reason = crtTeamMatch[1].trim();
                     }
+                    
+                    
+                    // Pattern: General rejection note (for corporate rejection)
+                    if (!reason && note.trim()) {
+                        reason = note.trim();
+                    }
+                    
                     if (!reviewer) {
                         const reviewerGeneric = note.match(/rejected\s+by\s+([^:]+):/i);
                         if (reviewerGeneric) reviewer = reviewerGeneric[1].trim();
                     }
                     if (!reviewer) reviewer = 'CRT Team';
-                    if (!reason) reason = 'Amendment rejected.';
+                    if (!reason) reason = 'Corporate rejected.';
 
                     const submitter = deriveSubmitterFromPrevStatus(log.from_status);
                     // Prefer entries that explicitly contain "rejected by" in the note
@@ -511,20 +552,28 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                         status: 'completed'
                     });
                 } else if (log.to_status === 'Pending 2nd Approval' || (log.note && log.note.toLowerCase().includes('first approval'))) {
+                    // Only show Submitted by for First Approval Granted
+                    const submitterInfo = getSubmitterInfo(log.note || '');
+                    const base = (log.note || 'First approval completed');
+                    const details = base + (submitterInfo ? '\n' + submitterInfo : '');
                     logs.push({
                         timestamp: formatDateTime(new Date(log.timestamp)),
                         action: 'First Approval Granted',
-                        details: (log.note || 'First approval completed') + '\n' + toApprovedBy(getSubmitterInfo(log.note || '')),
+                        details,
                         status: 'completed'
                     });
                 } else if (log.to_status === 'Cooling Period' || (log.note && log.note.toLowerCase().includes('second approval'))) {
+                    // For Second Approval Granted, show Submitted by instead of Approved by
+                    const submitterInfo = getSubmitterInfo(log.note || '');
+                    const base = (log.note || 'Second approval completed');
+                    const details = base + (submitterInfo ? '\n' + submitterInfo : '');
                     logs.push({
                         timestamp: formatDateTime(new Date(log.timestamp)),
                         action: 'Second Approval Granted',
-                        details: (log.note || 'Second approval completed') + '\n' + toApprovedBy(getSubmitterInfo(log.note || '')),
+                        details,
                         status: 'completed'
                     });
-                } else if (log.to_status === 'Amendment Requested' || (log.note && log.note.toLowerCase().includes('amendment'))) {
+                } else if (log.to_status === 'Amendment Requested') {
                     // Enforce standard format for amendment entries
                     const prevStatus = log.from_status;
                     const contactsList = (formData.contacts || []) as Contact[];
@@ -553,15 +602,15 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                             role = primary.company_role || 'First Approver';
                         }
                     }
-                    const submittedLine = name ? `Amendment Request Submitted by: ${name}${role ? ` (${role})` : ''}` : '';
-                    const statusChanged = `Status changed from ${prevStatus || 'Previous Status'} to ${log.to_status || 'Amendment Requested'}`;
-                    const details = [statusChanged, submittedLine].filter(Boolean).join('\n');
+                    const submittedLine = name ? `submitted by: ${name}${role ? ` (${role})` : ''}` : '';
+                    const details = submittedLine;
 
                     logs.push({
                         timestamp: formatDateTime(new Date(log.timestamp)),
                         action: 'Amendment Requested',
                         details,
-                        status: 'pending'
+                        status: 'pending',
+                        amendmentId: (log as any).uuid || (log as any).id // Include the amendment ID directly
                     });
                 }
             });
@@ -576,13 +625,16 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                     submittedByRole: string;
                 };
                 const details = [
-                    `Reason:  ${lr.reason}`,
-                    `Rejected by: ${lr.reviewer}`,
-                    `Submitted by: ${lr.submittedByName}${lr.submittedByRole ? ` (${lr.submittedByRole})` : ''}`,
+                    `Reason: ${lr.reason}`,
+                    `Submitted by: CRT Team`,
                 ].join('\n');
+                // Determine if this is an amendment rejection or general corporate rejection
+                const isAmendmentRejection = lr.reason.includes('Amendment') || lr.reason.includes('amendment');
+                const actionName = isAmendmentRejection ? 'Amendment Declined' : 'Corporate Rejected';
+                
                 logs.push({
                     timestamp: formatDateTime(lr.timestamp),
-                    action: 'Amendment Rejected',
+                    action: actionName,
                     details,
                     status: 'rejected',
                 });
@@ -599,7 +651,7 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
             });
         }
 
-        if (formMode === 'approve' && formData.first_approval_confirmation && !formData.second_approval_confirmation) {
+        if (formMode === 'approve-second' && formData.first_approval_confirmation && !formData.second_approval_confirmation) {
             logs.push({
                 timestamp: 'Pending',
                 action: 'Second Approval Required',
@@ -669,14 +721,6 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                 <h1 className="text-center text-xl font-bold text-ht-gray-dark mb-4">e-Commercial Agreement</h1>
                 {formData.status === 'Approved' && (
                   <div className="flex justify-end mb-4 gap-2">
-                    <a
-                      href={formData?.id ? `http://localhost:3001/corporates/${formData.id}/pdf` : '#'}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-700"
-                    >
-                      Preview PDF (Server)
-                    </a>
                     <button
                       type="button"
                       onClick={handlePrint}
@@ -708,7 +752,7 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                             <DisplayField label="Account Note" value={formData.account_note} borderless />
                         </div>
                         <div className="space-y-4">
-                            <DisplayField label="Agreement Duration" value={formData.agreement_from && formData.agreement_to ? `${new Date(formData.agreement_from).toISOString().split('T')[0]} to ${new Date(formData.agreement_to).toISOString().split('T')[0]}` : ''} borderless />
+                            <DisplayField label="Agreement Duration" value={formData.agreement_from && formData.agreement_to ? `${formData.agreement_from.split('T')[0]} to ${formData.agreement_to.split('T')[0]}` : ''} borderless />
                             <DisplayField label="Credit Limit" value={`MYR ${formData.credit_limit}`} borderless />
                             <DisplayField label="Credit Terms" value={`${formData.credit_terms} days`} borderless />
                             <DisplayField label="Transaction Fees Rate" value={`${formData.transaction_fee}%`} borderless />
@@ -784,9 +828,9 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                     </div>
                 </ContentSection>
                 
-                {((formMode === 'approve' && formData.first_approval_confirmation) || formMode === 'approve-second' || (formMode === 'edit' && (formData.status === 'Pending 2nd Approval' || formData.status === 'Cooling Period' || formData.status === 'Approved'))) && (
+                {((formMode === 'approve' && formData.first_approval_confirmation) || formMode === 'approve-second' || (formMode === 'edit' && (formData.status === 'Pending 2nd Approval' || formData.status === 'Cooling Period' || formData.status === 'Approved')) || formData.status === 'Cooling Period' || formData.status === 'Approved') && (
                     <ContentSection title="Secondary Approval">
-                        {!shouldShowDisplayOnly && (
+                        {!shouldShowSecondaryAsDisplayOnly && formData.status !== 'Pending 2nd Approval' && (
                             <div className="flex items-center mb-4">
                                 <input
                                     type="checkbox"
@@ -804,8 +848,8 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                         )}
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                            {shouldShowDisplayOnly ? (
-                                // Display-only mode: show all fields as DisplayFields
+                            {shouldShowSecondaryAsDisplayOnly ? (
+                                // Display-only mode: show all fields as DisplayFields (same as First Approval section)
                                 <>
                                     <DisplayField label="Signatory Name" value={`${secondary_approver.first_name || ''} ${secondary_approver.last_name || ''}`.trim()} borderless />
                                     <DisplayField label="Company Role" value={secondary_approver.company_role ?? null} borderless />
@@ -853,16 +897,16 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                                         <option value="Ms">Ms</option>
                                     </SelectField>
                                     <div className="md:col-span-1"></div>
-                                    <InputField id="first_name" label="First Name" name="first_name" value={secondary_approver.first_name ?? null} onChange={handleSecondaryApproverChange} required={formMode === 'approve' || formMode === 'approve-second'} disabled={isReadOnly} />
-                                    <InputField id="last_name" label="Last Name" name="last_name" value={secondary_approver.last_name ?? null} onChange={handleSecondaryApproverChange} required={formMode === 'approve' || formMode === 'approve-second'} disabled={isReadOnly} />
-                                    <InputField id="company_role" label="Company Role" name="company_role" value={secondary_approver.company_role ?? null} onChange={handleSecondaryApproverChange} required={formMode === 'approve' || formMode === 'approve-second'} disabled={isReadOnly} />
+                                    <InputField id="first_name" label="First Name" name="first_name" value={secondary_approver.first_name ?? null} onChange={handleSecondaryApproverChange} required={formMode === 'approve' || formMode === 'approve-second'} disabled={isReadOnly} borderless={isApproveSecondMode} />
+                                    <InputField id="last_name" label="Last Name" name="last_name" value={secondary_approver.last_name ?? null} onChange={handleSecondaryApproverChange} required={formMode === 'approve' || formMode === 'approve-second'} disabled={isReadOnly} borderless={isApproveSecondMode} />
+                                    <InputField id="company_role" label="Company Role" name="company_role" value={secondary_approver.company_role ?? null} onChange={handleSecondaryApproverChange} required={formMode === 'approve' || formMode === 'approve-second'} disabled={isReadOnly} borderless={isApproveSecondMode} />
 
-                                    <InputField id="email" label="Email Address" name="email" type="email" value={secondary_approver.email ?? null} onChange={handleSecondaryApproverChange} required={formMode === 'approve' || formMode === 'approve-second'} disabled={isReadOnly} />
+                                    <InputField id="email" label="Email Address" name="email" type="email" value={secondary_approver.email ?? null} onChange={handleSecondaryApproverChange} required={formMode === 'approve' || formMode === 'approve-second'} disabled={isReadOnly} borderless={isApproveSecondMode} />
                                     <div>
                                         <label className="block text-xs font-medium text-gray-700 mb-1">*Contact Number</label>
                                         <div className="flex">
                                             <select 
-                                                className={`inline-flex items-center px-3 rounded-l-md ${isReadOnly ? 'border-0' : 'border border-r-0 border-gray-300'} text-gray-500 text-sm focus:ring-ht-blue focus:border-ht-blue ${isReadOnly ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
+                                                className={`inline-flex items-center px-3 rounded-l-md ${isReadOnly || isApproveSecondMode ? 'border-0' : 'border border-r-0 border-gray-300'} text-gray-500 text-sm focus:ring-ht-blue focus:border-ht-blue ${isReadOnly ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
                                                 value={secondary_approver.contact_prefix || '+60'}
                                                 onChange={e => handleSecondaryApproverChange({ target: { name: 'contact_prefix', value: e.target.value } } as React.ChangeEvent<HTMLInputElement>)}
                                                 disabled={isReadOnly}
@@ -880,7 +924,7 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                                                 value={secondary_approver.contact_number ?? ''}
                                                 onChange={handleSecondaryApproverChange}
                                                 disabled={isReadOnly}
-                                                className={`flex-1 block w-full rounded-none rounded-r-md ${isReadOnly ? 'border-0' : 'border border-gray-300'} p-2 text-sm focus:ring-ht-blue focus:border-ht-blue ${isReadOnly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white dark:bg-white'}`}
+                                                className={`flex-1 block w-full rounded-none rounded-r-md ${isReadOnly || isApproveSecondMode ? 'border-0' : 'border border-gray-300'} p-2 text-sm focus:ring-ht-blue focus:border-ht-blue ${isReadOnly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white dark:bg-white'}`}
                                             />
                                         </div>
                                     </div>
@@ -964,13 +1008,13 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                                               <div className="flex items-center justify-between">
                                                   <p className="text-sm font-semibold text-gray-900">
                                                     {log.action}
-                                                    {log.action === 'Amendment Requested' && latestAmendmentId && (
+                                                    {log.action === 'Amendment Requested' && getAmendmentIdForTimelineEntry(log) && (
                                                       <button
                                                         type="button"
-                                                        onClick={() => router.push(`/amendment/view/${latestAmendmentId}`)}
+                                                        onClick={() => router.push(`/amendment/view/${getAmendmentIdForTimelineEntry(log)}`)}
                                                         className="ml-2 inline-flex items-center text-xs text-ht-blue hover:text-ht-blue-dark"
                                                       >
-                                                        View
+                                                        View #{getAmendmentNumber(log)}
                                                       </button>
                                                     )}
                                                   </p>
@@ -987,114 +1031,6 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                 </ContentSection>
 
             </div>
-
-            {/* Print-only Container */}
-            <div id="print-root" ref={printRef} className="hidden">
-                <div style={{ padding: '24px', fontFamily: 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto', color: '#111827' }}>
-                    <h1 style={{ fontSize: '20px', fontWeight: 700, textAlign: 'center', marginBottom: '12px' }}>e-Commercial Agreement</h1>
-                    <div style={{ fontSize: '12px', color: '#374151', textAlign: 'center', marginBottom: '16px' }}>
-                        HT Voucher Trading Sdn Bhd (Company No: 202401035271 (1581118A)) — HappieToken
-                    </div>
-
-                    {/* Corporate Summary */}
-                    <h2 style={{ fontSize: '14px', fontWeight: 700, marginTop: '16px', marginBottom: '8px' }}>Corporate Summary</h2>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                        <div><strong>Company Name:</strong> {formData.company_name}</div>
-                        <div><strong>Registration No.:</strong> {formData.reg_number}</div>
-                        <div style={{ gridColumn: '1 / span 2' }}><strong>Office Address:</strong> {`${formData.office_address1 || ''}${formData.office_address2 ? `, ${formData.office_address2}` : ''}`}</div>
-                        <div><strong>City:</strong> {formData.city}</div>
-                        <div><strong>State:</strong> {formData.state}</div>
-                        <div><strong>Postcode:</strong> {formData.postcode}</div>
-                        <div><strong>Country:</strong> {formData.country}</div>
-                        <div><strong>Website:</strong> {formData.website}</div>
-                        <div style={{ gridColumn: '1 / span 2' }}><strong>Account Note:</strong> {formData.account_note}</div>
-                    </div>
-
-                    {/* Commercial Terms */}
-                    <h2 style={{ fontSize: '14px', fontWeight: 700, marginTop: '16px', marginBottom: '8px' }}>Commercial Terms</h2>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                        <div><strong>Agreement From:</strong> {formData.agreement_from}</div>
-                        <div><strong>Agreement To:</strong> {formData.agreement_to}</div>
-                        <div><strong>Credit Limit:</strong> {formData.credit_limit}</div>
-                        <div><strong>Credit Terms:</strong> {formData.credit_terms}</div>
-                        <div><strong>Transaction Fee:</strong> {formData.transaction_fee}%</div>
-                        <div><strong>Late Payment Interest:</strong> {formData.late_payment_interest}%</div>
-                        <div><strong>White Labeling Fee:</strong> {formData.white_labeling_fee || 'N/A'}</div>
-                        <div><strong>Custom Feature Fee:</strong> {formData.custom_feature_fee}</div>
-                    </div>
-
-                    {/* Generic Terms & Conditions */}
-                    <h2 style={{ fontSize: '14px', fontWeight: 700, marginTop: '16px', marginBottom: '8px', pageBreakBefore: 'always' as any }}>Generic Terms & Conditions</h2>
-                    <div style={{ fontSize: '12px', lineHeight: 1.5 }}>
-                        <p>These Standard Terms and Conditions (&quot;Terms&quot;) govern the relationship between HT Voucher Trading Sdn Bhd (trading as HappieToken) and the Client. These Terms apply to all Clients unless otherwise agreed in writing.</p>
-                        <p>Provision of Services: The Company shall provide the Services described in the relevant Commercial Terms or online order form.</p>
-                        <p>Client Obligations: The Client agrees to use the Services in accordance with these Terms and applicable laws.</p>
-                        <p>Payment Terms: Payment terms are as specified in the Commercial Terms. The Client agrees to pay all fees as scheduled.</p>
-                        <p>Limitation of Liability: The Company’s liability is limited as permitted by law. No indirect or consequential damages.</p>
-                        <p>Termination: Either party may terminate with written notice as specified in the Commercial Terms.</p>
-                        <p>Governing Law: These Terms are governed by the laws of Malaysia.</p>
-                    </div>
-
-                    {/* Commercial Terms & Conditions (narrative) */}
-                    <h2 style={{ fontSize: '14px', fontWeight: 700, marginTop: '16px', marginBottom: '8px' }}>Commercial Terms & Conditions</h2>
-                    <div style={{ fontSize: '12px', lineHeight: 1.5 }}>
-                        <p>Transaction Fees: Percentage applied per transaction and non-refundable. Credit Terms: Invoices due per agreed days; late interest applies. Additional service fees apply only upon request.</p>
-                        <p>Confidentiality: All commercial terms are confidential. Payment Processing: Payments must use designated channels.</p>
-                        <p>Dispute Resolution: Disputes resolved via arbitration under Malaysian law. SLAs: Service availability and performance per specifications.</p>
-                    </div>
-
-                    {/* Approvers */}
-                    <h2 style={{ fontSize: '14px', fontWeight: 700, marginTop: '16px', marginBottom: '8px', pageBreakBefore: 'always' as any }}>Approvers</h2>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                        <div>
-                            <h3 style={{ fontWeight: 600, marginBottom: '6px' }}>First Approver</h3>
-                            <div><strong>Name:</strong> {(formData.contacts?.[0]?.first_name || '') + ' ' + (formData.contacts?.[0]?.last_name || '')}</div>
-                            <div><strong>Company Role:</strong> {formData.contacts?.[0]?.company_role || ''}</div>
-                            <div><strong>Email:</strong> {formData.contacts?.[0]?.email || ''}</div>
-                            <div><strong>Contact:</strong> {(formData.contacts?.[0]?.contact_prefix || '+60') + ' ' + (formData.contacts?.[0]?.contact_number || '')}</div>
-                        </div>
-                        <div>
-                            <h3 style={{ fontWeight: 600, marginBottom: '6px' }}>Second Approver</h3>
-                            <div><strong>Name:</strong> {(secondary_approver?.first_name || '') + ' ' + (secondary_approver?.last_name || '')}</div>
-                            <div><strong>Company Role:</strong> {secondary_approver?.company_role || ''}</div>
-                            <div><strong>Email:</strong> {secondary_approver?.email || ''}</div>
-                            <div><strong>Contact:</strong> {(secondary_approver?.contact_prefix || '+60') + ' ' + (secondary_approver?.contact_number || '')}</div>
-                        </div>
-                    </div>
-
-                    {/* Appendix: Process Timeline */}
-                    <h2 style={{ fontSize: '14px', fontWeight: 700, marginTop: '16px', marginBottom: '8px', pageBreakBefore: 'always' as any }}>Appendix: Process Timeline</h2>
-                    <div style={{ fontSize: '12px' }}>
-                        {(logs || []).map((log, idx) => (
-                            <div key={idx} style={{ marginBottom: '10px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <div style={{ fontWeight: 600 }}>{log.action}</div>
-                                    <div style={{ color: '#6B7280' }}>{log.timestamp}</div>
-                                </div>
-                                <div style={{ whiteSpace: 'pre-line' }}>{log.details}</div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-
-            {/* Print Styles */}
-            <style jsx global>{`
-              @media print {
-                /* Hide everything */
-                body * { visibility: hidden !important; }
-                /* Show only print root */
-                #print-root, #print-root * { visibility: visible !important; }
-                #print-root { display: block !important; position: static !important; inset: auto !important; }
-                /* Remove link underlines for cleaner output */
-                a { text-decoration: none !important; color: inherit !important; }
-                /* Page break helpers */
-                h2 { break-after: avoid-page; }
-                h1 { break-after: avoid-page; }
-                /* Margins */
-                @page { size: A4; margin: 12mm; }
-              }
-            `}</style>
 
             <div className="flex justify-end items-center pt-6 mt-6 space-x-4">
                  {(formMode !== 'approve' && formMode !== 'approve-second') && (
@@ -1132,14 +1068,14 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                         {isSaving ? 'Processing...' : 'Save'}
                     </button>
                 )}
-                 {(formMode === 'approve' || formMode === 'approve-second') && !isReadOnly ? (
+                {(formMode === 'approve' || formMode === 'approve-second') && !isReadOnly && !shouldHideApproveRejectButtons ? (
                     <>
                         <button 
                             type="button"
                             onClick={() => setIsRejectModalOpen(true)}
-                            disabled={isRejecting}
+                            disabled={isRejecting || shouldDisableApproveReject}
                             className={`text-sm px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                                isRejecting
+                                isRejecting || shouldDisableApproveReject
                                     ? 'bg-red-400 text-white cursor-not-allowed' 
                                     : 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-700'
                             }`}
@@ -1149,7 +1085,6 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                         <button 
                             type="button"
                             onClick={async () => {
-                                console.log('Submitting form data:', JSON.stringify(formData, null, 2));
                                 
                                 // Validation checks
                                 if (formMode === 'approve-second') {
@@ -1169,13 +1104,15 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                                 
                                 try {
                                     await onSaveCorporate(formData, 'submit');
+                                    // Refresh the page after successful approval
+                                    window.location.reload();
                                 } catch (error) {
                                     console.error('Approval failed:', error);
                                 } finally {
                                     setIsApproving(false); // Reset loading state
                                 }
                             }}
-                            disabled={isApproving} // Disable button during loading
+                            disabled={isApproving || shouldDisableApproveReject} // Disable button during loading or when amendment requested
                             className="text-sm bg-ht-blue text-white px-4 py-2 rounded-md hover:bg-ht-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue-dark disabled:bg-ht-gray disabled:cursor-not-allowed"
                         >
                             {isApproving ? 'Validating...' : 'Approve'}
@@ -1187,13 +1124,22 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                             <button 
                                 type="button"
                                 onClick={async () => {
-                                    console.log('Submitting form data:', JSON.stringify(formData, null, 2));
                                     setIsSendingToApprover(true);
                                     try {
+                                        // Attempt to save corporate and send email to approver
+                                        // This will throw an error if email sending fails, preventing redirection
                                         await onSaveCorporate(formData, 'sent');
+                                        // Only redirect if successful (handled in onSaveCorporate)
                                     } catch (error) {
                                         console.error('Failed to send to approver:', error);
+                                        // Show error modal to user instead of redirecting
+                                        // This prevents unwanted redirections when email sending fails
+                                        const errorMessage = error instanceof Error ? error.message : 'Failed to send to approver. Please try again.';
+                                        setValidationErrorMessage(errorMessage);
+                                        setShowValidationError(true);
+                                        // Note: No throw error here - error is handled by showing modal
                                     } finally {
+                                        // Always reset loading state
                                         setIsSendingToApprover(false);
                                     }
                                 }}
@@ -1224,7 +1170,8 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                 onClose={() => {
                     setIsRejectSuccessModalOpen(false);
                     setIsRejecting(false);
-                    onCloseForm();
+                    // Refresh the page instead of redirecting
+                    window.location.reload();
                 }}
                 title="Rejection Successful"
                 message="The corporate has been successfully rejected."

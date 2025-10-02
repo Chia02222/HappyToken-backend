@@ -45,6 +45,7 @@ export declare class CorporateController {
         cooling_period_start: string | null;
         cooling_period_end: string | null;
         secondary_approver_uuid: string | null;
+        featured: boolean;
         created_at: string;
         updated_at: string;
     }[]>;
@@ -124,6 +125,7 @@ export declare class CorporateController {
         cooling_period_start: string | null;
         cooling_period_end: string | null;
         secondary_approver_uuid: string | null;
+        featured: boolean;
         created_at: string;
         updated_at: string;
     } | null>;
@@ -168,6 +170,7 @@ export declare class CorporateController {
         cooling_period_start: string | null;
         cooling_period_end: string | null;
         secondary_approver_uuid: string | null;
+        featured: boolean;
         created_at: string;
         updated_at: string;
     }>;
@@ -247,6 +250,7 @@ export declare class CorporateController {
         cooling_period_start: string | null;
         cooling_period_end: string | null;
         secondary_approver_uuid: string | null;
+        featured: boolean;
         created_at: string;
         updated_at: string;
     } | null>;
@@ -333,6 +337,7 @@ export declare class CorporateController {
         cooling_period_start: string | null;
         cooling_period_end: string | null;
         secondary_approver_uuid: string | null;
+        featured: boolean;
         created_at: string;
         updated_at: string;
     } | null>;
@@ -384,85 +389,7 @@ export declare class CorporateController {
         to_status: import("../../database/types").CorporateStatus | null;
         amendment_data: any;
     } | undefined>;
-    submitForFirstApproval(id: string): Promise<{
-        contacts: {
-            uuid: string;
-            created_at: string;
-            updated_at: string;
-            corporate_uuid: string;
-            salutation: string;
-            first_name: string;
-            last_name: string;
-            contact_number: string;
-            email: string;
-            company_role: string;
-            system_role: string;
-        }[];
-        subsidiaries: {
-            uuid: string;
-            company_name: string;
-            reg_number: string;
-            office_address1: string;
-            office_address2: string | null;
-            postcode: string;
-            city: string;
-            state: string;
-            country: string;
-            website: string | null;
-            account_note: string | null;
-            created_at: string;
-            updated_at: string;
-            corporate_uuid: string;
-        }[];
-        investigation_log: {
-            uuid: string;
-            created_at: string;
-            corporate_uuid: string;
-            timestamp: string;
-            note: string | null;
-            from_status: import("../../database/types").CorporateStatus | null;
-            to_status: import("../../database/types").CorporateStatus | null;
-            amendment_data: any;
-        }[];
-        uuid: string;
-        company_name: string;
-        reg_number: string;
-        status: import("../../database/types").CorporateStatus;
-        office_address1: string;
-        office_address2: string | null;
-        postcode: string;
-        city: string;
-        state: string;
-        country: string;
-        website: string | null;
-        account_note: string | null;
-        billing_same_as_official: boolean;
-        billing_address1: string;
-        billing_address2: string;
-        billing_postcode: string;
-        billing_city: string;
-        billing_state: string;
-        billing_country: string;
-        company_tin: string;
-        sst_number: string;
-        agreement_from: string | null;
-        agreement_to: string | null;
-        credit_limit: string;
-        credit_terms: string;
-        transaction_fee: string;
-        late_payment_interest: string;
-        white_labeling_fee: string;
-        custom_feature_fee: string;
-        agreed_to_generic_terms: boolean;
-        agreed_to_commercial_terms: boolean;
-        first_approval_confirmation: boolean;
-        second_approval_confirmation: boolean | null;
-        cooling_period_start: string | null;
-        cooling_period_end: string | null;
-        secondary_approver_uuid: string | null;
-        created_at: string;
-        updated_at: string;
-    } | null>;
+    submitForFirstApproval(id: string): Promise<void>;
     sendEcommericialTermlink(id: string, approver?: 'first' | 'second'): Promise<{
         success: boolean;
         message: any;
@@ -543,6 +470,7 @@ export declare class CorporateController {
         cooling_period_start: string | null;
         cooling_period_end: string | null;
         secondary_approver_uuid: string | null;
+        featured: boolean;
         created_at: string;
         updated_at: string;
     } | null>;
@@ -555,5 +483,11 @@ export declare class CorporateController {
     }): Promise<{
         success: boolean;
         message: any;
+    }>;
+    updateFeaturedStatus(id: string, body: {
+        featured: boolean;
+    }): Promise<{
+        success: boolean;
+        message: string;
     }>;
 }

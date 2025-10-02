@@ -29,10 +29,13 @@ export class CorporateController {
   async getCorporatePdf(@Param('id', new ParseUUIDPipe()) id: string, @Res() res: any) {
     const corp = await this.corporateService.findById(id);
     if (!corp) throw new HttpException('Not found', HttpStatus.NOT_FOUND);
-    const html = buildAgreementHtml(corp);
-    const pdf = await this.pdfService.renderAgreementPdf(html);
+    const feBase = process.env.FRONTEND_BASE_URL;
+    if (!feBase) {
+      throw new HttpException('FRONTEND_BASE_URL is not configured on the server', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+    const pdf = await this.pdfService.renderAgreementPdfFromUrl(feBase, id);
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${(corp.company_name || 'Corporate').replace(/[^a-zA-Z0-9 _.-]/g,'-')} - Happy Token.pdf"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${(corp.company_name || 'Corporate').replace(/[^a-zA-Z0-9 _.-]/g,'-')} - Happie Token.pdf"`);
     res.end(Buffer.from(pdf));
   }
 
@@ -115,7 +118,7 @@ export class CorporateController {
   async submitForFirstApproval(
     @Param('id', new ParseUUIDPipe()) id: string,
   ) {
-    return await this.corporateService.updateStatus(id, 'Pending 1st Approval', 'Submitted to 1st approver.');
+    return;
   }
 
   @Post(':id/resend-link')
@@ -150,5 +153,13 @@ export class CorporateController {
   @Post(':id/send-amend-reject-email')
   async sendAmendRejectEmail(@Param('id', new ParseUUIDPipe()) id: string, @Body() body: { note?: string }) {
     return await this.resendService.sendAmendRejectEmail(id, body.note);
+  }
+
+  @Put(':id/featured')
+  async updateFeaturedStatus(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() body: { featured: boolean }
+  ) {
+    return await this.corporateService.updateFeaturedStatus(id, body.featured);
   }
 }

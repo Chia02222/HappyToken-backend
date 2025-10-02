@@ -5,8 +5,8 @@ import SelectField from '../common/SelectField';
 import FormSection from '../common/FormSection';
 import { CorporateDetails, Contact, Subsidiary } from '../../types';
 import { corporateFormSchema } from '../../utils/corporateFormSchema';
-import { getMalaysiaDateString, handleDateInputChange } from '../../utils/validators';
-import { countries, getStatesForCountry, getStatesWithNA, getStateFieldLabel, getUniqueCallingCodes } from '../../data/countries';
+import { getMalaysiaDateString } from '../../utils/validators';
+import { countries, getStatesWithNA, getStateFieldLabel, getUniqueCallingCodes } from '../../data/countries';
 
 interface CorporateFormProps {
     onCloseForm: () => void;
@@ -333,9 +333,9 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                     <div className="md:col-span-2">
                         <label className="block text-xs font-medium text-gray-700 mb-1">Agreement Duration</label>
                         <div className="flex items-center space-x-2">
-                           <InputField id="agreementFrom" label="" name="agreement_from" value={(formData.agreement_from ? String(formData.agreement_from).slice(0,10) : '')} onChange={(e) => handleChange({ target: { name: 'agreement_from', value: handleDateInputChange(e.target.value) } } as React.ChangeEvent<HTMLInputElement>)} type="date" required min={getMalaysiaDateString()} error={errors.agreementFrom} />
+                           <InputField id="agreementFrom" label="" name="agreement_from" value={formData.agreement_from ? formData.agreement_from.split('T')[0] : ''} onChange={(e) => handleChange({ target: { name: 'agreement_from', value: e.target.value } } as React.ChangeEvent<HTMLInputElement>)} type="date" required min={getMalaysiaDateString()} error={errors.agreementFrom} />
                            <span className="text-gray-500">to</span>
-                           <InputField id="agreementTo" label="" name="agreement_to" value={(formData.agreement_to ? String(formData.agreement_to).slice(0,10) : '')} onChange={(e) => handleChange({ target: { name: 'agreement_to', value: handleDateInputChange(e.target.value) } } as React.ChangeEvent<HTMLInputElement>)} type="date" required min={(formData.agreement_from ? String(formData.agreement_from).slice(0,10) : getMalaysiaDateString())} error={errors.agreementTo} />
+                           <InputField id="agreementTo" label="" name="agreement_to" value={formData.agreement_to ? formData.agreement_to.split('T')[0] : ''} onChange={(e) => handleChange({ target: { name: 'agreement_to', value: e.target.value } } as React.ChangeEvent<HTMLInputElement>)} type="date" required min={(formData.agreement_from ? formData.agreement_from.split('T')[0] : getMalaysiaDateString())} error={errors.agreementTo} />
                         </div>
                     </div>
                     

@@ -12,7 +12,6 @@ export class SubsidiariesService {
   }
 
   async addSubsidiary(subsidiaryData: CreateSubsidiaryDto | (CreateSubsidiaryDto & { corporate_uuid?: string })) {
-    console.log('addSubsidiary called with:', subsidiaryData);
     const { id: _id, ...insertData } = subsidiaryData as any; // omit 'id'; accept uuid linkage
     const inserted = await this.db
       .insertInto('subsidiaries')
@@ -27,7 +26,6 @@ export class SubsidiariesService {
   }
 
   async updateSubsidiary(uuid: string, subsidiaryData: UpdateSubsidiaryDto) {
-    console.log('updateSubsidiary called with:', { uuid, subsidiaryData });
     const { id: _subsidiaryId, ...updateData } = subsidiaryData;
     const updated = await this.db
       .updateTable('subsidiaries')
@@ -42,7 +40,6 @@ export class SubsidiariesService {
   }
 
   async deleteSubsidiary(uuid: string) {
-    console.log('deleteSubsidiary called with uuid:', uuid);
     await this.db.deleteFrom('subsidiaries').where('uuid', '=', uuid).execute();
     return { success: true };
   }

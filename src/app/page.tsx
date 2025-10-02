@@ -5,16 +5,19 @@ import MainLayout from '../components/layout/MainLayout';
 import Dashboard from '../components/Dashboard';
 import CRTCorporatePage from '../components/CRTCorporatePage';
 import HistoryLogModal from '../components/modals/HistoryLogModal';
+import ErrorBoundary from '../components/common/ErrorBoundary';
 import { Page, Corporate, CorporateDetails, CorporateStatus, Contact} from '../types';
 import { getCorporates, getCorporateById, updateCorporateStatus, addRemark, deleteCorporate, sendEcommericialTermlink, submitCorporateForFirstApproval } from '../services/api';
 import ConfirmationModal from '../components/modals/ConfirmationModal';
 import SuccessModal from '../components/modals/SuccessModal';
 import ErrorMessageModal from '../components/modals/ErrorMessageModal';
 import LoginPage from '../components/LoginPage';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 
 const App: React.FC = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [currentPage, setCurrentPage] = useState<Page>('CRT Corporate'); // Default to CRT Corporate
   const [userRole, setUserRole] = useState<'admin' | 'client'>('admin'); // Default to admin
   const [isAuthenticated, setIsAuthenticated] = useState(false); // Authentication state
@@ -29,8 +32,11 @@ const App: React.FC = () => {
   const [successModalContent, setSuccessModalContent] = useState({ title: '', message: '' });
   const [isErrorModalVisible, setIsErrorModalVisible] = useState(false);
   const [errorModalContent, setErrorModalContent] = useState('');
-
-  const router = useRouter();
+  const [isLoadingCorporates, setIsLoadingCorporates] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [isSendingLink, setIsSendingLink] = useState(false);
+  const [isSavingRemark, setIsSavingRemark] = useState(false);
 
   // Login handler
   const handleLogin = (role: 'admin' | 'client') => {
@@ -54,10 +60,13 @@ const App: React.FC = () => {
 
   const fetchCorporates = async () => {
     try {
+      setIsLoadingCorporates(true);
       const data = await getCorporates();
       setCorporates(data);
     } catch (error) {
       console.error("Failed to fetch corporates:", error);
+    } finally {
+      setIsLoadingCorporates(false);
     }
   };
 
@@ -73,6 +82,14 @@ const App: React.FC = () => {
     fetchCorporates();
   }, []);
 
+  // Handle page parameter from URL
+  useEffect(() => {
+    const pageParam = searchParams.get('page');
+    if (pageParam && ['Dashboard', 'RFQ', 'Merchant', 'CRT Corporate', 'API', 'Configuration', 'Management', 'Reports'].includes(pageParam)) {
+      setCurrentPage(pageParam as Page);
+    }
+  }, [searchParams]);
+
   const handleAddNewCorporate = () => {
     router.push('/corporate/new');
   };
@@ -87,20 +104,26 @@ const App: React.FC = () => {
   
   const handleUpdateStatus = async (id: string, status: CorporateStatus, note?: string) => {
     try {
+        setIsUpdatingStatus(true);
         await updateCorporateStatus(id, status, note);
         await fetchCorporates();
     } catch (error) {
         console.error(`Failed to update status for corporate ${id}:`, error);
+    } finally {
+        setIsUpdatingStatus(false);
     }
   };
 
   const handleViewHistory = async (corporateId: string) => {
     try {
+      setIsLoadingHistory(true);
       const fullData = await getCorporateById(corporateId);
       setSelectedCorporateForHistory(fullData);
       setIsHistoryModalVisible(true);
     } catch (error) {
       console.error(`Failed to fetch history for corporate ${corporateId}:`, error);
+    } finally {
+      setIsLoadingHistory(false);
     }
   };
 
@@ -130,6 +153,7 @@ const App: React.FC = () => {
 
   const handleSendEcommercialTermLink = async (id: string) => {
     try {
+      setIsSendingLink(true);
       const corporate = await getCorporateById(id);
       if (!corporate || !corporate.contacts || corporate.contacts.length === 0) {
       setErrorModalContent(`No contact information found for corporate ${id}. Cannot send approver link.`);
@@ -161,11 +185,14 @@ const App: React.FC = () => {
       setErrorModalContent(`Failed to send approver link for corporate ${id}. Please try again.`);
       setIsErrorModalVisible(true);
       console.error(`Failed to resend registration link for corporate ${id}:`, error);
+    } finally {
+      setIsSendingLink(false);
     }
   };
 
   const handleSaveRemark = async (corporateId: string, note: string) => {
     try {
+      setIsSavingRemark(true);
       // Fetch current corporate data to get its status
       const currentCorporateData = await getCorporateById(corporateId);
       const currentStatus = currentCorporateData?.status;
@@ -173,29 +200,37 @@ const App: React.FC = () => {
       await addRemark(corporateId, note, currentStatus, currentStatus); // Pass current status
       // Refresh history data
       const fullData = await getCorporateById(corporateId);
-      console.log('fullData after saving remark:', fullData);
       setSelectedCorporateForHistory(fullData);
       await fetchCorporates(); // Also refresh the main list
     } catch (error) {
       console.error(`Failed to save remark for corporate ${corporateId}:`, error);
+    } finally {
+      setIsSavingRemark(false);
     }
   };
   const renderMainContent = () => {
     switch (currentPage) {
       case 'CRT Corporate':
         return (
-            <CRTCorporatePage 
-                onAddNew={handleAddNewCorporate}
-                onView={handleViewCorporateWrapper}
-                onViewHistory={handleViewHistory}
-                corporates={corporates}
-                updateStatus={handleUpdateStatus}
-                corporateToAutoSendLink={corporateToAutoSendLink}
-                setCorporateToAutoSendLink={setCorporateToAutoSendLink}
-                onDeleteCorporate={handleDeleteCorporate}
-                onSendEcommericialTermlink={handleSendEcommercialTermLink}
-                fetchCorporates={fetchCorporates}
-            />
+            <ErrorBoundary>
+                <CRTCorporatePage 
+                    onAddNew={handleAddNewCorporate}
+                    onView={handleViewCorporateWrapper}
+                    onViewHistory={handleViewHistory}
+                    corporates={corporates}
+                    updateStatus={handleUpdateStatus}
+                    corporateToAutoSendLink={corporateToAutoSendLink}
+                    setCorporateToAutoSendLink={setCorporateToAutoSendLink}
+                    onDeleteCorporate={handleDeleteCorporate}
+                    onSendEcommericialTermlink={handleSendEcommercialTermLink}
+                    fetchCorporates={fetchCorporates}
+                    isLoadingCorporates={isLoadingCorporates}
+                    isUpdatingStatus={isUpdatingStatus}
+                    isLoadingHistory={isLoadingHistory}
+                    isSendingLink={isSendingLink}
+                    isSavingRemark={isSavingRemark}
+                />
+            </ErrorBoundary>
         );
       case 'Dashboard':
       default:
@@ -209,40 +244,42 @@ const App: React.FC = () => {
   }
 
   return (
-    <MainLayout
-      currentPage={currentPage}
-      setCurrentPage={setCurrentPage}
-      isSidebarCollapsed={isSidebarCollapsed}
-      onToggleSidebar={() => setIsSidebarCollapsed(prev => !prev)}
-      userRole={userRole}
-      onLogout={handleLogout}
-    >
-      {renderMainContent()}
-      <HistoryLogModal
-        isOpen={isHistoryModalVisible}
-        onClose={handleCloseHistoryModal}
-        corporate={selectedCorporateForHistory}
-        onSave={handleSaveRemark}
-      />
-      <ConfirmationModal
-        isOpen={isConfirmDeleteModalVisible}
-        onClose={() => setIsConfirmDeleteModalVisible(false)}
-        onConfirm={confirmDeleteCorporate}
-        title="Confirm Deletion"
-        message="Are you sure you want to delete this corporate account? This action cannot be undone."
-      />
-      <SuccessModal
-        isOpen={isSuccessModalVisible}
-        onClose={() => setIsSuccessModalVisible(false)}
-        title={successModalContent.title}
-        message={successModalContent.message}
-      />
-      <ErrorMessageModal
-        isOpen={isErrorModalVisible}
-        onClose={() => setIsErrorModalVisible(false)}
-        message={errorModalContent}
-      />
-    </MainLayout>
+    <ErrorBoundary>
+      <MainLayout
+        currentPage={currentPage}
+        setCurrentPage={setCurrentPage}
+        isSidebarCollapsed={isSidebarCollapsed}
+        onToggleSidebar={() => setIsSidebarCollapsed(prev => !prev)}
+        userRole={userRole}
+        onLogout={handleLogout}
+      >
+        {renderMainContent()}
+        <HistoryLogModal
+          isOpen={isHistoryModalVisible}
+          onClose={handleCloseHistoryModal}
+          corporate={selectedCorporateForHistory}
+          onSave={handleSaveRemark}
+        />
+        <ConfirmationModal
+          isOpen={isConfirmDeleteModalVisible}
+          onClose={() => setIsConfirmDeleteModalVisible(false)}
+          onConfirm={confirmDeleteCorporate}
+          title="Confirm Deletion"
+          message="Are you sure you want to delete this corporate account? This action cannot be undone."
+        />
+        <SuccessModal
+          isOpen={isSuccessModalVisible}
+          onClose={() => setIsSuccessModalVisible(false)}
+          title={successModalContent.title}
+          message={successModalContent.message}
+        />
+        <ErrorMessageModal
+          isOpen={isErrorModalVisible}
+          onClose={() => setIsErrorModalVisible(false)}
+          message={errorModalContent}
+        />
+      </MainLayout>
+    </ErrorBoundary>
   );
 };
 

@@ -22,7 +22,6 @@ let SubsidiariesService = class SubsidiariesService {
         return this.dbService.getDb();
     }
     async addSubsidiary(subsidiaryData) {
-        console.log('addSubsidiary called with:', subsidiaryData);
         const { id: _id, ...insertData } = subsidiaryData;
         const inserted = await this.db
             .insertInto('subsidiaries')
@@ -36,7 +35,6 @@ let SubsidiariesService = class SubsidiariesService {
         return inserted;
     }
     async updateSubsidiary(uuid, subsidiaryData) {
-        console.log('updateSubsidiary called with:', { uuid, subsidiaryData });
         const { id: _subsidiaryId, ...updateData } = subsidiaryData;
         const updated = await this.db
             .updateTable('subsidiaries')
@@ -50,7 +48,6 @@ let SubsidiariesService = class SubsidiariesService {
         return updated;
     }
     async deleteSubsidiary(uuid) {
-        console.log('deleteSubsidiary called with uuid:', uuid);
         await this.db.deleteFrom('subsidiaries').where('uuid', '=', uuid).execute();
         return { success: true };
     }

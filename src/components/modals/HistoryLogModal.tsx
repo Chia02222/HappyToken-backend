@@ -35,7 +35,6 @@ const HistoryLogModal: React.FC<HistoryLogModalProps> = ({ isOpen, onClose, corp
     }, [isOpen]);
 
     const handleSave = () => {
-        console.log('handleSave called');
         if (corporate && logNote.trim()) {
             onSave(corporate.id, logNote);
             onClose(); // Add this line to close the modal
@@ -45,7 +44,7 @@ const HistoryLogModal: React.FC<HistoryLogModalProps> = ({ isOpen, onClose, corp
     if (!corporate) return null;
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={`History & Log for ${corporate.company_name}`} size="lg">
+        <Modal isOpen={isOpen} onClose={onClose} title={"History"} size="lg">
             <div className="space-y-4">
                 {/* History Section */}
                 <div className="max-h-64 overflow-y-auto pr-2 space-y-4 border rounded-md p-3 bg-gray-50">
@@ -83,7 +82,7 @@ const HistoryLogModal: React.FC<HistoryLogModalProps> = ({ isOpen, onClose, corp
                 {/* Actions */}
                 <div className="flex justify-end space-x-3 pt-3 mt-2 border-t">
                     <button onClick={onClose} className="text-sm bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300">Close</button>
-                    <button onClick={handleSave} disabled={!logNote.trim()} className="text-sm bg-ht-blue text-white px-4 py-2 rounded-md hover:bg-ht-blue-dark disabled:bg-ht-gray">Save Log</button>
+                    <button onClick={handleSave} disabled={!logNote.trim()} className="text-sm bg-ht-blue text-white px-4 py-2 rounded-md hover:bg-ht-blue-dark disabled:bg-ht-gray">Add Log</button>
                 </div>
             </div>
         </Modal>

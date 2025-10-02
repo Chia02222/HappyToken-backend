@@ -46,7 +46,6 @@ let ResendService = class ResendService {
                 console.error('Failed to send custom email via Resend:', data);
                 return { success: false, message: data.message || 'Failed to send custom email.' };
             }
-            console.log(`Custom email sent to ${to} with subject: ${subject}`);
             return { success: true, message: `Custom email sent to ${to}.` };
         }
         catch (error) {
@@ -117,7 +116,7 @@ let ResendService = class ResendService {
                   <a href="${corporateFormLink}" style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">Review Corporate Account</a>
                 </p>
                 
-                <p>Thank you,<br/>Happy Token Team</p>
+                <p>Thank you,<br/>Happie Token Team</p>
               </div>
             `
                         : `
@@ -138,7 +137,7 @@ let ResendService = class ResendService {
                   <a href="${corporateFormLink}" style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">Review Corporate Account</a>
                 </p>
                 
-                <p>Thank you,<br/>Happy Token Team</p>
+                <p>Thank you,<br/>Happie Token Team</p>
               </div>
             `,
                 }),
@@ -148,7 +147,6 @@ let ResendService = class ResendService {
                 console.error('Failed to send email via Resend:', data);
                 return { success: false, message: data.message || 'Failed to send email.' };
             }
-            console.log(`E-Commercial Terms link email sent to ${recipientEmail} for corporate ID: ${id}`);
             return { success: true, message: `E-Commercial Terms link sent to ${recipientEmail}.` };
         }
         catch (error) {
@@ -204,7 +202,7 @@ let ResendService = class ResendService {
           <p>You can review and update the request by clicking the link below:</p>
           <p><a href="${corporateLink}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Review Amendment Request</a></p>
           
-          <p>Thank you,<br>Happy Token Team</p>
+          <p>Thank you,<br>Happie Token Team</p>
         </div>
       `;
             const response = await fetch('https://api.resend.com/emails', {
@@ -225,7 +223,6 @@ let ResendService = class ResendService {
                 console.error('Failed to send amendment request email via Resend:', data);
                 return { success: false, message: data.message || 'Failed to send amendment request email.' };
             }
-            console.log(`Amendment request email sent to ${crtEmail} for corporate ID: ${corporateId}`);
             return { success: true, message: `Amendment request email sent to ${crtEmail}.` };
         }
         catch (error) {
@@ -267,7 +264,7 @@ let ResendService = class ResendService {
           <a href="${corporateLink}" style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">Review Corporate Account</a>
         </p>
         
-        <p>Thank you,<br/>Happy Token Team</p>
+        <p>Thank you,<br/>Happie Token Team</p>
       </div>
     `;
         const resp = await fetch('https://api.resend.com/emails', {
@@ -337,7 +334,7 @@ let ResendService = class ResendService {
           <a href="${corporateLink}" style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">Review Corporate Account</a>
         </p>
         
-        <p>Thank you,<br/>Happy Token Team</p>
+        <p>Thank you,<br/>Happie Token Team</p>
       </div>
     `;
         const resp = await fetch('https://api.resend.com/emails', {
@@ -420,7 +417,7 @@ let ResendService = class ResendService {
           <a href="${portalLink}" style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">Go to Corporate Portal</a>
         </p>
         
-        <p>Thank you for joining us,<br/>Happy Token Team</p>
+        <p>Thank you for joining us,<br/>Happie Token Team</p>
       </div>
     `;
         const sendTo = async (to, userName) => {
@@ -432,7 +429,7 @@ let ResendService = class ResendService {
                 if (pdfResp.ok) {
                     const arrayBuf = await pdfResp.arrayBuffer();
                     const base64 = Buffer.from(arrayBuf).toString('base64');
-                    const filename = `${(corporate.company_name || 'Corporate').replace(/[^a-zA-Z0-9 _.-]/g, '-')} - Happy Token.pdf`;
+                    const filename = `${(corporate.company_name || 'Corporate').replace(/[^a-zA-Z0-9 _.-]/g, '-')} - Happie Token.pdf`;
                     attachments = [{ filename, content: base64 }];
                 }
             }

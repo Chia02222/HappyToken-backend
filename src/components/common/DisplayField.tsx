@@ -11,7 +11,7 @@ const DisplayField: React.FC<DisplayFieldProps> = ({ label, value, borderless = 
   <div>
     <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
     <div className={`p-2 w-full bg-white dark:bg-white text-sm min-h-[38px] flex items-center ${borderless ? '' : 'border border-gray-300 rounded-md'}`}>
-      {value || <span className="text-gray-400">N/A</span>}
+      {value || ''}
     </div>
   </div>
 );

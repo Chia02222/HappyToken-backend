@@ -22,7 +22,6 @@ let ContactsService = class ContactsService {
         return this.dbService.getDb();
     }
     async addContact(contactData) {
-        console.log('addContact called with:', contactData);
         const { id: _id, ...contactDataWithoutId } = contactData;
         const insertData = {
             corporate_uuid: contactDataWithoutId.corporate_uuid,
@@ -56,7 +55,6 @@ let ContactsService = class ContactsService {
         return inserted;
     }
     async updateContact(uuid, contactData) {
-        console.log('updateContact called with:', { uuid, contactData });
         const { id: _contactId, ...updateData } = contactData;
         const updated = await this.db
             .updateTable('contacts')
@@ -70,7 +68,6 @@ let ContactsService = class ContactsService {
         return updated;
     }
     async deleteContact(uuid) {
-        console.log('deleteContact called with uuid:', uuid);
         await this.db.deleteFrom('contacts').where('uuid', '=', uuid).execute();
         return { success: true };
     }

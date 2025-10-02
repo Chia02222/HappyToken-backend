@@ -67,6 +67,7 @@ export async function migrateToLatest() {
         cooling_period_start TIMESTAMP,
         cooling_period_end TIMESTAMP,
         secondary_approver_uuid UUID,
+        featured BOOLEAN NOT NULL DEFAULT false,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
@@ -135,6 +136,23 @@ export async function migrateToLatest() {
     `;
     await sql`CREATE INDEX investigation_logs_corporate_uuid_idx ON investigation_logs(corporate_uuid)`;
 
+    await sql`CREATE INDEX investigation_logs_to_status_idx ON investigation_logs(to_status)`;
+    await sql`CREATE INDEX investigation_logs_timestamp_idx ON investigation_logs(timestamp)`;
+    await sql`CREATE INDEX investigation_logs_created_at_idx ON investigation_logs(created_at)`;
+
+    await sql`CREATE INDEX corporates_status_idx ON corporates(status)`;
+    await sql`CREATE INDEX corporates_updated_at_idx ON corporates(updated_at)`;
+    await sql`CREATE INDEX corporates_featured_idx ON corporates(featured)`;
+    await sql`CREATE INDEX corporates_created_at_idx ON corporates(created_at)`;
+
+    await sql`CREATE INDEX corporates_status_updated_at_idx ON corporates(status, updated_at)`;
+    await sql`CREATE INDEX investigation_logs_corporate_uuid_to_status_idx ON investigation_logs(corporate_uuid, to_status)`;
+    await sql`CREATE INDEX contacts_email_idx ON contacts(email)`;
+    await sql`CREATE INDEX contacts_system_role_idx ON contacts(system_role)`;
+
+    await sql`CREATE INDEX subsidiaries_company_name_idx ON subsidiaries(company_name)`;
+    await sql`CREATE INDEX subsidiaries_reg_number_idx ON subsidiaries(reg_number)`;
+        
     console.log('✅ Schema reset and migration completed successfully');
   } catch (error) {
     console.error('❌ Failed to migrate:', error);

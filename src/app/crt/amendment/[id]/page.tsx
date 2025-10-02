@@ -77,7 +77,6 @@ const CRTAmendmentReviewPage: React.FC = () => {
       await updateAmendmentStatus(amendmentData.corporate_id, amendmentId, 'approved', 'Amendment approved by CRT team');
       // Revert to previous status and notify the appropriate approver
       const prev = amendmentData.from_status || 'Pending 1st Approval';
-      await updateCorporateStatus(amendmentData.corporate_id, prev, `Amendment approved by CRT; reverting to ${prev}.`);
       const approver: 'first' | 'second' = prev === 'Pending 2nd Approval' ? 'second' : 'first';
       try { await sendEcommericialTermlink(amendmentData.corporate_id, approver); } catch {}
       setAmendmentData(prevState => prevState ? { ...prevState, amendment_data: { ...prevState.amendment_data, status: 'approved' } } : prevState);
@@ -100,8 +99,6 @@ const CRTAmendmentReviewPage: React.FC = () => {
       setIsProcessing(true);
       await updateAmendmentStatus(amendmentData.corporate_id, amendmentId, 'rejected', rejectReason.trim());
       const prev = amendmentData.from_status || 'Pending 1st Approval';
-      await updateCorporateStatus(amendmentData.corporate_id, prev, `Amendment rejected by CRT: ${rejectReason.trim()}`);
-      try { await sendAmendRejectEmail(amendmentData.corporate_id, rejectReason.trim()); } catch {}
       setAmendmentData(prevState => prevState ? { ...prevState, amendment_data: { ...prevState.amendment_data, status: 'rejected' } } : prevState);
       setRejectOpen(false);
       setRejectReason('');
@@ -134,6 +131,9 @@ const CRTAmendmentReviewPage: React.FC = () => {
       <div className="space-y-4">{children}</div>
     </div>
   );
+
+  // Use raw DATE values as returned by backend (DATE type, no timezone)
+  const rawDate = (value: any): string => (value == null ? '' : String(value));
 
   const renderCompanySection = (data: any, other: any) => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -216,8 +216,8 @@ const CRTAmendmentReviewPage: React.FC = () => {
 
   const renderCommercialSection = (data: any, other: any) => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <Field label="Agreement From" value={data?.agreement_from} highlight={data?.agreement_from !== other?.agreement_from} />
-      <Field label="Agreement To" value={data?.agreement_to} highlight={data?.agreement_to !== other?.agreement_to} />
+      <Field label="Agreement From" value={rawDate(data?.agreement_from)} highlight={rawDate(data?.agreement_from) !== rawDate(other?.agreement_from)} />
+      <Field label="Agreement To" value={rawDate(data?.agreement_to)} highlight={rawDate(data?.agreement_to) !== rawDate(other?.agreement_to)} />
       <Field label="Credit Limit" value={data?.credit_limit} highlight={data?.credit_limit !== other?.credit_limit} />
       <Field label="Credit Terms" value={data?.credit_terms} highlight={data?.credit_terms !== other?.credit_terms} />
       <Field label="Transaction Fee" value={data?.transaction_fee} highlight={data?.transaction_fee !== other?.transaction_fee} />
@@ -342,7 +342,22 @@ const CRTAmendmentReviewPage: React.FC = () => {
     <FormLayout title="CRT Amendment Review">
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-[1600px] mx-auto">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Amendment Review</h1>
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-2xl font-bold text-gray-900">Amendment Review</h1>
+            <button
+              onClick={() => {
+                const corpId = (originalCorporate && (originalCorporate.uuid || originalCorporate.id)) || amendmentData?.corporate_id;
+                if (corpId) {
+                  router.push(`/corporate/${corpId}?mode=edit`);
+                } else {
+                  router.back();
+                }
+              }}
+              className="inline-flex items-center px-3 py-2 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
+            >
+              Back to Corporate
+            </button>
+          </div>
           <p className="text-sm text-gray-600 mb-6">Left: Original • Right: Amendment</p>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

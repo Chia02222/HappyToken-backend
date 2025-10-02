@@ -1,7 +1,7 @@
 
 import { CorporateDetails } from '../types';
 
-const API_BASE_URL = 'http://localhost:3001';
+export const API_BASE_URL = 'http://localhost:3001';
 
 const handleResponse = async (response: Response) => {
     // Read raw text once and safely parse JSON when possible
@@ -200,6 +200,17 @@ export const updateAmendmentStatus = async (corporateId: string, amendmentId: st
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({ status, reviewNotes }),
+    });
+    return handleResponse(response);
+};
+
+export const updateCorporateFeatured = async (id: string, featured: boolean) => {
+    const response = await fetch(`${API_BASE_URL}/corporates/${id}/featured`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ featured }),
     });
     return handleResponse(response);
 };

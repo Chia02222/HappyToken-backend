@@ -69,6 +69,7 @@ let CorporateService = class CorporateService {
             status: 'Draft',
             agreement_from: corporateBaseData.agreement_from === '' ? null : corporateBaseData.agreement_from,
             agreement_to: corporateBaseData.agreement_to === '' ? null : corporateBaseData.agreement_to,
+            featured: false,
             created_at: (0, kysely_1.sql) `date_trunc('second', now() AT TIME ZONE 'Asia/Kuala_Lumpur')::timestamp(0)`,
             updated_at: (0, kysely_1.sql) `date_trunc('second', now() AT TIME ZONE 'Asia/Kuala_Lumpur')::timestamp(0)`,
         };
@@ -132,21 +133,21 @@ let CorporateService = class CorporateService {
         return inserted;
     }
     async update(id, updateData) {
-        console.log('CorporateService.update called with id:', id);
         try {
-            console.log('Raw updateData:', JSON.stringify(updateData));
         }
         catch { }
         const { investigation_log: _investigation_log, ...restOfUpdateData } = updateData;
         const { id: _updateDtoId, contacts, subsidiaries, contactIdsToDelete, subsidiaryIdsToDelete, secondary_approver: _secondary_approver, ...corporateUpdateData } = restOfUpdateData;
         const looksUuid = true;
         const secondaryApproverData = updateData.secondary_approver;
-        console.log('Derived corporateUpdateData keys:', Object.keys(corporateUpdateData));
-        console.log('contactIdsToDelete:', contactIdsToDelete);
-        console.log('subsidiaryIdsToDelete:', subsidiaryIdsToDelete);
         if (secondaryApproverData) {
             let secondaryApproverUuid;
-            if (secondaryApproverData.use_existing_contact && secondaryApproverData.selected_contact_id) {
+            const existingSecondaryContact = contacts?.find(contact => contact.system_role === 'secondary_approver' ||
+                (secondaryApproverData.selected_contact_id && String(contact.id) === String(secondaryApproverData.selected_contact_id)));
+            if (existingSecondaryContact) {
+                secondaryApproverUuid = String(existingSecondaryContact.id);
+            }
+            else if (secondaryApproverData.use_existing_contact && secondaryApproverData.selected_contact_id) {
                 const selectedUuid = String(secondaryApproverData.selected_contact_id);
                 await this.contactsService.updateContact(selectedUuid, {
                     salutation: secondaryApproverData.salutation ?? '',
@@ -188,6 +189,7 @@ let CorporateService = class CorporateService {
             ...sanitizedCorporateUpdate,
             agreement_from: corporateUpdateData.agreement_from === '' ? null : corporateUpdateData.agreement_from,
             agreement_to: corporateUpdateData.agreement_to === '' ? null : corporateUpdateData.agreement_to,
+            website: corporateUpdateData.website === '' || corporateUpdateData.website === null || corporateUpdateData.website === undefined ? 'N/A' : corporateUpdateData.website,
             updated_at: (0, kysely_1.sql) `date_trunc('second', now() AT TIME ZONE 'Asia/Kuala_Lumpur')::timestamp(0)`,
         };
         const updatedCorporate = await this.db
@@ -204,7 +206,6 @@ let CorporateService = class CorporateService {
         const isPersistedId = (value) => isUuid(value);
         if (contacts) {
             for (const contact of contacts) {
-                console.log('Processing contact:', contact);
                 const cid = contact.id;
                 if (isPersistedId(cid)) {
                     await this.contactsService.updateContact(String(cid), contact);
@@ -219,7 +220,6 @@ let CorporateService = class CorporateService {
         }
         if (contactIdsToDelete) {
             for (const contactId of contactIdsToDelete) {
-                console.log('Attempting to delete contactId:', contactId);
                 if (!contactId) {
                     console.warn('Skipping empty contactId');
                     continue;
@@ -243,7 +243,6 @@ let CorporateService = class CorporateService {
         }
         if (subsidiaryIdsToDelete) {
             for (const subsidiaryId of subsidiaryIdsToDelete) {
-                console.log('Attempting to delete subsidiaryId:', subsidiaryId);
                 if (!subsidiaryId) {
                     console.warn('Skipping empty subsidiaryId');
                     continue;
@@ -252,7 +251,6 @@ let CorporateService = class CorporateService {
             }
         }
         const result = await this.findById(id);
-        console.log('CorporateService.update returning:', JSON.stringify(result));
         return result;
     }
     async delete(id) {
@@ -265,7 +263,6 @@ let CorporateService = class CorporateService {
         return { success: true };
     }
     async addInvestigationLog(corporateId, logData) {
-        console.log('addInvestigationLog called with:', { corporateId, logData });
         try {
             let inserted = null;
             try {
@@ -284,7 +281,6 @@ let CorporateService = class CorporateService {
                     .executeTakeFirst();
             }
             catch { }
-            console.log('Investigation log inserted:', inserted);
             return inserted;
         }
         catch (error) {
@@ -349,12 +345,9 @@ let CorporateService = class CorporateService {
                         .execute();
                 }
                 catch { }
-                console.log(`[updateStatus] Corporate ${id} entered Cooling Period. Scheduling completion in 30 seconds.`);
                 setTimeout(async () => {
                     try {
-                        console.log(`[setTimeout] Calling handleCoolingPeriodCompletion for corporate ${id}.`);
                         await this.handleCoolingPeriodCompletion(id);
-                        console.log(`[setTimeout] Cooling period completed for corporate ${id}.`);
                     }
                     catch (error) {
                         console.error(`[setTimeout] Error completing cooling period for corporate ${id}:`, error);
@@ -365,28 +358,21 @@ let CorporateService = class CorporateService {
         return await this.update(String(id), { status: status });
     }
     async handleCoolingPeriodCompletion(corporateId) {
-        console.log(`[handleCoolingPeriodCompletion] called for corporateId: ${corporateId}`);
         const corporate = await this.findById(corporateId);
         if (!corporate) {
             console.error(`[handleCoolingPeriodCompletion] Corporate ${corporateId} not found.`);
             throw new Error('Corporate not found');
         }
-        console.log(`[handleCoolingPeriodCompletion] Corporate found: ${JSON.stringify(corporate)}`);
         const newStatus = 'Approved';
         const note = `Cooling period completed. Auto-approved by system after 30 seconds.`;
-        console.log(`[handleCoolingPeriodCompletion] Updating status to: ${newStatus}`);
         await this.updateStatus(corporateId, newStatus, note);
         const updatedCorporate = await this.findById(corporateId);
-        console.log(`[handleCoolingPeriodCompletion] Status updated successfully for corporate ${corporateId}. New status: ${updatedCorporate?.status}`);
         try {
-            console.log(`[handleCoolingPeriodCompletion] Sending welcome email for corporate ${corporateId}`);
             await this.resendService.sendAccountCreatedSuccessEmail(corporateId);
-            console.log(`[handleCoolingPeriodCompletion] Welcome email sent successfully for corporate ${corporateId}`);
         }
         catch (error) {
             console.error(`[handleCoolingPeriodCompletion] Failed to send welcome email for corporate ${corporateId}:`, error);
         }
-        console.log(`[handleCoolingPeriodCompletion] Returning corporate: ${JSON.stringify(updatedCorporate)}`);
         return updatedCorporate;
     }
     async expireStaleCorporatesDaily() {
@@ -416,7 +402,29 @@ let CorporateService = class CorporateService {
                     changed_fields[key] = newVal;
                 }
             }
-            const amendmentNote = `Amendment Request Submitted|Requested Changes: ${amendmentData.requestedChanges}|Reason: ${amendmentData.amendmentReason}|Submitted by: ${amendmentData.submittedBy}`;
+            let submittedBy = 'Unknown Approver';
+            const amendedContacts = amended.contacts || [];
+            if (amendedContacts.length > 0) {
+                let approverContact = null;
+                if (corporate.status === 'Pending 2nd Approval') {
+                    const secondaryApprover = amendedContacts.find((c) => c.system_role === 'secondary_approver');
+                    if (secondaryApprover) {
+                        approverContact = secondaryApprover;
+                    }
+                    else {
+                        approverContact = amendedContacts[0];
+                    }
+                }
+                else {
+                    approverContact = amendedContacts[0];
+                }
+                if (approverContact && approverContact.first_name && approverContact.last_name) {
+                    const fullName = `${approverContact.first_name} ${approverContact.last_name}`.trim();
+                    const role = approverContact.company_role || (approverContact.system_role === 'secondary_approver' ? 'Secondary Approver' : 'First Approver');
+                    submittedBy = `${fullName} (${role})`;
+                }
+            }
+            const amendmentNote = `Amendment request submitted by ${submittedBy}`;
             const inserted = await this.addInvestigationLog(corporateId, {
                 timestamp: (0, kysely_1.sql) `(now() AT TIME ZONE 'Asia/Kuala_Lumpur')::text`,
                 note: amendmentNote,
@@ -424,13 +432,18 @@ let CorporateService = class CorporateService {
                 to_status: 'Amendment Requested',
                 amendment_data: {
                     requested_changes: amendmentData.requestedChanges,
-                    amendment_reason: amendmentData.amendmentReason,
                     submitted_by: amendmentData.submittedBy,
                     changed_fields,
+                    original_data: corporate,
+                    amended_data: amended,
                     status: 'pending'
                 }
             });
-            await this.updateStatus(corporateId, 'Amendment Requested', 'Amendment request submitted');
+            await this.db
+                .updateTable('corporates')
+                .set({ status: 'Amendment Requested' })
+                .where('uuid', '=', corporateId)
+                .execute();
             const amendmentId = inserted.uuid ?? inserted.id;
             return { success: true, message: 'Amendment request created successfully', amendmentId };
         }
@@ -452,21 +465,26 @@ let CorporateService = class CorporateService {
                 throw new Error('Amendment request not found');
             }
             const statusNote = status === 'approved'
-                ? `Amendment Approved|Reviewed by: CRT Team|Review Notes: ${reviewNotes || 'Approved'}`
-                : `Amendment Rejected|Reviewed by: CRT Team|Review Notes: ${reviewNotes || 'Rejected'}`;
+                ? `Amendment approved by CRT Team`
+                : `Amendment declined by CRT Team (Reason: ${reviewNotes || 'Rejected'})`;
             await this.addInvestigationLog(corporateId, {
                 timestamp: (0, kysely_1.sql) `(now() AT TIME ZONE 'Asia/Kuala_Lumpur')::text`,
                 note: statusNote,
                 from_status: 'Amendment Requested',
-                to_status: status === 'approved' ? 'Pending 1st Approval' : 'Pending 1st Approval',
+                to_status: amendmentLog.from_status || 'Pending 1st Approval',
                 amendment_data: {
                     ...amendmentLog.amendment_data,
                     status: status,
-                    reviewed_by: 'crt@happietoken.com',
                     review_notes: reviewNotes,
                     decision: status
                 }
             });
+            const previousStatus = amendmentLog.from_status || 'Pending 1st Approval';
+            await this.db
+                .updateTable('corporates')
+                .set({ status: previousStatus })
+                .where('uuid', '=', corporateId)
+                .execute();
             const changes = amendmentLog.amendment_data?.changed_fields || amendmentLog.amendment_data?.amended_data;
             if (status === 'approved' && changes) {
                 await this.update(corporateId, changes);
@@ -508,6 +526,20 @@ let CorporateService = class CorporateService {
         }
         catch (error) {
             console.error('Error fetching amendment by ID:', error);
+            throw error;
+        }
+    }
+    async updateFeaturedStatus(corporateId, featured) {
+        try {
+            await this.db
+                .updateTable('corporates')
+                .set({ featured })
+                .where('uuid', '=', corporateId)
+                .execute();
+            return { success: true, message: `Corporate ${featured ? 'featured' : 'unfeatured'} successfully` };
+        }
+        catch (error) {
+            console.error('Error updating featured status:', error);
             throw error;
         }
     }

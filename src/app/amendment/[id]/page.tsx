@@ -12,6 +12,8 @@ interface CorporateData {
   company_name: string;
   reg_number: string;
   credit_limit: string;
+  agreement_from?: string;
+  agreement_to?: string;
   office_address1: string;
   office_address2: string;
   postcode: string;
@@ -76,12 +78,7 @@ const AmendmentRequestPage: React.FC = () => {
   };
 
   const handleCancel = () => {
-    // For approvers, redirect back to ECommercialTermsForm
-    if (mode === 'approve' || mode === 'approve-second') {
-      router.push(`/corporate/${corporateId}?mode=${mode}&step=2`);
-    } else {
-      router.push(`/corporate/${corporateId}`);
-    }
+    router.back();
   };
 
   if (loading) {
@@ -144,29 +141,9 @@ const AmendmentRequestPage: React.FC = () => {
         onClose={async () => {
           setSuccessOpen(false);
           
-          // For approvers, redirect to Amendment View-only page
-          if (mode === 'approve' || mode === 'approve-second') {
-            if (createdAmendmentId) {
-              router.push(`/amendment/view/${createdAmendmentId}`);
-            } else {
-              try {
-                const amendments = await getAmendmentRequestsByCorporate(corporateId);
-                if (amendments && amendments.length > 0) {
-                  const latestAmendment = amendments[amendments.length - 1];
-                  router.push(`/amendment/view/${latestAmendment.id}`);
-                } else {
-                  router.push(`/corporate/${corporateId}?mode=${mode}&step=2`);
-                }
-              } catch (error) {
-                router.push(`/corporate/${corporateId}?mode=${mode}&step=2`);
-              }
-            }
-            return;
-          }
-          
-          // For non-approvers, redirect to CRT amendment page
+          // Redirect all users to Amendment View page
           if (createdAmendmentId) {
-            router.push(`/crt/amendment/${createdAmendmentId}`);
+            router.push(`/amendment/view/${createdAmendmentId}`);
           } else {
             // If no amendment ID was captured, try to fetch the latest amendment request
             try {
@@ -174,7 +151,7 @@ const AmendmentRequestPage: React.FC = () => {
               if (amendments && amendments.length > 0) {
                 // Get the most recent amendment request
                 const latestAmendment = amendments[amendments.length - 1];
-                router.push(`/crt/amendment/${latestAmendment.id}`);
+                router.push(`/amendment/view/${latestAmendment.id}`);
               } else {
                 // Fallback: redirect to corporate page
                 router.push(`/corporate/${corporateId}?step=2`);

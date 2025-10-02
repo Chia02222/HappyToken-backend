@@ -17,7 +17,6 @@ const common_1 = require("@nestjs/common");
 const corporate_service_1 = require("./corporate.service");
 const resend_service_1 = require("../resend/resend.service");
 const pdf_service_1 = require("./pdf.service");
-const pdf_template_1 = require("./pdf.template");
 const corporate_dto_1 = require("./dto/corporate.dto");
 const zod_validation_pipe_1 = require("../../common/zod-validation.pipe");
 let CorporateController = class CorporateController {
@@ -39,10 +38,13 @@ let CorporateController = class CorporateController {
         const corp = await this.corporateService.findById(id);
         if (!corp)
             throw new common_1.HttpException('Not found', common_1.HttpStatus.NOT_FOUND);
-        const html = (0, pdf_template_1.buildAgreementHtml)(corp);
-        const pdf = await this.pdfService.renderAgreementPdf(html);
+        const feBase = process.env.FRONTEND_BASE_URL;
+        if (!feBase) {
+            throw new common_1.HttpException('FRONTEND_BASE_URL is not configured on the server', common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        const pdf = await this.pdfService.renderAgreementPdfFromUrl(feBase, id);
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename="${(corp.company_name || 'Corporate').replace(/[^a-zA-Z0-9 _.-]/g, '-')} - Happy Token.pdf"`);
+        res.setHeader('Content-Disposition', `attachment; filename="${(corp.company_name || 'Corporate').replace(/[^a-zA-Z0-9 _.-]/g, '-')} - Happie Token.pdf"`);
         res.end(Buffer.from(pdf));
     }
     async create(corporateData) {
@@ -78,7 +80,7 @@ let CorporateController = class CorporateController {
         return await this.corporateService.getAmendmentById(amendmentId);
     }
     async submitForFirstApproval(id) {
-        return await this.corporateService.updateStatus(id, 'Pending 1st Approval', 'Submitted to 1st approver.');
+        return;
     }
     async sendEcommericialTermlink(id, approver = 'first') {
         const result = await this.resendService.sendEcommericialTermlink(id, approver);
@@ -103,6 +105,9 @@ let CorporateController = class CorporateController {
     }
     async sendAmendRejectEmail(id, body) {
         return await this.resendService.sendAmendRejectEmail(id, body.note);
+    }
+    async updateFeaturedStatus(id, body) {
+        return await this.corporateService.updateFeaturedStatus(id, body.featured);
     }
 };
 exports.CorporateController = CorporateController;
@@ -240,6 +245,14 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], CorporateController.prototype, "sendAmendRejectEmail", null);
+__decorate([
+    (0, common_1.Put)(':id/featured'),
+    __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], CorporateController.prototype, "updateFeaturedStatus", null);
 exports.CorporateController = CorporateController = __decorate([
     (0, common_1.Controller)('corporates'),
     __metadata("design:paramtypes", [corporate_service_1.CorporateService,

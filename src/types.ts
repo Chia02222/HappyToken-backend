@@ -53,7 +53,7 @@ export interface Corporate {
   cooling_period_start?: string | null;
   cooling_period_end?: string | null;
   secondary_approver_id?: string | null;
-  
+  featured: boolean;
 }
 
 export interface CorporateDetails extends Corporate {

@@ -66,7 +66,7 @@ const AmendmentViewPage: React.FC = () => {
     <div className={`p-3 rounded-md ${highlight ? 'bg-amber-50' : ''}`}>
       <label className="block text-xs font-medium text-gray-700 mb-1">{label}</label>
       <div className={`text-sm p-2 rounded ${highlight ? 'text-amber-900 bg-amber-50' : 'text-gray-900'}`}>
-        {value ?? <span className="text-gray-400 italic">Not provided</span>}
+        {value ?? ''}
       </div>
     </div>
   );
@@ -77,6 +77,9 @@ const AmendmentViewPage: React.FC = () => {
       <div className="space-y-4">{children}</div>
     </div>
   );
+
+  // Use raw DATE values as returned by backend (DATE type, no timezone)
+  const rawDate = (value: any): string => (value == null ? '' : String(value));
 
   const renderCompanySection = (data: any, other: any) => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -159,8 +162,8 @@ const AmendmentViewPage: React.FC = () => {
 
   const renderCommercialSection = (data: any, other: any) => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <Field label="Agreement From" value={data?.agreement_from} highlight={data?.agreement_from !== other?.agreement_from} />
-      <Field label="Agreement To" value={data?.agreement_to} highlight={data?.agreement_to !== other?.agreement_to} />
+      <Field label="Agreement From" value={rawDate(data?.agreement_from)} highlight={rawDate(data?.agreement_from) !== rawDate(other?.agreement_from)} />
+      <Field label="Agreement To" value={rawDate(data?.agreement_to)} highlight={rawDate(data?.agreement_to) !== rawDate(other?.agreement_to)} />
       <Field label="Credit Limit" value={data?.credit_limit} highlight={data?.credit_limit !== other?.credit_limit} />
       <Field label="Credit Terms" value={data?.credit_terms} highlight={data?.credit_terms !== other?.credit_terms} />
       <Field label="Transaction Fee" value={data?.transaction_fee} highlight={data?.transaction_fee !== other?.transaction_fee} />
@@ -234,14 +237,17 @@ const AmendmentViewPage: React.FC = () => {
 
   const buildViewPair = () => {
     // Prefer explicit original/amended snapshots when provided by backend
-    const legacyOriginal = amendmentData?.amendment_data?.original_data || null;
-    const legacyAmended = amendmentData?.amendment_data?.amended_data || null;
-    const hasLegacy = legacyOriginal && typeof legacyOriginal === 'object' && Object.keys(legacyOriginal).length > 0;
-    if (hasLegacy) {
-      return { original: legacyOriginal, amended: legacyAmended || legacyOriginal };
+    const storedOriginal = amendmentData?.amendment_data?.original_data || null;
+    const storedAmended = amendmentData?.amendment_data?.amended_data || null;
+    const hasStoredSnapshots = storedOriginal && typeof storedOriginal === 'object' && Object.keys(storedOriginal).length > 0;
+    
+    if (hasStoredSnapshots) {
+      // Use stored snapshots - these are the true original vs amended data
+      return { original: storedOriginal, amended: storedAmended || storedOriginal };
     }
 
-    // Determine delta from various possible shapes
+    // Fallback: If no stored snapshots, reconstruct from current corporate data + changes
+    // Note: This may show no changes if the amendment was already approved and applied
     const delta = (amendmentData?.amendment_data?.changed_fields && Object.keys(amendmentData.amendment_data.changed_fields || {}).length > 0)
       ? amendmentData.amendment_data.changed_fields
       : (amendmentData?.amendment_data?.amendedData && typeof amendmentData.amendment_data.amendedData === 'object')
@@ -292,7 +298,23 @@ const AmendmentViewPage: React.FC = () => {
               <p className="text-sm text-gray-600">Left: Original • Right: Amendment</p>
             </div>
             <button
-              onClick={() => router.back()}
+              onClick={() => {
+                if (originalCorporate?.uuid) {
+                  // Prefer previous status from amendment (from_status) if available
+                  const prevStatus = amendmentData?.from_status || originalCorporate.status;
+                  let mode = 'edit';
+
+                  if (prevStatus === 'Pending 1st Approval') {
+                    mode = 'approve';
+                  } else if (prevStatus === 'Pending 2nd Approval') {
+                    mode = 'approve-second';
+                  }
+
+                  router.push(`/corporate/${originalCorporate.uuid}?mode=${mode}&step=2`);
+                } else {
+                  router.back();
+                }
+              }}
               className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
             >
               Back

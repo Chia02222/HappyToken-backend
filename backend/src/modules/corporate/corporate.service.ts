@@ -72,8 +72,9 @@ export class CorporateService {
     const corporateInsertData: NewCorporate = {
       ...corporateBaseData,
       status: 'Draft',
-      agreement_from: corporateBaseData.agreement_from === '' ? null : corporateBaseData.agreement_from,
-      agreement_to: corporateBaseData.agreement_to === '' ? null : corporateBaseData.agreement_to,
+      agreement_from: (corporateBaseData as any).agreement_from === '' ? null : (corporateBaseData as any).agreement_from,
+      agreement_to: (corporateBaseData as any).agreement_to === '' ? null : (corporateBaseData as any).agreement_to,
+      featured: false,
       created_at: sql`date_trunc('second', now() AT TIME ZONE 'Asia/Kuala_Lumpur')::timestamp(0)` as unknown as string,
       updated_at: sql`date_trunc('second', now() AT TIME ZONE 'Asia/Kuala_Lumpur')::timestamp(0)` as unknown as string,
     };
@@ -148,9 +149,7 @@ export class CorporateService {
   }
 
   async update(id: string, updateData: UpdateCorporateDto) {
-    console.log('CorporateService.update called with id:', id);
     try {
-      console.log('Raw updateData:', JSON.stringify(updateData));
     } catch {}
 
     const { investigation_log: _investigation_log, ...restOfUpdateData } = updateData as UpdateCorporateDto & { investigation_log?: InvestigationLogTable };
@@ -168,14 +167,21 @@ export class CorporateService {
     const looksUuid = true;
     const secondaryApproverData = updateData.secondary_approver;
 
-    console.log('Derived corporateUpdateData keys:', Object.keys(corporateUpdateData));
-    console.log('contactIdsToDelete:', contactIdsToDelete);
-    console.log('subsidiaryIdsToDelete:', subsidiaryIdsToDelete);
+    
 
     if (secondaryApproverData) {
       let secondaryApproverUuid: string | undefined;
 
-      if (secondaryApproverData.use_existing_contact && secondaryApproverData.selected_contact_id) {
+      // Check if secondary approver contact already exists in the contacts array
+      const existingSecondaryContact = contacts?.find(contact => 
+        contact.system_role === 'secondary_approver' || 
+        (secondaryApproverData.selected_contact_id && String(contact.id) === String(secondaryApproverData.selected_contact_id))
+      );
+
+      if (existingSecondaryContact) {
+        // Secondary approver contact already exists in contacts array, just link it
+        secondaryApproverUuid = String(existingSecondaryContact.id);
+      } else if (secondaryApproverData.use_existing_contact && secondaryApproverData.selected_contact_id) {
         const selectedUuid = String(secondaryApproverData.selected_contact_id);
         await this.contactsService.updateContact(selectedUuid, {
           salutation: secondaryApproverData.salutation ?? '',
@@ -220,8 +226,9 @@ export class CorporateService {
 
     const corporateFieldsToUpdate: Partial<UpdatableCorporateTable> = {
       ...(sanitizedCorporateUpdate as Partial<UpdatableCorporateTable>),
-      agreement_from: corporateUpdateData.agreement_from === '' ? null : corporateUpdateData.agreement_from,
-      agreement_to: corporateUpdateData.agreement_to === '' ? null : corporateUpdateData.agreement_to,
+      agreement_from: (corporateUpdateData as any).agreement_from === '' ? null : (corporateUpdateData as any).agreement_from,
+      agreement_to: (corporateUpdateData as any).agreement_to === '' ? null : (corporateUpdateData as any).agreement_to,
+      website: corporateUpdateData.website === '' || corporateUpdateData.website === null || corporateUpdateData.website === undefined ? 'N/A' : corporateUpdateData.website,
       updated_at: sql`date_trunc('second', now() AT TIME ZONE 'Asia/Kuala_Lumpur')::timestamp(0)` as unknown as string,
     };
 
@@ -242,7 +249,6 @@ export class CorporateService {
 
     if (contacts) {
       for (const contact of contacts) {
-        console.log('Processing contact:', contact);
         const cid = (contact as { id?: unknown }).id;
         if (isPersistedId(cid)) {
           await this.contactsService.updateContact(String(cid), contact as any);
@@ -258,7 +264,6 @@ export class CorporateService {
 
     if (contactIdsToDelete) {
         for (const contactId of contactIdsToDelete) {
-            console.log('Attempting to delete contactId:', contactId);
             if (!contactId) { console.warn('Skipping empty contactId'); continue; }
             await this.contactsService.deleteContact(String(contactId));
         }
@@ -280,14 +285,12 @@ export class CorporateService {
 
     if (subsidiaryIdsToDelete) {
         for (const subsidiaryId of subsidiaryIdsToDelete) {
-            console.log('Attempting to delete subsidiaryId:', subsidiaryId);
             if (!subsidiaryId) { console.warn('Skipping empty subsidiaryId'); continue; }
             await this.subsidiariesService.deleteSubsidiary(String(subsidiaryId));
         }
     }
 
     const result = await this.findById(id);
-    console.log('CorporateService.update returning:', JSON.stringify(result));
     return result;
   }
 
@@ -302,7 +305,6 @@ export class CorporateService {
   }
 
   async addInvestigationLog(corporateId: string, logData: Omit<InvestigationLogTable, 'uuid' | 'corporate_uuid' | 'created_at' | 'id' | 'corporate_id'>) {
-    console.log('addInvestigationLog called with:', { corporateId, logData });
     try {
       let inserted = null as any;
       try {
@@ -320,7 +322,6 @@ export class CorporateService {
           .returningAll()
           .executeTakeFirst();
       } catch {}
-      console.log('Investigation log inserted:', inserted);
       return inserted!;
     } catch (error) {
       console.error('Error inserting investigation log:', error);
@@ -391,12 +392,9 @@ export class CorporateService {
             .execute();
         } catch {}
 
-        console.log(`[updateStatus] Corporate ${id} entered Cooling Period. Scheduling completion in 30 seconds.`);
         setTimeout(async () => {
           try {
-            console.log(`[setTimeout] Calling handleCoolingPeriodCompletion for corporate ${id}.`);
             await this.handleCoolingPeriodCompletion(id);
-            console.log(`[setTimeout] Cooling period completed for corporate ${id}.`);
           } catch (error) {
             console.error(`[setTimeout] Error completing cooling period for corporate ${id}:`, error);
           }
@@ -408,33 +406,26 @@ export class CorporateService {
   }
 
   async handleCoolingPeriodCompletion(corporateId: string) {
-    console.log(`[handleCoolingPeriodCompletion] called for corporateId: ${corporateId}`);
     const corporate = await this.findById(corporateId);
     if (!corporate) {
       console.error(`[handleCoolingPeriodCompletion] Corporate ${corporateId} not found.`);
       throw new Error('Corporate not found');
     }
-    console.log(`[handleCoolingPeriodCompletion] Corporate found: ${JSON.stringify(corporate)}`);
 
     const newStatus: CorporateStatus = 'Approved';
     const note = `Cooling period completed. Auto-approved by system after 30 seconds.`;
-    console.log(`[handleCoolingPeriodCompletion] Updating status to: ${newStatus}`);
     await this.updateStatus(corporateId, newStatus, note);
 
     const updatedCorporate = await this.findById(corporateId);
-    console.log(`[handleCoolingPeriodCompletion] Status updated successfully for corporate ${corporateId}. New status: ${updatedCorporate?.status}`);
     
     // Send welcome email to first and second approvers
     try {
-      console.log(`[handleCoolingPeriodCompletion] Sending welcome email for corporate ${corporateId}`);
       await this.resendService.sendAccountCreatedSuccessEmail(corporateId);
-      console.log(`[handleCoolingPeriodCompletion] Welcome email sent successfully for corporate ${corporateId}`);
     } catch (error) {
       console.error(`[handleCoolingPeriodCompletion] Failed to send welcome email for corporate ${corporateId}:`, error);
       // Don't throw error - email failure shouldn't stop the cooling period completion
     }
     
-    console.log(`[handleCoolingPeriodCompletion] Returning corporate: ${JSON.stringify(updatedCorporate)}`);
     return updatedCorporate;
   }
 
@@ -474,8 +465,36 @@ export class CorporateService {
         }
       }
 
-      // Create amendment request log entry
-      const amendmentNote = `Amendment Request Submitted|Requested Changes: ${amendmentData.requestedChanges}|Reason: ${amendmentData.amendmentReason}|Submitted by: ${amendmentData.submittedBy}`;
+      // Extract contact information from amendment data based on current status
+      let submittedBy = 'Unknown Approver';
+      const amendedContacts = amended.contacts || [];
+
+      if (amendedContacts.length > 0) {
+        let approverContact: any = null;
+        
+        // Determine which approver submitted based on current status
+        if (corporate.status === 'Pending 2nd Approval') {
+          // Secondary approver submitted the amendment
+          const secondaryApprover = amendedContacts.find((c: any) => c.system_role === 'secondary_approver');
+          if (secondaryApprover) {
+            approverContact = secondaryApprover;
+          } else {
+            // Fallback to primary contact if no secondary approver found
+            approverContact = amendedContacts[0];
+          }
+        } else {
+          // Primary approver submitted the amendment (Pending 1st Approval or other statuses)
+          approverContact = amendedContacts[0];
+        }
+        
+        if (approverContact && approverContact.first_name && approverContact.last_name) {
+          const fullName = `${approverContact.first_name} ${approverContact.last_name}`.trim();
+          const role = approverContact.company_role || (approverContact.system_role === 'secondary_approver' ? 'Secondary Approver' : 'First Approver');
+          submittedBy = `${fullName} (${role})`;
+        }
+      }
+
+      const amendmentNote = `Amendment request submitted by ${submittedBy}`;
       
       const inserted = await this.addInvestigationLog(corporateId, {
         timestamp: sql`(now() AT TIME ZONE 'Asia/Kuala_Lumpur')::text` as unknown as string,
@@ -484,16 +503,20 @@ export class CorporateService {
         to_status: 'Amendment Requested',
         amendment_data: {
           requested_changes: amendmentData.requestedChanges,
-          amendment_reason: amendmentData.amendmentReason,
           submitted_by: amendmentData.submittedBy,
-          // only store changed fields; original comes from corporates
           changed_fields,
+          original_data: corporate,  // Store original data snapshot
+          amended_data: amended,     // Store amended data snapshot
           status: 'pending'
         }
       });
 
-      // Update corporate status to Amendment Requested
-      await this.updateStatus(corporateId, 'Amendment Requested', 'Amendment request submitted');
+      // Update corporate status to Amendment Requested (without creating duplicate log)
+      await this.db
+        .updateTable('corporates')
+        .set({ status: 'Amendment Requested' })
+        .where('uuid', '=', corporateId)
+        .execute();
 
       const amendmentId = (inserted as any).uuid ?? (inserted as any).id;
       return { success: true, message: 'Amendment request created successfully', amendmentId };
@@ -520,22 +543,29 @@ export class CorporateService {
 
       // Update amendment status
       const statusNote = status === 'approved' 
-        ? `Amendment Approved|Reviewed by: CRT Team|Review Notes: ${reviewNotes || 'Approved'}`
-        : `Amendment Rejected|Reviewed by: CRT Team|Review Notes: ${reviewNotes || 'Rejected'}`;
+        ? `Amendment approved by CRT Team`
+        : `Amendment declined by CRT Team (Reason: ${reviewNotes || 'Rejected'})`;
 
       await this.addInvestigationLog(corporateId, {
         timestamp: sql`(now() AT TIME ZONE 'Asia/Kuala_Lumpur')::text` as unknown as string,
         note: statusNote,
         from_status: 'Amendment Requested',
-        to_status: status === 'approved' ? 'Pending 1st Approval' : 'Pending 1st Approval',
+        to_status: amendmentLog.from_status || 'Pending 1st Approval',
         amendment_data: {
           ...amendmentLog.amendment_data,
           status: status,
-          reviewed_by: 'crt@happietoken.com',
           review_notes: reviewNotes,
           decision: status
         }
       });
+
+      // Update corporate status to the previous status (from the amendment log) without creating a log entry
+      const previousStatus = amendmentLog.from_status || 'Pending 1st Approval';
+      await this.db
+        .updateTable('corporates')
+        .set({ status: previousStatus as CorporateStatus })
+        .where('uuid', '=', corporateId)
+        .execute();
 
       // If approved, apply the changes to corporate data (prefer changed_fields; fallback to legacy amended_data)
       const changes = amendmentLog.amendment_data?.changed_fields || amendmentLog.amendment_data?.amended_data;
@@ -582,6 +612,21 @@ export class CorporateService {
       return amendment;
     } catch (error) {
       console.error('Error fetching amendment by ID:', error);
+      throw error;
+    }
+  }
+
+  async updateFeaturedStatus(corporateId: string, featured: boolean) {
+    try {
+      await this.db
+        .updateTable('corporates')
+        .set({ featured })
+        .where('uuid', '=', corporateId)
+        .execute();
+
+      return { success: true, message: `Corporate ${featured ? 'featured' : 'unfeatured'} successfully` };
+    } catch (error) {
+      console.error('Error updating featured status:', error);
       throw error;
     }
   }

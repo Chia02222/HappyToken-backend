@@ -6,6 +6,7 @@ import StatusBadge from './common/StatusBadge';
 import ChangeStatusModal from './modals/ChangeStatusModal';
 import CopyLinkModal from './modals/CopyLinkModal';
 import EllipsisMenu from './common/EllipsisMenu';
+import { updateCorporateFeatured } from '../services/api';
 
 interface CorporatePageProps {
     onAddNew: () => void;
@@ -18,6 +19,11 @@ interface CorporatePageProps {
     onDeleteCorporate: (id: string) => Promise<void>;
     onSendEcommericialTermlink: (id: string) => Promise<void>;
     fetchCorporates: () => Promise<void>;
+    isLoadingCorporates?: boolean;
+    isUpdatingStatus?: boolean;
+    isLoadingHistory?: boolean;
+    isSendingLink?: boolean;
+    isSavingRemark?: boolean;
 }
 
 const CRTCorporatePage: React.FC<CorporatePageProps> = ({
@@ -30,12 +36,17 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
     setCorporateToAutoSendLink,
     onDeleteCorporate,
     onSendEcommericialTermlink,
+    fetchCorporates,
+    isLoadingCorporates = false,
+    isUpdatingStatus = false,
+    isLoadingHistory = false,
+    isSendingLink = false,
+    isSavingRemark = false,
 }) => {
     const [selectedCorporate, setSelectedCorporate] = useState<Corporate | null>(null);
     const [targetStatus, setTargetStatus] = useState<CorporateStatus | null>(null);
     const [isChangeStatusModalVisible, setIsChangeStatusModalVisible] = useState(false);
     const [isCopyLinkModalVisible, setIsCopyLinkModalVisible] = useState(false);
-    const [featuredCorporateIds, setFeaturedCorporateIds] = useState<Set<string>>(new Set());
     const [isRejectingStatus] = useState(false);
 
     useEffect(() => {
@@ -48,6 +59,16 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
     const handleOpenCopyLinkModal = (corporate: Corporate) => {
         setSelectedCorporate(corporate);
         setIsCopyLinkModalVisible(true);
+    };
+
+    const handleFeatureToggle = async (corporateId: string, currentFeatured: boolean) => {
+        try {
+            await updateCorporateFeatured(corporateId, !currentFeatured);
+            // Refresh the corporates list to get updated data
+            fetchCorporates();
+        } catch (error) {
+            console.error('Error updating featured status:', error);
+        }
     };
 
 
@@ -66,6 +87,15 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
     };
 
     const renderActions = (corporate: Corporate) => {
+        if (isUpdatingStatus) {
+            return (
+                <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-ht-blue"></div>
+                    <span className="ml-1 text-xs text-gray-600">Updating...</span>
+                </div>
+            );
+        }
+        
         switch (corporate.status) {
             case 'Cooling Period':
                 return (
@@ -94,14 +124,13 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
     };
 
     const orderedCorporates = React.useMemo(() => {
-        if (!featuredCorporateIds.size) return corporates;
         const featured: typeof corporates = [];
         const rest: typeof corporates = [];
         for (const c of corporates) {
-            if (featuredCorporateIds.has(c.id)) featured.push(c); else rest.push(c);
+            if (c.featured) featured.push(c); else rest.push(c);
         }
         return [...featured, ...rest];
-    }, [corporates, featuredCorporateIds]);
+    }, [corporates]);
 
     return (
         <>
@@ -143,10 +172,19 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {orderedCorporates.map((corporate) => (
+                            {isLoadingCorporates ? (
+                                <tr>
+                                    <td colSpan={7} className="px-6 py-8 text-center">
+                                        <div className="flex items-center justify-center">
+                                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-ht-blue"></div>
+                                            <span className="ml-2 text-gray-600">Loading corporates...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ) : orderedCorporates.map((corporate) => (
                                 <tr
                                     key={corporate.id || corporate.reg_number}
-                                    className={`${featuredCorporateIds.has(corporate.id) ? 'bg-ht-blue-light hover:bg-ht-blue-light' : 'hover:bg-gray-50'} cursor-pointer`}
+                                    className={`${corporate.featured ? 'bg-ht-blue-light hover:bg-ht-blue-light' : 'hover:bg-gray-50'} cursor-pointer`}
                                     onClick={() => onView(corporate)}
                                 >
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
@@ -173,9 +211,17 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
                                     >
                                         <button
                                             onClick={() => onViewHistory(corporate.id)}
-                                            className="text-sm text-ht-blue hover:text-ht-blue-dark font-semibold"
+                                            className="text-sm text-ht-blue hover:text-ht-blue-dark font-semibold flex items-center"
+                                            disabled={isLoadingHistory}
                                         >
-                                            View
+                                            {isLoadingHistory ? (
+                                                <>
+                                                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-ht-blue mr-1"></div>
+                                                    Loading...
+                                                </>
+                                            ) : (
+                                                'View'
+                                            )}
                                         </button>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -190,12 +236,8 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
                                                     onClick: () => onSendEcommericialTermlink(corporate.id),
                                                 },
                                                 {
-                                                    label: featuredCorporateIds.has(corporate.id) ? 'Unfeature' : 'Feature',
-                                                    onClick: () => setFeaturedCorporateIds(prev => {
-                                                        const next = new Set(prev);
-                                                        if (next.has(corporate.id)) next.delete(corporate.id); else next.add(corporate.id);
-                                                        return next;
-                                                    }),
+                                                    label: corporate.featured ? 'Unfeature' : 'Feature',
+                                                    onClick: () => handleFeatureToggle(corporate.id, corporate.featured),
                                                 },
                                                 {
                                                     label: 'Delete',

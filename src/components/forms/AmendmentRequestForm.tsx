@@ -361,7 +361,7 @@ const AmendmentRequestForm: React.FC<AmendmentRequestFormProps> = ({
               id="website"
               label="Website"
               name="website"
-              type="url"
+              type={formData.website === 'N/A' ? 'text' : 'url'}
               value={formData.website}
               onChange={handleChange}
             />
@@ -484,15 +484,14 @@ const AmendmentRequestForm: React.FC<AmendmentRequestFormProps> = ({
                   error={errors[`contacts.${index}.email`]}
                 />
 
-                <SelectField
+                <InputField
                   id={`company_role_${index}`}
                   label="Company Role"
                   name="company_role"
                   value={contact.company_role}
                   onChange={(e) => handleContactChange(index, 'company_role', e.target.value)}
-                >
-                  <option>Select Role</option>
-                </SelectField>
+                  required
+                />
                 <SelectField
                   id={`system_role_${index}`}
                   label="System Role"
@@ -702,7 +701,7 @@ const AmendmentRequestForm: React.FC<AmendmentRequestFormProps> = ({
             onClick={onCancel}
             className="text-sm text-gray-700 bg-white px-4 py-2 rounded-md border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue"
           >
-            Confirm
+            Cancel
           </button>
           <button
             type="submit"

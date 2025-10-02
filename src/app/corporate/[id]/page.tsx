@@ -67,6 +67,7 @@ const INITIAL_CORPORATE_FORM_DATA: CorporateDetails = {
     agreed_to_commercial_terms: false,
     first_approval_confirmation: false,
     second_approval_confirmation: false,
+    featured: false,
     investigation_log: [],
 };
 
@@ -108,7 +109,7 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
           const fullFormData = await getCorporateById(corporateId);
           // Pre-populate secondary approver in approve-second mode so user doesn't need to reselect
           let prefilledSecondary: Partial<CorporateDetails> = {};
-          if (mode === 'approve-second') {
+          if (mode === 'approve-second' || mode === 'approve') {
             const contacts = fullFormData.contacts || [];
             const secId = fullFormData.secondary_approver_id ?? undefined;
             const byId = contacts.find((c: Contact) => String(c.id) === String(secId));
@@ -250,33 +251,44 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
         }
       } else if (formMode === 'approve' && action === 'submit') {
         updatedFormData.first_approval_confirmation = true;
-        // Ensure secondary approver is persisted to contacts table and linked on corporate
+        // Ensure secondary approver is persisted to contacts table with system_role
         const sa = updatedFormData.secondary_approver as (Contact & { use_existing_contact?: boolean; selected_contact_id?: string }) | undefined;
         if (sa) {
-          // Always enforce system_role for secondary approver when saving
-          updatedFormData.secondary_approver = { ...sa, system_role: 'secondary_approver' };
-
           if (sa.use_existing_contact && sa.selected_contact_id) {
-            const selected = updatedFormData.contacts?.find(c => String(c.id) === String(sa.selected_contact_id));
-            if (selected) {
-              // Populate fields to avoid overwriting existing contact with empty strings in backend
-              updatedFormData.secondary_approver = {
-                ...sa,
-                selected_contact_id: String(selected.id ?? ''),
-                salutation: selected.salutation,
-                first_name: selected.first_name,
-                last_name: selected.last_name,
-                company_role: selected.company_role,
+            // Update existing contact in contacts array with secondary_approver system_role
+            const contactToUpdateIndex = updatedFormData.contacts.findIndex(c => String(c.id) === String(sa.selected_contact_id));
+            if (contactToUpdateIndex !== -1) {
+              const updatedContacts = [...updatedFormData.contacts];
+              updatedContacts[contactToUpdateIndex] = {
+                ...updatedContacts[contactToUpdateIndex],
                 system_role: 'secondary_approver',
-                email: selected.email,
-                contact_number: selected.contact_number,
+                // Update any fields that might have changed
+                salutation: sa.salutation || updatedContacts[contactToUpdateIndex].salutation,
+                first_name: sa.first_name || updatedContacts[contactToUpdateIndex].first_name,
+                last_name: sa.last_name || updatedContacts[contactToUpdateIndex].last_name,
+                company_role: sa.company_role || updatedContacts[contactToUpdateIndex].company_role,
+                email: sa.email || updatedContacts[contactToUpdateIndex].email,
+                contact_number: sa.contact_number || updatedContacts[contactToUpdateIndex].contact_number,
               };
+              updatedFormData.contacts = updatedContacts;
             }
+          } else if (!sa.use_existing_contact) {
+            // Add new secondary approver contact to contacts array
+            const newSecondaryContact: Contact = {
+              salutation: sa.salutation || 'Mr',
+              first_name: sa.first_name || '',
+              last_name: sa.last_name || '',
+              contact_number: sa.contact_number || '',
+              email: sa.email || '',
+              company_role: sa.company_role || '',
+              system_role: 'secondary_approver',
+            };
+            updatedFormData.contacts = [...updatedFormData.contacts, newSecondaryContact];
           }
         }
       }
 
-      const { contacts, subsidiaries, contactIdsToDelete, subsidiaryIdsToDelete, ...corporateData } = updatedFormData;
+      const { contacts, subsidiaries, contactIdsToDelete, subsidiaryIdsToDelete, secondary_approver, ...corporateData } = updatedFormData;
 
       const dataToSend = {
         ...corporateData,
@@ -284,7 +296,7 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
         subsidiaries,
         contactIdsToDelete,
         subsidiaryIdsToDelete,
-        secondary_approver: updatedFormData.secondary_approver,
+        // Don't send secondary_approver object - let backend find by system_role
       };
 
       // Debug logging removed to avoid main-thread overhead
@@ -292,47 +304,44 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
       let savedCorporateId = corporateId;
 
       if (corporateId && corporateId !== 'new') {
-        console.log('Updating existing corporate:', corporateId);
         await updateCorporate(corporateId, dataToSend);
       } else {
-        console.log('Creating new corporate with data:', dataToSend);
         try {
           const newCorporate = await createCorporate(dataToSend);
-          console.log('New corporate created:', newCorporate);
           savedCorporateId = newCorporate.uuid;
-          console.log('Assigned savedCorporateId:', savedCorporateId);
         } catch (error) {
           console.error('Failed to create corporate:', error);
           throw error;
         }
       }
 
-      console.log('Final savedCorporateId before email check:', savedCorporateId);
-      console.log('Action:', action);
 
       if (action === 'sent' && savedCorporateId) {
         // Send email to first approver and update status via backend
+        // This is the critical section that handles email sending for "Send to Approver" button
         try {
-          console.log('Sending email to first approver for corporate ID:', savedCorporateId);
           
           // First, let's verify the corporate was created and has contact info
+          // This prevents errors when trying to send emails to non-existent corporates
           const corporate = await getCorporateById(savedCorporateId);
           if (!corporate || !corporate.contacts || corporate.contacts.length === 0) {
             throw new Error('Corporate not found or has no contacts');
           }
           
+          // Validate that the primary contact has a valid email address
+          // This prevents sending emails to invalid or missing email addresses
           const firstContact = corporate.contacts[0];
           if (!firstContact.email || firstContact.email === 'N/A' || firstContact.email === '') {
             throw new Error('Primary contact email is missing or invalid');
           }
           
-          console.log('Primary contact email:', firstContact.email);
           
-          // Send the email
+          // Send the email using the backend service
+          // This will update the corporate status to 'Pending 1st Approval' if successful
           const result = await sendEcommericialTermlink(savedCorporateId);
-          console.log('Email send result:', result);
           
           // Check if the result indicates success
+          // The backend service returns {success: false, message: "..."} on failure
           if (result && result.success === false) {
             throw new Error(result.message || 'Email sending failed');
           }
@@ -345,21 +354,30 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
           setIsSuccessModalVisible(true);
           return;
         } catch (err) {
+          // Log the error for debugging purposes
           console.error('Error sending email to first approver:', err);
+          
+          // Create a user-friendly error message
           const msg = err instanceof Error ? err.message : String(err);
           setErrorModalContent(`Failed to send for approval: ${msg}. The corporate data has been saved but the email could not be sent. Please check the email configuration or contact information and try again.`);
           setIsErrorModalVisible(true);
-          return;
+          
+          // CRITICAL: Re-throw the error to prevent success flow from executing
+          // This ensures the calling code (ECommercialTermsForm) catches the error
+          // and shows an error modal instead of redirecting
+          throw err;
         }
       } else if (formMode === 'approve' && action === 'submit' && savedCorporateId) {
-        // Persist secondary approver/contact changes before moving to second approval
-        try {
-          await updateCorporate(savedCorporateId, dataToSend as any);
-        } catch (e) {
-          console.warn('Non-fatal: failed to persist secondary approver before status update', e);
-        }
+        // Secondary approver data is already persisted in the main updateCorporate call above
+        // No need for duplicate call
 
-        await updateCorporateStatus(savedCorporateId, 'Pending 2nd Approval', 'First approval completed.');
+        // Build detailed status note including approver name and role
+        const firstApprover = formData.contacts?.[0];
+        const approverName = firstApprover ? `${firstApprover.first_name} ${firstApprover.last_name}`.trim() : 'First Approver';
+        const approverRole = firstApprover?.company_role || 'First Approver';
+        const statusNote = `First approval completed.\nSubmitted by: ${approverName} (${approverRole})`;
+
+        await updateCorporateStatus(savedCorporateId, 'Pending 2nd Approval', statusNote);
         try {
           await sendEcommericialTermlink(savedCorporateId, 'second');
         } catch (err) {
@@ -372,7 +390,13 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
         router.push(`/corporate/${savedCorporateId}?mode=approve-second&step=2`);
         return;
       } else if (formMode === 'approve-second' && action === 'submit' && savedCorporateId) {
-        await updateCorporateStatus(savedCorporateId, 'Cooling Period', 'Second approval completed.');
+        // Build detailed status note including second approver name and role
+        const secondApprover = formData.secondary_approver;
+        const approverName = secondApprover ? `${secondApprover.first_name || ''} ${secondApprover.last_name || ''}`.trim() : 'Second Approver';
+        const approverRole = secondApprover?.company_role || 'Second Approver';
+        const statusNote = `Second approval completed.\nSubmitted by: ${approverName} (${approverRole})`;
+
+        await updateCorporateStatus(savedCorporateId, 'Cooling Period', statusNote);
         setSuccessModalContent({ 
           title: 'Second Approval Completed', 
           message: 'The agreement has been fully approved and is now in the cooling period.' 
@@ -410,7 +434,6 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
   };
 
   const handleAmendRequest = () => {
-    console.log('Amend Request clicked for corporate:', corporateId);
     router.push(`/amendment/${corporateId}`);
   };
 
@@ -496,6 +519,9 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
       .replace(/\bAmendment\s+request\s+submitted\b[:.!\s]*/gi, '')
       // Remove any lines that start with "Submitted by: ..."
       .replace(/^\s*Submitted\s+by:\s*.*$/gim, '')
+      // Remove pipe-separated format with undefined values
+      .replace(/\|Requested Changes:\s*undefined\||Reason:\s*undefined\||Submitted by:\s*undefined\|/gi, '')
+      .replace(/\|Requested Changes:\s*[^|]*\||Reason:\s*[^|]*\||Submitted by:\s*[^|]*\|/gi, '')
       // Collapse multiple blank lines
       .replace(/\n{2,}/g, '\n')
       .trim();
@@ -629,7 +655,7 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
   return (
     <FormLayout 
       title={formTitle}
-      showAmendRequestButton={formStep === 2 && (formMode === 'approve' || formMode === 'approve-second')}
+      showAmendRequestButton={formStep === 2 && (formMode === 'approve' || formMode === 'approve-second') && formData.status !== 'Rejected' && formData.status !== 'Cooling Period' && formData.status !== 'Approved'}
       amendRequestDisabled={String(formData.status) === 'Amendment Requested'}
       onAmendRequest={handleAmendRequest}
     >
@@ -646,7 +672,6 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
                     Amendment request submitted by: {getSubmittedByName()} {getSubmittedByRole() ? `(${getSubmittedByRole()})` : ''}
                   </div>
                 )}
-                <div className="text-sm whitespace-pre-wrap">{formatAmendNote(latestAmendLog?.note ?? undefined)}</div>
               </div>
               <div className="flex items-center gap-2">
                 <button

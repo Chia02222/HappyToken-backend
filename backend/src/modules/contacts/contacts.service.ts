@@ -12,7 +12,6 @@ export class ContactsService {
   }
 
   async addContact(contactData: any) {
-    console.log('addContact called with:', contactData);
     const { id: _id, ...contactDataWithoutId } = contactData as CreateContactDto & { id?: string | number }; // transitional support
 
     const insertData = {
@@ -50,7 +49,6 @@ export class ContactsService {
   }
 
   async updateContact(uuid: string, contactData: UpdateContactDto) {
-    console.log('updateContact called with:', { uuid, contactData });
     // Never update primary key
     const { id: _contactId, ...updateData } = contactData;
     const updated = await this.db
@@ -66,7 +64,6 @@ export class ContactsService {
   }
 
   async deleteContact(uuid: string) {
-    console.log('deleteContact called with uuid:', uuid);
     await this.db.deleteFrom('contacts').where('uuid', '=', uuid).execute();
     return { success: true };
   }

@@ -16,7 +16,27 @@ const CopyLinkModal: React.FC<CopyLinkModalProps> = ({ isOpen, onClose, corporat
 
     if (!corporate) return null;
 
-    const approvalLink = `localhost:3002/?role=client&page=Approver%20Corporate&corporateId=${corporate.id}&formMode=approve`;
+    // Determine the correct approval mode based on corporate status
+    // This ensures the right approver gets the right link format
+    const getApprovalMode = (status: string): string => {
+        switch (status) {
+            case 'Pending 2nd Approval':
+                // Second approver needs approve-second mode
+                return 'approve-second';
+            case 'Pending 1st Approval':
+            default:
+                // First approver or any other status uses approve mode
+                return 'approve';
+        }
+    };
+
+    // Get the appropriate mode for this corporate's current status
+    const mode = getApprovalMode(corporate.status);
+    
+    // Generate the approval link with correct mode and step parameters
+    // Format: http://localhost:3000/corporate/{id}?mode={mode}&step=2
+    // This matches the URL format used by the backend email service
+    const approvalLink = `http://localhost:3000/corporate/${corporate.id}?mode=${mode}&step=2`;
 
     const handleCopy = () => {
         navigator.clipboard.writeText(approvalLink).then(() => {
@@ -28,7 +48,10 @@ const CopyLinkModal: React.FC<CopyLinkModalProps> = ({ isOpen, onClose, corporat
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Copy Registration Link">
             <div>
-                <p className="text-sm text-gray-600 mb-4">An approval link for <span className="font-medium">{corporate.company_name}</span> has been generated. Copy this link and share it with the approver to review and approve the corporate account.</p>
+                <p className="text-sm text-gray-600 mb-4">
+                    An approval link for <span className="font-medium">{corporate.company_name}</span> has been generated. 
+                    Copy this link and share it with the {mode === 'approve-second' ? 'second' : 'first'} approver to review and approve the corporate account.
+                </p>
                 
                 <div className="flex items-center space-x-2">
                     <input
