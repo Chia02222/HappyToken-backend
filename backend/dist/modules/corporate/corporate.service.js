@@ -309,11 +309,12 @@ let CorporateService = class CorporateService {
             throw new Error('Corporate not found');
         }
         const oldStatus = corporate.status;
-        const shouldLog = !(!note);
-        if ((note || status !== oldStatus) && shouldLog) {
+        const hasStatusChange = status !== oldStatus;
+        const hasNote = note !== undefined && String(note).trim() !== '';
+        if (hasStatusChange || hasNote) {
             await this.addInvestigationLog(id, {
                 timestamp: (0, kysely_1.sql) `(now() AT TIME ZONE 'Asia/Kuala_Lumpur')::text`,
-                note: note === undefined ? `Status changed from ${oldStatus} to ${status}` : note,
+                note: hasNote ? note : `Status changed from ${oldStatus} to ${status}`,
                 from_status: oldStatus,
                 to_status: status,
                 amendment_data: null,
@@ -331,29 +332,29 @@ let CorporateService = class CorporateService {
         `;
                 await this.resendService.sendCustomEmail('wanjun123@1utar.my', subject, html);
             }
-            if (status === 'Cooling Period') {
-                const coolingPeriodStart = new Date();
-                const coolingPeriodEnd = new Date(coolingPeriodStart.getTime() + 30 * 1000);
-                try {
-                    await this.db
-                        .updateTable('corporates')
-                        .set({
-                        cooling_period_start: (0, kysely_1.sql) `(${coolingPeriodStart} AT TIME ZONE 'Asia/Kuala_Lumpur')::text`,
-                        cooling_period_end: (0, kysely_1.sql) `(${coolingPeriodEnd} AT TIME ZONE 'Asia/Kuala_Lumpur')::text`,
-                    })
-                        .where('uuid', '=', id)
-                        .execute();
-                }
-                catch { }
-                setTimeout(async () => {
-                    try {
-                        await this.handleCoolingPeriodCompletion(id);
-                    }
-                    catch (error) {
-                        console.error(`[setTimeout] Error completing cooling period for corporate ${id}:`, error);
-                    }
-                }, 30000);
+        }
+        if (status === 'Cooling Period') {
+            const coolingPeriodStart = new Date();
+            const coolingPeriodEnd = new Date(coolingPeriodStart.getTime() + 30 * 1000);
+            try {
+                await this.db
+                    .updateTable('corporates')
+                    .set({
+                    cooling_period_start: (0, kysely_1.sql) `(${coolingPeriodStart} AT TIME ZONE 'Asia/Kuala_Lumpur')::text`,
+                    cooling_period_end: (0, kysely_1.sql) `(${coolingPeriodEnd} AT TIME ZONE 'Asia/Kuala_Lumpur')::text`,
+                })
+                    .where('uuid', '=', id)
+                    .execute();
             }
+            catch { }
+            setTimeout(async () => {
+                try {
+                    await this.handleCoolingPeriodCompletion(id);
+                }
+                catch (error) {
+                    console.error(`[setTimeout] Error completing cooling period for corporate ${id}:`, error);
+                }
+            }, 30000);
         }
         return await this.update(String(id), { status: status });
     }

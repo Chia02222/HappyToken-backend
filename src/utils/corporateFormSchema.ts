@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-// Optional positive number stored as string in form fields
 const positiveNumStringOptional = z
   .union([z.string().trim().length(0), z.string().trim()])
   .optional()
@@ -16,7 +15,6 @@ const positiveNumStringOptional = z
 
 export const corporateFormSchema = z
   .object({
-    // Company Information
     company_name: z.string().trim().min(1, 'Company Name is required'),
     reg_number: z.string().trim().min(1, 'Registration Number is required'),
     office_address1: z.string().trim().min(1, 'Office Address 1 is required'),
@@ -26,7 +24,6 @@ export const corporateFormSchema = z
     state: z.string().trim().min(1, 'State is required'),
     country: z.string().trim().min(1, 'Country is required'),
 
-    // Contacts (require primary)
     contacts: z
       .array(
         z.object({
@@ -42,7 +39,6 @@ export const corporateFormSchema = z
       )
       .min(1, 'At least one contact is required'),
 
-    // Billing
     billing_same_as_official: z.boolean(),
     billing_address1: z.string().optional().nullable(),
     billing_address2: z.string().optional().nullable(),
@@ -51,11 +47,9 @@ export const corporateFormSchema = z
     billing_state: z.string().optional().nullable(),
     billing_country: z.string().optional().nullable(),
 
-    // Tax
     company_tin: z.string().trim().min(1, 'Company TIN is required'),
     sst_number: z.string().optional().nullable(),
 
-    // Commercial Terms (optional)
     agreement_from: z.string().trim().optional().nullable(),
     agreement_to: z.string().trim().optional().nullable(),
     credit_limit: positiveNumStringOptional,

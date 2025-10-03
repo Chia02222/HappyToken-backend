@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import FormLayout from '../../../../components/layout/FormLayout';
 import SuccessModal from '../../../../components/modals/SuccessModal';
 import { getAmendmentById, updateAmendmentStatus, updateCorporateStatus, sendEcommericialTermlink, sendAmendRejectEmail, getCorporateById } from '@/services/api';
+import { logError } from '@/utils/logger';
+import { errorHandler } from '@/utils/errorHandler';
 
 interface AmendmentData {
   id: string;
@@ -41,7 +43,8 @@ const CRTAmendmentReviewPage: React.FC = () => {
         const data = await getAmendmentById(amendmentId);
         setAmendmentData(data);
       } catch (err) {
-        console.error('Error fetching amendment data:', err);
+        const errorMessage = errorHandler.handleApiError(err as Error, { component: 'CRTAmendmentReviewPage', action: 'fetchAmendmentData', amendmentId });
+        logError('Error fetching amendment data', { error: errorMessage }, 'CRTAmendmentReviewPage');
         setError(err instanceof Error ? err.message : String(err));
       } finally {
         setLoading(false);
@@ -84,7 +87,8 @@ const CRTAmendmentReviewPage: React.FC = () => {
       setSuccessMessage(`Reverted to ${prev}. Email sent to the ${approver === 'second' ? 'second' : 'first'} approver.`);
       setSuccessOpen(true);
     } catch (err) {
-      console.error('Error approving amendment:', err);
+      const errorMessage = errorHandler.handleApiError(err as Error, { component: 'CRTAmendmentReviewPage', action: 'approveAmendment', amendmentId });
+      logError('Error approving amendment', { error: errorMessage }, 'CRTAmendmentReviewPage');
       setSuccessTitle('Action Failed');
       setSuccessMessage('Failed to approve amendment. Please try again.');
       setSuccessOpen(true);
@@ -106,7 +110,8 @@ const CRTAmendmentReviewPage: React.FC = () => {
       setSuccessMessage(`Reverted to ${prev}. Rejection email sent to the appropriate approver.`);
       setSuccessOpen(true);
     } catch (err) {
-      console.error('Error declining amendment:', err);
+      const errorMessage = errorHandler.handleApiError(err as Error, { component: 'CRTAmendmentReviewPage', action: 'declineAmendment', amendmentId });
+      logError('Error declining amendment', { error: errorMessage }, 'CRTAmendmentReviewPage');
       setRejectOpen(false);
       setSuccessTitle('Action Failed');
       setSuccessMessage('Failed to decline amendment. Please try again.');

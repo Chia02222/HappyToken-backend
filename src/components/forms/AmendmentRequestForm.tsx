@@ -7,6 +7,8 @@ import SelectField from '../common/SelectField';
 import FormSection from '../common/FormSection';
 import DisplayField from '../common/DisplayField';
 import { Subsidiary } from '../../types';
+import { logError } from '../../utils/logger';
+import { errorHandler } from '../../utils/errorHandler';
 
 interface AmendmentRequestFormProps {
   corporateId: string;
@@ -27,7 +29,6 @@ interface Contact {
 }
 
 interface FormData {
-  // Company Information
   company_name: string;
   reg_number: string;
   office_address1: string;
@@ -38,13 +39,10 @@ interface FormData {
   country: string;
   website: string;
   
-  // Contact Person
   contacts: any[];
-  // Subsidiaries
   subsidiaries: Subsidiary[];
   subsidiaryIdsToDelete?: string[];
   
-  // Billing Address
   billing_same_as_official: boolean;
   billing_address1: string;
   billing_address2: string;
@@ -53,11 +51,9 @@ interface FormData {
   billing_state: string;
   billing_country: string;
   
-  // Tax Information
   company_tin: string;
   sst_number: string;
   
-  // Commercial Terms
   agreement_from: string;
   agreement_to: string;
   credit_limit: string;
@@ -67,7 +63,6 @@ interface FormData {
   white_labeling_fee: string;
   custom_feature_fee: string;
   
-  // Account Note
   account_note: string;
 }
 
@@ -126,13 +121,11 @@ const AmendmentRequestForm: React.FC<AmendmentRequestFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Per-section edit toggles
   const [editCompany, setEditCompany] = useState(false);
   const [editContacts, setEditContacts] = useState(false);
   const [editTax, setEditTax] = useState(false);
   const [editCommercial, setEditCommercial] = useState(false);
 
-  // Draft helpers
   const saveDraft = React.useCallback(() => {
     try {
       const payload = JSON.stringify(formData);
@@ -144,7 +137,6 @@ const AmendmentRequestForm: React.FC<AmendmentRequestFormProps> = ({
     try { localStorage.removeItem(draftKey); } catch {}
   }, [draftKey]);
 
-  // Hydrate draft on mount
   useEffect(() => {
     try {
       const raw = localStorage.getItem(draftKey);
@@ -154,7 +146,6 @@ const AmendmentRequestForm: React.FC<AmendmentRequestFormProps> = ({
         setFormData(prev => ({ ...prev, ...parsed }));
       }
     } catch {}
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftKey]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -173,7 +164,6 @@ const AmendmentRequestForm: React.FC<AmendmentRequestFormProps> = ({
       }));
     }
     
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -276,7 +266,6 @@ const AmendmentRequestForm: React.FC<AmendmentRequestFormProps> = ({
       newErrors.company_tin = 'Company TIN is required';
     }
 
-    // Validate primary contact
     const primaryContact = formData.contacts[0];
     if (!primaryContact.first_name.trim()) {
       newErrors['contacts.0.first_name'] = 'Primary contact first name is required';
@@ -313,7 +302,8 @@ const AmendmentRequestForm: React.FC<AmendmentRequestFormProps> = ({
       await onSave(amendmentData);
       clearDraft();
     } catch (error) {
-      console.error('Error saving amendment request:', error);
+      const errorMessage = errorHandler.handleApiError(error as Error, { component: 'AmendmentRequestForm', action: 'saveAmendmentRequest' });
+      logError('Error saving amendment request', { error: errorMessage }, 'AmendmentRequestForm');
       setErrors({ submit: 'Failed to save amendment request. Please try again.' });
     } finally {
       setIsSubmitting(false);

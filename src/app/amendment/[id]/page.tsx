@@ -6,6 +6,8 @@ import FormLayout from '../../../components/layout/FormLayout';
 import AmendmentRequestForm from '@/components/forms/AmendmentRequestForm';
 import SuccessModal from '../../../components/modals/SuccessModal';
 import { getCorporateById, createAmendmentRequest, getAmendmentRequestsByCorporate } from '@/services/api';
+import { logError } from '@/utils/logger';
+import { errorHandler } from '@/utils/errorHandler';
 
 interface CorporateData {
   id: string;
@@ -46,7 +48,8 @@ const AmendmentRequestPage: React.FC = () => {
         const data = await getCorporateById(corporateId);
         setCorporateData(data);
       } catch (err) {
-        console.error('Error fetching corporate data:', err);
+        const errorMessage = errorHandler.handleApiError(err as Error, { component: 'AmendmentRequestPage', action: 'fetchCorporateData', corporateId });
+        logError('Error fetching corporate data', { error: errorMessage }, 'AmendmentRequestPage');
         setError('Failed to load corporate data. Please try again.');
       } finally {
         setLoading(false);
@@ -72,7 +75,8 @@ const AmendmentRequestPage: React.FC = () => {
       setSuccessMessage('Your amendment request has been submitted successfully.');
       setSuccessOpen(true);
     } catch (err) {
-      console.error('Error submitting amendment request:', err);
+      const errorMessage = errorHandler.handleApiError(err as Error, { component: 'AmendmentRequestPage', action: 'submitAmendmentRequest', corporateId });
+      logError('Error submitting amendment request', { error: errorMessage }, 'AmendmentRequestPage');
       throw err;
     }
   };
@@ -157,7 +161,8 @@ const AmendmentRequestPage: React.FC = () => {
                 router.push(`/corporate/${corporateId}?step=2`);
               }
             } catch (error) {
-              console.error('Error fetching amendment requests:', error);
+              const errorMessage = errorHandler.handleApiError(error as Error, { component: 'AmendmentRequestPage', action: 'fetchAmendmentRequests', corporateId });
+              logError('Error fetching amendment requests', { error: errorMessage }, 'AmendmentRequestPage');
               // Fallback: redirect to corporate page
               router.push(`/corporate/${corporateId}?step=2`);
             }

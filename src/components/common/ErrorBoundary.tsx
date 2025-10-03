@@ -1,6 +1,8 @@
 "use client";
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { logError } from '@/utils/logger';
+import { errorHandler } from '@/utils/errorHandler';
 
 interface Props {
   children: ReactNode;
@@ -24,9 +26,9 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    const errorMessage = errorHandler.handleApiError(error, { component: 'ErrorBoundary', action: 'catchError' });
+    logError('ErrorBoundary caught an error', { error: errorMessage, errorInfo }, 'ErrorBoundary');
     
-    // Call the onError callback if provided
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
     }

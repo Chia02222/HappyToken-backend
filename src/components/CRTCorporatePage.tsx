@@ -7,6 +7,8 @@ import ChangeStatusModal from './modals/ChangeStatusModal';
 import CopyLinkModal from './modals/CopyLinkModal';
 import EllipsisMenu from './common/EllipsisMenu';
 import { updateCorporatePinned } from '../services/api';
+import { logError } from '../utils/logger';
+import { errorHandler } from '../utils/errorHandler';
 
 interface CorporatePageProps {
     onAddNew: () => void;
@@ -48,6 +50,7 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
     const [isChangeStatusModalVisible, setIsChangeStatusModalVisible] = useState(false);
     const [isCopyLinkModalVisible, setIsCopyLinkModalVisible] = useState(false);
     const [isRejectingStatus] = useState(false);
+    const [loadingHistoryId, setLoadingHistoryId] = useState<string | null>(null);
 
     useEffect(() => {
         if (corporateToAutoSendLink) {
@@ -64,10 +67,10 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
     const handlePinToggle = async (corporateId: string, currentPinned: boolean) => {
         try {
             await updateCorporatePinned(corporateId, !currentPinned);
-            // Refresh the corporates list to get updated data
             fetchCorporates();
         } catch (error) {
-            console.error('Error updating pinned status:', error);
+            const errorMessage = errorHandler.handleApiError(error as Error, { component: 'CRTCorporatePage', action: 'updatePinnedStatus', corporateId });
+            logError('Error updating pinned status', { error: errorMessage }, 'CRTCorporatePage');
         }
     };
 
@@ -210,11 +213,18 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
                                         onClick={(e) => e.stopPropagation()}
                                     >
                                         <button
-                                            onClick={() => onViewHistory(corporate.id)}
+                                            onClick={async () => {
+                                                setLoadingHistoryId(corporate.id);
+                                                try {
+                                                    await Promise.resolve(onViewHistory(corporate.id));
+                                                } finally {
+                                                    setLoadingHistoryId(null);
+                                                }
+                                            }}
                                             className="text-sm text-ht-blue hover:text-ht-blue-dark font-semibold flex items-center"
-                                            disabled={isLoadingHistory}
+                                            disabled={loadingHistoryId === corporate.id}
                                         >
-                                            {isLoadingHistory ? (
+                                            {loadingHistoryId === corporate.id ? (
                                                 <>
                                                     <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-ht-blue mr-1"></div>
                                                     Loading...

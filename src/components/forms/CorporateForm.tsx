@@ -8,6 +8,8 @@ import { CorporateDetails, Contact, Subsidiary } from '../../types';
 import { corporateFormSchema } from '../../utils/corporateFormSchema';
 import { getMalaysiaDateString } from '../../utils/validators';
 import { countries, getStatesWithNA, getStateFieldLabel, getUniqueCallingCodes } from '../../data/countries';
+import { logError } from '../../utils/logger';
+import { errorHandler } from '../../utils/errorHandler';
 
 interface CorporateFormProps {
     onCloseForm: () => void;
@@ -33,10 +35,8 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
 		} catch {}
 	};
 
-    // Primary contact id for mapping contact field errors
     const primaryId = formData.contacts?.[0]?.id || '0';
 
-    // Function to get calling code for a country
     const getCallingCodeForCountry = (countryName: string): string => {
         const country = countries.find(c => c.name === countryName);
         return country ? country.callingCode : '+60'; // Default to Malaysia's calling code
@@ -57,7 +57,6 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
 			setErrors({});
 			return true;
 		}
-		// Map the FIRST zod issue to an input id so we can show red and scroll
 		const issue = res.error.issues[0];
 		const p = issue.path.join('.');
 		let id = String(issue.path[0]);
@@ -88,10 +87,8 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
         } else {
             setFormData(prev => {
                 const newData = { ...prev, [name]: value };
-                // Clear state when country changes and auto-select calling code
                 if (name === 'country') {
                     newData.state = '';
-                    // Auto-select calling code for all contacts when country changes
                     const callingCode = getCallingCodeForCountry(value);
                     newData.contacts = newData.contacts.map(contact => ({
                         ...contact,
@@ -111,7 +108,6 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
             const newSubsidiaries = prev.subsidiaries.map((sub: Subsidiary, i: number) => {
                 if (i === index) {
                     const updatedSub = { ...sub, [name]: value };
-                    // Clear state when country changes for subsidiary
                     if (name === 'country') {
                         updatedSub.state = '';
                     }
@@ -387,13 +383,13 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                 <button 
                     type="button"
                     onClick={async () => {
-                        // In edit mode, skip validation to allow saving
                         if (formMode !== 'edit' && !runZodValidation()) return;
                         try {
                             setIsSaving(true);
                             await onSaveCorporate(formData, 'save');
                         } catch (error) {
-                            console.error('Save failed:', error);
+                            const errorMessage = errorHandler.handleApiError(error as Error, { component: 'CorporateForm', action: 'save' });
+                            logError('Save failed', { error: errorMessage }, 'CorporateForm');
                         } finally {
                             setIsSaving(false);
                         }
@@ -408,7 +404,6 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                     onClick={async () => {
                         setIsValidatingNext(true);
                         try {
-                            // In edit mode, allow navigating to next without validation
                             if (formMode !== 'edit' && !runZodValidation()) return;
                             setFormStep(2);
                         } finally {

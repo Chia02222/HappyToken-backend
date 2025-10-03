@@ -49,7 +49,6 @@ export class ContactsService {
   }
 
   async updateContact(uuid: string, contactData: UpdateContactDto) {
-    // Never update primary key
     const { id: _contactId, ...updateData } = contactData;
     const updated = await this.db
       .updateTable('contacts')

@@ -22,7 +22,6 @@ const AmendRequestModal: React.FC<AmendRequestModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Helper function to format timestamp
   const formatTimestamp = (timestamp?: string) => {
     if (!timestamp) return '';
     const date = new Date(timestamp);

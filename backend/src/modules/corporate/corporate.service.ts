@@ -15,9 +15,25 @@ import { SubsidiariesService } from '../subsidiaries/subsidiaries.service';
 import { ResendService } from '../resend/resend.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
-// Define a type for CorporateTable without the primary key 'uuid'
 type UpdatableCorporateTable = Omit<CorporateTable, 'uuid'>;
 
+/**
+ * Corporate Service
+ * 
+ * Main service for managing corporate accounts and their lifecycle.
+ * Handles CRUD operations, status transitions, and approval workflows.
+ * 
+ * Key Business Rules:
+ * - Corporate approval requires 2 approvers (primary and secondary)
+ * - Status flow: Draft → Pending 1st Approval → Pending 2nd Approval → Cooling Period → Approved
+ * - Amendment requests can be made from any approved status
+ * - Investigation logs track all status changes and actions
+ * 
+ * Related Services:
+ * - ContactsService: Manages corporate contacts
+ * - SubsidiariesService: Manages corporate subsidiaries
+ * - ResendService: Handles email notifications
+ */
 @Injectable()
 export class CorporateService {
   constructor(
@@ -51,7 +67,6 @@ export class CorporateService {
       return null;
     }
 
-    // Load children via uuid-first; fallback to numeric FK if present (transition safety)
     const [contacts, subsidiaries, investigationLogs] = await Promise.all([
       this.db.selectFrom('contacts').selectAll().where('corporate_uuid', '=', corporate.uuid).orderBy('created_at', 'asc').execute(),
       this.db.selectFrom('subsidiaries').selectAll().where('corporate_uuid', '=', corporate.uuid).execute(),
@@ -66,6 +81,24 @@ export class CorporateService {
     };
   }
 
+  /**
+   * Creates a new corporate account with related entities
+   * 
+   * Process:
+   * 1. Insert corporate record with 'Draft' status
+   * 2. Create associated contacts (primary contact is required)
+   * 3. Create associated subsidiaries (if any)
+   * 4. Handle secondary approver setup (existing contact or new)
+   * 5. Link secondary approver to corporate record
+   * 
+   * Important: Secondary approver can be:
+   * - An existing contact (use_existing_contact = true)
+   * - A new contact (automatically created and linked)
+   * - Marked with system_role = 'secondary_approver'
+   * 
+   * @param corporateData - Corporate data with contacts, subsidiaries, and secondary approver
+   * @returns Created corporate record with UUID
+   */
   async create(corporateData: Omit<CreateCorporateWithRelationsDto, 'investigation_log'>) {
     const { contacts, subsidiaries, secondary_approver, ...corporateBaseData } = corporateData;
 
@@ -91,14 +124,12 @@ export class CorporateService {
 
     if (contacts) {
       for (const contact of contacts) {
-        // @ts-ignore transitional support; ContactsService to be updated to accept corporate_uuid
         await this.contactsService.addContact({ ...contact, corporate_uuid: (inserted as any).uuid });
       }
     }
 
     if (subsidiaries) {
       for (const subsidiary of subsidiaries) {
-        // @ts-ignore transitional support; SubsidiariesService to be updated to accept corporate_uuid
         await this.subsidiariesService.addSubsidiary({ ...subsidiary, corporate_uuid: (inserted as any).uuid });
       }
     }
@@ -148,6 +179,25 @@ export class CorporateService {
     return inserted!;
   }
 
+  /**
+   * Updates an existing corporate account
+   * 
+   * Process:
+   * 1. Update corporate base data
+   * 2. Handle contact updates (create, update, delete)
+   * 3. Handle subsidiary updates (create, update, delete)
+   * 4. Update secondary approver if changed
+   * 5. Preserve investigation logs (audit trail)
+   * 
+   * Important: 
+   * - Secondary approver updates require special handling
+   * - Investigation logs are NEVER deleted (audit compliance)
+   * - Status changes should use updateStatus() method
+   * 
+   * @param id - Corporate UUID
+   * @param updateData - Updated corporate data
+   * @returns Updated corporate record
+   */
   async update(id: string, updateData: UpdateCorporateDto) {
     try {
     } catch {}
@@ -344,6 +394,26 @@ export class CorporateService {
     }
   }
 
+  /**
+   * Updates corporate status and creates investigation log
+   * 
+   * Status Transition Rules:
+   * - Draft → Pending 1st Approval (when sent to first approver)
+   * - Pending 1st Approval → Pending 2nd Approval (first approver approves)
+   * - Pending 2nd Approval → Cooling Period (second approver approves)
+   * - Cooling Period → Approved (after 14 days, automatic)
+   * - Any status → Amendment Requested (when amendment is submitted)
+   * - Amendment Requested → Previous Status (when amendment approved/declined)
+   * 
+   * Investigation Logs:
+   * - Every status change is logged with timestamp
+   * - Logs include actor, action, and optional notes
+   * - Used for audit trail and timeline display
+   * 
+   * @param id - Corporate UUID
+   * @param status - New status
+   * @param note - Optional note describing the change
+   */
   async updateStatus(id: string, status: string, note?: string) {
     const corporate = await this.findById(id);
     if (!corporate) {
@@ -352,12 +422,13 @@ export class CorporateService {
 
     const oldStatus = corporate.status;
 
-    const shouldLog = !( !note );
+    const hasStatusChange = status !== oldStatus;
+    const hasNote = note !== undefined && String(note).trim() !== '';
 
-    if ((note || status !== oldStatus) && shouldLog) {
+    if (hasStatusChange || hasNote) {
       await this.addInvestigationLog(id, {
         timestamp: sql`(now() AT TIME ZONE 'Asia/Kuala_Lumpur')::text` as unknown as string,
-        note: note === undefined ? `Status changed from ${oldStatus} to ${status}` : note,
+        note: hasNote ? note! : `Status changed from ${oldStatus} to ${status}`,
         from_status: oldStatus as CorporateStatus,
         to_status: status as CorporateStatus,
         amendment_data: null,
@@ -377,34 +448,54 @@ export class CorporateService {
         await this.resendService.sendCustomEmail('wanjun123@1utar.my', subject, html);
       }
 
-      if (status === 'Cooling Period') {
-        const coolingPeriodStart = new Date();
-        const coolingPeriodEnd = new Date(coolingPeriodStart.getTime() + 30 * 1000);
+    }
 
+    if (status === 'Cooling Period') {
+      const coolingPeriodStart = new Date();
+      const coolingPeriodEnd = new Date(coolingPeriodStart.getTime() + 30 * 1000);
+
+      try {
+        await this.db
+          .updateTable('corporates')
+          .set({
+            cooling_period_start: sql`(${coolingPeriodStart} AT TIME ZONE 'Asia/Kuala_Lumpur')::text` as unknown as string,
+            cooling_period_end: sql`(${coolingPeriodEnd} AT TIME ZONE 'Asia/Kuala_Lumpur')::text` as unknown as string,
+          })
+          .where('uuid', '=', id)
+          .execute();
+      } catch {}
+
+      setTimeout(async () => {
         try {
-          await this.db
-            .updateTable('corporates')
-            .set({
-              cooling_period_start: sql`(${coolingPeriodStart} AT TIME ZONE 'Asia/Kuala_Lumpur')::text` as unknown as string,
-              cooling_period_end: sql`(${coolingPeriodEnd} AT TIME ZONE 'Asia/Kuala_Lumpur')::text` as unknown as string,
-            })
-            .where('uuid', '=', id)
-            .execute();
-        } catch {}
-
-        setTimeout(async () => {
-          try {
-            await this.handleCoolingPeriodCompletion(id);
-          } catch (error) {
-            console.error(`[setTimeout] Error completing cooling period for corporate ${id}:`, error);
-          }
-        }, 30000);
-      }
+          await this.handleCoolingPeriodCompletion(id);
+        } catch (error) {
+          console.error(`[setTimeout] Error completing cooling period for corporate ${id}:`, error);
+        }
+      }, 30000);
     }
 
     return await this.update(String(id), { status: status as CorporateStatus });
   }
 
+  /**
+   * Completes cooling period and activates corporate account
+   * 
+   * Process:
+   * 1. Verify corporate exists and is in 'Cooling Period' status
+   * 2. Update status to 'Approved'
+   * 3. Send welcome emails to both approvers
+   * 4. Create investigation log for completion
+   * 
+   * Error Handling:
+   * - Email failures don't block status update (logged but not thrown)
+   * - Status is updated even if email fails
+   * 
+   * Note: Currently triggered after 30 seconds for testing.
+   * In production, should be triggered by cron job after 14 days.
+   * 
+   * @param corporateId - Corporate UUID
+   * @returns Updated corporate record
+   */
   async handleCoolingPeriodCompletion(corporateId: string) {
     const corporate = await this.findById(corporateId);
     if (!corporate) {
@@ -445,6 +536,26 @@ export class CorporateService {
   }
 
   // Amendment Request Methods
+  /**
+   * Creates an amendment request for an existing corporate
+   * 
+   * Amendment Workflow:
+   * 1. Compare current data with proposed changes
+   * 2. Store only changed fields (not full data)
+   * 3. Update status to 'Amendment Requested'
+   * 4. Create investigation log with change details
+   * 5. Notify CRT team via email
+   * 
+   * Important Business Rules:
+   * - Amendments can only be requested from certain statuses
+   * - Changed fields are stored separately for comparison
+   * - Original data remains unchanged until amendment approved
+   * - Submitter info is captured from current status (primary or secondary approver)
+   * 
+   * @param corporateId - Corporate UUID
+   * @param amendmentData - Proposed changes
+   * @returns Created amendment request with UUID
+   */
   async createAmendmentRequest(corporateId: string, amendmentData: any) {
     try {
       

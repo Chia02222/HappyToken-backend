@@ -26,7 +26,6 @@ const AmendmentComparisonView: React.FC<AmendmentComparisonViewProps> = ({
   onDecline,
   isReviewMode = false
 }) => {
-  // Compute effective amended view: apply changedFields to original when provided; otherwise use amendedData prop
   const amendedData = React.useMemo(() => {
     if (changedFields && typeof changedFields === 'object') {
       const base = Array.isArray(originalData) ? [...originalData] : { ...originalData } as any;

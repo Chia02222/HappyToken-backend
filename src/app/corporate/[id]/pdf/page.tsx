@@ -5,6 +5,8 @@ import React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getCorporateById, getAmendmentRequestsByCorporate } from '@/services/api';
 import type { CorporateDetails, Contact } from '@/types';
+import { logError, logInfo } from '@/utils/logger';
+import { errorHandler } from '@/utils/errorHandler';
 
 interface LogEntry {
   timestamp: string;
@@ -101,7 +103,7 @@ const PrintCorporateAgreementPage: React.FC = () => {
       logs.push({
         timestamp: formatDateTime(new Date(corp.created_at)),
         action: 'Agreement Created',
-        details: 'Initial draft prepared and submitted for review\n' + submitterInfo,
+        details: 'Initial draft prepared and submitted for review',
       });
     }
 
@@ -283,6 +285,24 @@ const PrintCorporateAgreementPage: React.FC = () => {
               submittedByRole: submitter.role,
             };
           }
+        } else if (log.to_status === 'Pending 1st Approval') {
+          const base = (log.note || 'Registration link sent to 1st approver');
+          const submitterInfo = getSubmitterInfo(log.note || '');
+          const details = base + (submitterInfo ? '\n' + submitterInfo : '');
+          logs.push({
+            timestamp: formatDateTime(new Date(log.timestamp)),
+            action: 'Registration Link Sent',
+            details,
+          });
+        } else if (log.to_status === 'Pending 2nd Approval' && log.note && log.note.toLowerCase().includes('registration link sent to 2nd approver')) {
+          const base = (log.note || 'Registration link sent to 2nd approver');
+          const submitterInfo = getSubmitterInfo(log.note || '');
+          const details = base + (submitterInfo ? '\n' + submitterInfo : '');
+          logs.push({
+            timestamp: formatDateTime(new Date(log.timestamp)),
+            action: 'Registration Link Sent',
+            details,
+          });
         } else if (log.to_status === 'Pending 2nd Approval' || (log.note && log.note.toLowerCase().includes('first approval'))) {
           // Only show Submitted by for First Approval Granted
           const base = (log.note || 'First approval completed');
@@ -426,7 +446,7 @@ const PrintCorporateAgreementPage: React.FC = () => {
               const amendData = amendment.amendment_data || amendment.amendmentData || amendment.amended_data || null;
               const original = corp || {};
               
-              console.log('🔍 DEBUG: Processing amendment:', {
+              logInfo('Processing amendment', {
                 id: amendment.id,
                 note: amendment.note,
                 to_status: amendment.to_status,

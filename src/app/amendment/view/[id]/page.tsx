@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import FormLayout from '../../../../components/layout/FormLayout';
 import { getAmendmentById, getCorporateById } from '@/services/api';
+import { logError } from '@/utils/logger';
+import { errorHandler } from '@/utils/errorHandler';
 
 interface AmendmentData {
   id: string;
@@ -34,7 +36,8 @@ const AmendmentViewPage: React.FC = () => {
         const data = await getAmendmentById(amendmentId);
         setAmendmentData(data);
       } catch (err) {
-        console.error('Error fetching amendment data:', err);
+        const errorMessage = errorHandler.handleApiError(err as Error, { component: 'AmendmentViewPage', action: 'fetchAmendmentData', amendmentId });
+        logError('Error fetching amendment data', { error: errorMessage }, 'AmendmentViewPage');
         setError(err instanceof Error ? err.message : String(err));
       } finally {
         setLoading(false);

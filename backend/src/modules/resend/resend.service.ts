@@ -60,7 +60,6 @@ export class ResendService {
       return { success: false, message: 'Corporate not found.' };
     }
 
-    // Get contact information for email personalization
     const firstContact = corporate.contacts?.[0];
     const secUuid = (corporate as { secondary_approver_uuid?: unknown }).secondary_approver_uuid as string | undefined;
     const contacts = (corporate.contacts || []);
@@ -69,7 +68,6 @@ export class ResendService {
     const fallback = contacts.length > 1 ? contacts[1] : undefined;
     const secondary = byId || byRole || fallback;
 
-    // Resolve recipient based on approver
     let recipientEmail: string | undefined;
     if (approver === 'first') {
       recipientEmail = firstContact?.email; // primary contact as first approver
@@ -77,7 +75,6 @@ export class ResendService {
       recipientEmail = secondary?.email;
     }
     if (recipientEmail) {
-      // Sanitize recipientEmail to remove any non-standard email characters
       recipientEmail = recipientEmail.replace(/[^a-zA-Z0-9._%+-@]/g, '');
     }
     if (!recipientEmail || recipientEmail === 'N/A' || recipientEmail === '') {
@@ -168,13 +165,11 @@ export class ResendService {
     }
 
     try {
-      // Get corporate details
       const corporate = await this.corporateService.findById(corporateId);
       if (!corporate) {
         return { success: false, message: 'Corporate not found.' };
       }
 
-      // Get the latest/pending amendment request from investigation logs
       const investigationLogs = await this.corporateService.getInvestigationLogs(corporateId);
       const latestAmendmentLog = investigationLogs.find((log: any) => log.to_status === 'Amendment Requested')
         || investigationLogs.find((log: { note?: string | null }) => log.note != null && log.note.includes('Amendment Request Submitted'));
@@ -183,10 +178,8 @@ export class ResendService {
         return { success: false, message: 'No amendment request found in investigation logs.' };
       }
 
-      // Extract data from the investigation log with tolerance for formatting
       const noteContent = latestAmendmentLog.note ?? '';
       
-      // Parse with tolerance for spaces, case, and HTML tags
       const requestedChangesMatch = noteContent.match(/Requested Changes:\s*([^<]+?)(?:<br>|$)/i);
       const reasonMatch = noteContent.match(/Reason:\s*([^<]+?)(?:<br>|$)/i);
       const submittedByMatch = noteContent.match(/Submitted by:\s*([^<]+?)(?:<br>|$)/i);
@@ -195,7 +188,6 @@ export class ResendService {
       const reason = reasonMatch ? reasonMatch[1].trim() : 'Not specified';
       const submittedBy = submittedByMatch ? submittedByMatch[1].trim() : 'Unknown';
 
-      // CRT email configuration
       const crtEmail = process.env.CRT_EMAIL || 'wanjun123@1utar.my';
       const subject = `Action Required: Amendment Request for ${corporate.company_name}`;
       const corporateLink = (latestAmendmentLog as any)?.uuid
@@ -224,7 +216,6 @@ export class ResendService {
         </div>
       `;
 
-      // Send email via Resend
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -321,12 +312,10 @@ export class ResendService {
       return { success: false, message: 'Corporate not found.' };
     }
 
-    // Determine recipient based on current status
     let recipientEmail: string | undefined;
     let approverName: string;
     
     if (corporate.status === 'Pending 2nd Approval') {
-      // Send to second approver
       const secUuid = (corporate as { secondary_approver_uuid?: unknown }).secondary_approver_uuid as string | undefined;
       const contacts = (corporate.contacts || []);
       const byId = contacts.find(c => String((c as { id?: unknown }).id) === String(secUuid));
@@ -336,7 +325,6 @@ export class ResendService {
       recipientEmail = secondary?.email;
       approverName = secondary ? `${secondary.first_name || ''} ${secondary.last_name || ''}`.trim() : 'Second Approver';
     } else {
-      // Send to first approver
       const firstContact = corporate.contacts?.[0];
       recipientEmail = firstContact?.email;
       approverName = firstContact ? `${firstContact.first_name || ''} ${firstContact.last_name || ''}`.trim() : 'First Approver';
@@ -440,7 +428,6 @@ export class ResendService {
       (corporate.contacts || []).find(c => c.system_role === 'secondary_approver');
     const secondEmail = secondary?.email;
 
-    // Get approver names
     const firstApproverName = firstContact ? `${firstContact.first_name || ''} ${firstContact.last_name || ''}`.trim() : 'First Approver';
     const secondApproverName = secondary ? `${secondary.first_name || ''} ${secondary.last_name || ''}`.trim() : 'Second Approver';
     const createdBy = `${firstApproverName}, ${secondApproverName}`;
@@ -473,7 +460,6 @@ export class ResendService {
 
     const sendTo = async (to: string, userName: string) => {
       if (!to) return { success: false };
-      // Try to generate backend PDF and attach; fallback to email without attachment
       let attachments: any[] | undefined;
       try {
         const pdfResp = await fetch(`http://localhost:3001/corporates/${(corporate as any).uuid ?? (corporate as any).id}/pdf`);

@@ -13,6 +13,8 @@ import SuccessModal from '../components/modals/SuccessModal';
 import ErrorMessageModal from '../components/modals/ErrorMessageModal';
 import LoginPage from '../components/LoginPage';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { logError, logInfo } from '../utils/logger';
+import { errorHandler } from '../utils/errorHandler';
 
 
 const App: React.FC = () => {
@@ -64,7 +66,8 @@ const App: React.FC = () => {
       const data = await getCorporates();
       setCorporates(data);
     } catch (error) {
-      console.error("Failed to fetch corporates:", error);
+      const errorMessage = errorHandler.handleApiError(error as Error, { component: 'App', action: 'fetchCorporates' });
+      logError("Failed to fetch corporates", { error: errorMessage }, 'App');
     } finally {
       setIsLoadingCorporates(false);
     }
@@ -108,7 +111,8 @@ const App: React.FC = () => {
         await updateCorporateStatus(id, status, note);
         await fetchCorporates();
     } catch (error) {
-        console.error(`Failed to update status for corporate ${id}:`, error);
+        const errorMessage = errorHandler.handleApiError(error as Error, { component: 'App', action: 'updateStatus', corporateId: id });
+        logError(`Failed to update status for corporate ${id}`, { error: errorMessage }, 'App');
     } finally {
         setIsUpdatingStatus(false);
     }
@@ -121,7 +125,8 @@ const App: React.FC = () => {
       setSelectedCorporateForHistory(fullData);
       setIsHistoryModalVisible(true);
     } catch (error) {
-      console.error(`Failed to fetch history for corporate ${corporateId}:`, error);
+      const errorMessage = errorHandler.handleApiError(error as Error, { component: 'App', action: 'fetchHistory', corporateId });
+      logError(`Failed to fetch history for corporate ${corporateId}`, { error: errorMessage }, 'App');
     } finally {
       setIsLoadingHistory(false);
     }
@@ -143,7 +148,8 @@ const App: React.FC = () => {
         await deleteCorporate(corporateToDeleteId);
         fetchCorporates();
       } catch (error) {
-        console.error(`Failed to delete corporate ${corporateToDeleteId}:`, error);
+        const errorMessage = errorHandler.handleApiError(error as Error, { component: 'App', action: 'deleteCorporate', corporateId: corporateToDeleteId });
+        logError(`Failed to delete corporate ${corporateToDeleteId}`, { error: errorMessage }, 'App');
       } finally {
         setIsConfirmDeleteModalVisible(false);
         setCorporateToDeleteId(null);
@@ -182,9 +188,10 @@ const App: React.FC = () => {
       });
       setIsSuccessModalVisible(true);
     } catch (error) {
+      const errorMessage = errorHandler.handleApiError(error as Error, { component: 'App', action: 'sendApproverLink', corporateId: id });
       setErrorModalContent(`Failed to send approver link for corporate ${id}. Please try again.`);
       setIsErrorModalVisible(true);
-      console.error(`Failed to resend registration link for corporate ${id}:`, error);
+      logError(`Failed to resend registration link for corporate ${id}`, { error: errorMessage }, 'App');
     } finally {
       setIsSendingLink(false);
     }
@@ -203,7 +210,8 @@ const App: React.FC = () => {
       setSelectedCorporateForHistory(fullData);
       await fetchCorporates(); // Also refresh the main list
     } catch (error) {
-      console.error(`Failed to save remark for corporate ${corporateId}:`, error);
+      const errorMessage = errorHandler.handleApiError(error as Error, { component: 'App', action: 'saveRemark', corporateId });
+      logError(`Failed to save remark for corporate ${corporateId}`, { error: errorMessage }, 'App');
     } finally {
       setIsSavingRemark(false);
     }

@@ -15,7 +15,6 @@ interface HistoryLogModalProps {
 const HistoryLogModal: React.FC<HistoryLogModalProps> = ({ isOpen, onClose, corporate, onSave }) => {
     const [logNote, setLogNote] = useState('');
 
-    // Date formatting utility
     const formatDateTime = (date: Date): string => {
         return date.toLocaleString('en-US', {
             day: '2-digit',
