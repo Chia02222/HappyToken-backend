@@ -6,6 +6,7 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import FormLayout from '../../../components/layout/FormLayout';
 import CorporateForm from '../../../components/forms/CorporateForm';
 import ECommercialTermsForm from '../../../components/forms/ECommercialTermsForm';
+import AmendRequestModal from '../../../components/modals/AmendRequestModal';
 import { CorporateDetails, CorporateStatus, Contact, LogEntry } from '../../../types';
 import { getCorporateById, createCorporate, updateCorporate, updateCorporateStatus, sendAmendmentEmail, sendEcommericialTermlink, sendAmendRejectEmail, getAmendmentRequestsByCorporate } from '../../../services/api';
 import SuccessModal from '../../../components/modals/SuccessModal';
@@ -491,6 +492,7 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
   const [isRejectingAmendment, setIsRejectingAmendment] = React.useState(false);
   const [amendRejectReason, setAmendRejectReason] = React.useState('');
   const [hasPendingAmendment, setHasPendingAmendment] = React.useState<boolean>(false);
+  const [showAmendmentModal, setShowAmendmentModal] = React.useState<boolean>(false);
 
   // Determine if there is still an active pending amendment request for this corporate
   useEffect(() => {
@@ -513,6 +515,13 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
     };
     checkPendingAmendment();
   }, [corporateId, formData.status, latestAmendLog?.timestamp]);
+
+  // Show modal when status is Amendment Requested and there's a pending amendment
+  useEffect(() => {
+    if (formData.status === 'Amendment Requested' && hasPendingAmendment) {
+      setShowAmendmentModal(true);
+    }
+  }, [formData.status, hasPendingAmendment]);
 
   const formatAmendNote = (note?: string) => {
     if (!note) return 'An amendment has been requested.';
@@ -691,6 +700,18 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
             </div>
           </div>
         )}
+
+        {/* Amendment Request Notice Modal */}
+        <AmendRequestModal
+          isOpen={showAmendmentModal}
+          onClose={() => setShowAmendmentModal(false)}
+          amendmentData={{
+            timestamp: latestAmendLog?.timestamp,
+            submittedBy: getSubmittedByName() || undefined,
+            submittedByRole: getSubmittedByRole() || undefined
+          }}
+          onViewAmendment={viewAmendmentReview}
+        />
 
         {isAmendRejecting && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import InputField from '../common/InputField';
 import SelectField from '../common/SelectField';
 import FormSection from '../common/FormSection';
+import SearchableCallingCodeField from '../common/SearchableCallingCodeField';
 import { CorporateDetails, Contact, Subsidiary } from '../../types';
 import { corporateFormSchema } from '../../utils/corporateFormSchema';
 import { getMalaysiaDateString } from '../../utils/validators';
@@ -34,6 +35,12 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
 
     // Primary contact id for mapping contact field errors
     const primaryId = formData.contacts?.[0]?.id || '0';
+
+    // Function to get calling code for a country
+    const getCallingCodeForCountry = (countryName: string): string => {
+        const country = countries.find(c => c.name === countryName);
+        return country ? country.callingCode : '+60'; // Default to Malaysia's calling code
+    };
 
 	const runZodValidation = (): boolean => {
 	    const dataForValidation = formMode === 'edit'
@@ -81,9 +88,15 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
         } else {
             setFormData(prev => {
                 const newData = { ...prev, [name]: value };
-                // Clear state when country changes
+                // Clear state when country changes and auto-select calling code
                 if (name === 'country') {
                     newData.state = '';
+                    // Auto-select calling code for all contacts when country changes
+                    const callingCode = getCallingCodeForCountry(value);
+                    newData.contacts = newData.contacts.map(contact => ({
+                        ...contact,
+                        contact_prefix: callingCode
+                    }));
                 } else if (name === 'billing_country') {
                     newData.billing_state = '';
                 }
@@ -162,7 +175,7 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                     first_name: '',
                     last_name: '',
                     contact_number: '',
-                    contact_prefix: '+60',
+                    contact_prefix: getCallingCodeForCountry(prev.country),
                     email: '',
                     company_role: '',
                     system_role: 'user',
@@ -270,17 +283,11 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                              <div>
                                 <label className="block text-xs font-medium text-gray-700 mb-1">*Contact Number</label>
                                 <div className="flex">
-                                    <select 
-                                        className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm focus:ring-ht-blue focus:border-ht-blue"
+                                    <SearchableCallingCodeField
                                         value={contact.contact_prefix || '+60'}
-                                        onChange={e => handleContactChange(index, { target: { name: 'contact_prefix', value: e.target.value } } as React.ChangeEvent<HTMLSelectElement>)}
-                                    >
-                    {getUniqueCallingCodes().map((item) => (
-                        <option key={item.code} value={item.code}>
-                            {item.code}
-                        </option>
-                    ))}
-                                    </select>
+                                        onChange={(value) => handleContactChange(index, { target: { name: 'contact_prefix', value } } as React.ChangeEvent<HTMLSelectElement>)}
+                                        id={`contact-prefix-${contact.id}`}
+                                    />
                                     <input type="text" id={`contact-number-${contact.id}`} name="contact_number" value={contact.contact_number} onChange={e => handleContactChange(index, e)} className={`flex-1 block w-full rounded-none rounded-r-md border p-2 text-sm focus:ring-ht-blue bg-white dark:bg-white ${errors[`contact-number-${contact.id}`] ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-ht-blue'}`} />
                                 </div>
                                 {errors[`contact-number-${contact.id}`] && <p className="mt-1 text-xs text-red-600">{errors[`contact-number-${contact.id}`]}</p>}
