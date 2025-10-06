@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import InputField from '../common/InputField';
 import SelectField from '../common/SelectField';
+import SearchableCountryField from '../common/SearchableCountryField';
 import FormSection from '../common/FormSection';
 import DisplayField from '../common/DisplayField';
 import { Subsidiary } from '../../types';
@@ -395,10 +396,15 @@ const AmendmentRequestForm: React.FC<AmendmentRequestFormProps> = ({
                 <option key={s} value={s}>{s}</option>
               ))}
             </SelectField>
-            <SelectField id="country" label="Country" name="country" value={formData.country} onChange={handleChange}>
-              <option>Malaysia</option>
-              <option>Singapore</option>
-            </SelectField>
+            <div>
+              <label htmlFor="country" className="block text-xs font-medium text-gray-700 mb-1">Country</label>
+              <SearchableCountryField
+                id="country"
+                value={formData.country}
+                onChange={(value) => handleChange({ target: { name: 'country', value } } as React.ChangeEvent<HTMLSelectElement>)}
+                placeholder="Select Country"
+              />
+            </div>
             <InputField
               id="website"
               label="Website"
@@ -443,10 +449,15 @@ const AmendmentRequestForm: React.FC<AmendmentRequestFormProps> = ({
                   <option value="">Select State</option>
                   {['Johor','Kedah','Kelantan','Melaka','Negeri Sembilan','Pahang','Penang','Perak','Perlis','Sabah','Sarawak','Selangor','Terengganu','W.P. Kuala Lumpur','W.P. Labuan','W.P. Putrajaya'].map((s) => <option key={s} value={s}>{s}</option>)}
                 </SelectField>
-                <SelectField id={`sub-country-${index}`} label="Country" name="country" value={sub.country} onChange={(e) => handleSubsidiaryChange(index, e)}>
-                  <option>Malaysia</option>
-                  <option>Singapore</option>
-                </SelectField>
+                <div>
+                  <label htmlFor={`sub-country-${index}`} className="block text-xs font-medium text-gray-700 mb-1">Country</label>
+                  <SearchableCountryField
+                    id={`sub-country-${index}`}
+                    value={sub.country}
+                    onChange={(value) => handleSubsidiaryChange(index, { target: { name: 'country', value } } as React.ChangeEvent<HTMLSelectElement>)}
+                    placeholder="Select Country"
+                  />
+                </div>
                 <div className="md:col-span-2">
                   <InputField id={`sub-website-${index}`} label="Website" name="website" value={sub.website || ''} onChange={(e) => handleSubsidiaryChange(index, e)} />
                 </div>

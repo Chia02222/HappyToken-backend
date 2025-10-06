@@ -4,6 +4,7 @@ import InputField from '../common/InputField';
 import SelectField from '../common/SelectField';
 import FormSection from '../common/FormSection';
 import SearchableCallingCodeField from '../common/SearchableCallingCodeField';
+import SearchableCountryField from '../common/SearchableCountryField';
 import { CorporateDetails, Contact, Subsidiary } from '../../types';
 import { corporateFormSchema } from '../../utils/corporateFormSchema';
 import { getMalaysiaDateString } from '../../utils/validators';
@@ -201,10 +202,16 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                     <InputField id="office_address2" label="Office Address 2" name="office_address2" value={formData.office_address2 ??  null} onChange={handleChange} />
                     <InputField id="postcode" label="Postcode" name="postcode" value={formData.postcode} onChange={handleChange} required error={errors.postcode} />
                     <InputField id="city" label="City" name="city" value={formData.city} onChange={handleChange} required error={errors.city} />
-                    <SelectField id="country" label="Country" name="country" value={formData.country} onChange={handleChange} required>
-                        <option value="">Select Country</option>
-                        {countries.map((country) => <option key={country.name} value={country.name}>{country.name}</option>)}
-                    </SelectField>
+                    <div>
+                        <label htmlFor="country" className="block text-xs font-medium text-gray-700 mb-1">Country *</label>
+                        <SearchableCountryField
+                            id="country"
+                            value={formData.country}
+                            onChange={(value) => handleChange({ target: { name: 'country', value } } as React.ChangeEvent<HTMLSelectElement>)}
+                            placeholder="Select Country"
+                            required
+                        />
+                    </div>
                 <SelectField id="state" label={getStateFieldLabel(formData.country)} name="state" value={formData.state} onChange={handleChange} required>
                     <option value="">Select {getStateFieldLabel(formData.country)}</option>
                     {getStatesWithNA(formData.country).map((state: string) => <option key={state} value={state}>{state}</option>)}
@@ -232,10 +239,16 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                                 <InputField id={`sub-office_address2-${sub.id}`} label="Office Address 2" name="office_address2" value={sub.office_address2 ?? null} onChange={(e) => handleSubsidiaryChange(index, e)} />
                                 <InputField id={`sub-postcode-${sub.id}`} label="Postcode" name="postcode" value={sub.postcode} onChange={(e) => handleSubsidiaryChange(index, e)} required />
                                 <InputField id={`sub-city-${sub.id}`} label="City" name="city" value={sub.city} onChange={(e) => handleSubsidiaryChange(index, e)} required />
-                                <SelectField id={`sub-country-${sub.id}`} label="Country" name="country" value={sub.country} onChange={(e) => handleSubsidiaryChange(index, e)} required>
-                                    <option value="">Select Country</option>
-                                    {countries.map((country) => <option key={country.name} value={country.name}>{country.name}</option>)}
-                                </SelectField>
+                                <div>
+                                    <label htmlFor={`sub-country-${sub.id}`} className="block text-xs font-medium text-gray-700 mb-1">Country *</label>
+                                    <SearchableCountryField
+                                        id={`sub-country-${sub.id}`}
+                                        value={sub.country}
+                                        onChange={(value) => handleSubsidiaryChange(index, { target: { name: 'country', value } } as React.ChangeEvent<HTMLSelectElement>)}
+                                        placeholder="Select Country"
+                                        required
+                                    />
+                                </div>
                                 <SelectField id={`sub-state-${sub.id}`} label={getStateFieldLabel(sub.country)} name="state" value={sub.state} onChange={(e) => handleSubsidiaryChange(index, e)} required>
                                     <option value="">Select {getStateFieldLabel(sub.country)}</option>
                                     {getStatesWithNA(sub.country).map((state: string) => <option key={state} value={state}>{state}</option>)}
@@ -312,10 +325,17 @@ const CorporateForm: React.FC<CorporateFormProps> = ({ onCloseForm, setFormStep,
                         <InputField id="billing_address2" label="Office Address 2" name="billing_address2" value={formData.billing_address2 as string} onChange={handleChange} />
                         <InputField id="billing_postcode" label="Postcode" name="billing_postcode" value={formData.billing_postcode as string} onChange={handleChange} required error={errors.billing_postcode} />
                         <InputField id="billing_city" label="City" name="billing_city" value={formData.billing_city as string} onChange={handleChange} required error={errors.billing_city} />
-                        <SelectField id="billing_country" label="Country" name="billing_country" value={formData.billing_country as string} onChange={handleChange} required error={errors.billing_country}>
-                            <option value="">Select Country</option>
-                            {countries.map((country) => <option key={country.name} value={country.name}>{country.name}</option>)}
-                        </SelectField>
+                        <div>
+                            <label htmlFor="billing_country" className="block text-xs font-medium text-gray-700 mb-1">Country *</label>
+                            <SearchableCountryField
+                                id="billing_country"
+                                value={formData.billing_country as string}
+                                onChange={(value) => handleChange({ target: { name: 'billing_country', value } } as React.ChangeEvent<HTMLSelectElement>)}
+                                placeholder="Select Country"
+                                required
+                                error={errors.billing_country}
+                            />
+                        </div>
                         <SelectField id="billing_state" label={getStateFieldLabel(formData.billing_country as string)} name="billing_state" value={formData.billing_state as string} onChange={handleChange} required error={errors.billing_state}>
                             <option value="">Select {getStateFieldLabel(formData.billing_country as string)}</option>
                             {getStatesWithNA(formData.billing_country as string).map((state: string) => <option key={state} value={state}>{state}</option>)}

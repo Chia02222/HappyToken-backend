@@ -48,6 +48,35 @@ export class CorporateService {
     return this.dbService.getDb();
   }
 
+  // Helper method to convert Date objects to YYYY-MM-DD string in local timezone
+  private formatDateToString(date: any): string | null {
+    if (!date) return null;
+    if (typeof date === 'string') return date;
+    if (date instanceof Date) {
+      // Convert Date object to YYYY-MM-DD string in local timezone
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    return null;
+  }
+
+  // Helper method to process corporate dates and convert to strings
+  private processCorporateDates(corporate: any): any {
+    return {
+      ...corporate,
+      agreement_from: this.formatDateToString(corporate.agreement_from),
+      agreement_to: this.formatDateToString(corporate.agreement_to),
+      cooling_period_start: corporate.cooling_period_start instanceof Date 
+        ? corporate.cooling_period_start.toISOString() 
+        : corporate.cooling_period_start,
+      cooling_period_end: corporate.cooling_period_end instanceof Date 
+        ? corporate.cooling_period_end.toISOString() 
+        : corporate.cooling_period_end,
+    };
+  }
+
   async findAll() {
     return await this.db
       .selectFrom('corporates')
@@ -73,12 +102,17 @@ export class CorporateService {
       this.db.selectFrom('investigation_logs').selectAll().where('corporate_uuid', '=', corporate.uuid).orderBy('timestamp', 'desc').execute(),
     ]);
 
-    return {
+    const result = {
       ...corporate,
       contacts,
       subsidiaries,
       investigation_log: investigationLogs,
     };
+
+    // Process dates to ensure they are strings
+    const processedResult = this.processCorporateDates(result);
+    
+    return processedResult;
   }
 
   /**
@@ -176,7 +210,10 @@ export class CorporateService {
       }
     }
 
-    return inserted!;
+    // Process dates to ensure they are strings
+    const processedResult = this.processCorporateDates(inserted!);
+    
+    return processedResult;
   }
 
   /**
