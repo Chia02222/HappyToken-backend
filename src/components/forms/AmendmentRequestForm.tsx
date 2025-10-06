@@ -889,7 +889,7 @@ const AmendmentRequestForm: React.FC<AmendmentRequestFormProps> = ({
                 : 'bg-ht-blue text-white hover:bg-ht-blue-dark'
             } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ht-blue`}
           >
-            {isSubmitting ? 'Submitting...' : 'Submit'}
+            {isSubmitting ? 'Preparing…' : 'Preview'}
           </button>
         </div>
       </form>
