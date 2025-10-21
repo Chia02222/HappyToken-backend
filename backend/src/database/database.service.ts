@@ -1,4 +1,3 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
 import { neon, NeonQueryFunction } from '@neondatabase/serverless';
 import { Kysely, sql } from 'kysely';
 import { NeonDialect } from 'kysely-neon';
@@ -7,8 +6,7 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-@Injectable()
-export class DatabaseService implements OnModuleInit {
+export class DatabaseService {
   private sql: NeonQueryFunction<boolean, boolean>;
   private db!: Kysely<Database>;
 
@@ -28,11 +26,11 @@ export class DatabaseService implements OnModuleInit {
 
     // Initialize Kysely with Neon dialect
     this.db = new Kysely<Database>({
-      dialect: new NeonDialect({ connectionString })
+      dialect: new NeonDialect({ neon: this.sql })
     });
   }
 
-  async onModuleInit() {
+  async initialize() {
     try {
       // Test the database connection
       await this.sql`SELECT 1 as test`;
@@ -52,3 +50,6 @@ export class DatabaseService implements OnModuleInit {
     return this.db;
   }
 }
+
+// Singleton instance
+export const databaseService = new DatabaseService();

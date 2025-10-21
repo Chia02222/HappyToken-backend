@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import MainLayout from '../components/layout/MainLayout';
 import Dashboard from '../components/Dashboard';
 import CRTCorporatePage from '../components/CRTCorporatePage';
@@ -17,7 +17,7 @@ import { logError, logInfo } from '../utils/logger';
 import { errorHandler } from '../utils/errorHandler';
 
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [currentPage, setCurrentPage] = useState<Page>('CRT Corporate'); // Default to CRT Corporate
@@ -288,6 +288,14 @@ const App: React.FC = () => {
         />
       </MainLayout>
     </ErrorBoundary>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AppContent />
+    </Suspense>
   );
 };
 

@@ -1,12 +1,12 @@
-import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { CorporateService } from '../corporate/corporate.service';
 
-@Injectable()
 export class ResendService {
-  constructor(
-    @Inject(forwardRef(() => CorporateService))
-    private readonly corporateService: CorporateService,
-  ) {}
+  private corporateService: CorporateService;
+
+  constructor() {
+    // CorporateService will be injected later to avoid circular dependency
+    this.corporateService = null as any;
+  }
 
   async sendCustomEmail(to: string, subject: string, html: string) {
     const RESEND_API_KEY = process.env.RESEND_API_KEY;

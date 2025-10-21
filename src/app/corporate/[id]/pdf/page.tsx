@@ -709,118 +709,146 @@ const PrintCorporateAgreementPage: React.FC = () => {
       <h2 className="text-sm font-semibold mt-4 mb-2 page-break-before">Generic Terms & Conditions</h2>
       <div className="text-sm leading-relaxed space-y-4">
         <p className="text-xs text-gray-500 mb-4">Last Updated: [Insert Date]</p>
-        <p>
-          These Standard Terms and Conditions ("Terms") govern the relationship between HT Voucher Trading Sdn Bhd (Company No. [Insert], trading as HappieToken, hereinafter referred to as the "Company") and any party ("Client") who enters into a commercial arrangement with the Company for the use of its products or services, whether by signing an order form, accepting a quotation, or registering via an online form. These Terms are legally binding and apply to all Clients unless otherwise agreed in writing.
+        <p>These Standard Terms and Conditions (&quot;Terms&quot;) govern the relationship between HT Voucher Trading Sdn Bhd (Company No. [Insert], trading as HappieToken, hereinafter referred to as the &quot;Company&quot;) and any party (&quot;Client&quot;) who enters into a commercial arrangement with the Company for the use of its products or services, whether by signing an order form, accepting a quotation, or registering via an online form. These Terms are legally binding and apply to all Clients unless otherwise agreed in writing.</p>
+        
+        <h4 className="font-semibold mt-6">1. Definitions</h4>
+        <p>&quot;Agreement&quot; means the binding contract between the Company and the Client, consisting of these Terms and any applicable Order Form or Commercial Terms Schedule.</p>
+        <p>&quot;Services&quot; means the platform access, features, tools, APIs, or solutions provided by the Company.</p>
+        <p>&quot;Client Data&quot; means any information, material, or content uploaded, submitted, or shared by the Client through the Services.</p>
+        <p>&quot;Effective Date&quot; means the date on which the Client first accepts or is deemed to accept these Terms.</p>
+        
+        <h4 className="font-semibold mt-6">2. Provision of Services</h4>
+        <p>The Company shall provide the Services described in the relevant Commercial Terms Schedule or online order form. The Company reserves the right to improve, modify, or discontinue any part of the Services with reasonable notice.</p>
+        
+        <h4 className="font-semibold mt-6">3. Use of the Platform</h4>
+        <p>The Client shall use the Services solely for its internal business purposes and shall not:</p>
+        <ul className="list-disc pl-6">
+          <li>Copy, resell, or license the platform or its features;</li>
+          <li>Interfere with the performance or security of the system;</li>
+          <li>Use the Services to conduct unlawful or unethical activities.</li>
+        </ul>
+        
+        <h4 className="font-semibold mt-6">4. Fees and Payment</h4>
+        <p>Fees, charges, credit terms, and payout details are specified in the Commercial Terms Schedule or Order Form. All invoices must be settled within the agreed credit term. The Company reserves the right to:</p>
+        <ul className="list-disc pl-6">
+          <li>Charge interest on late payments;</li>
+          <li>Suspend or limit Services for overdue accounts;</li>
+          <li>Withhold settlement payouts in case of breach.</li>
+        </ul>
+        
+        <h4 className="font-semibold mt-6">5. Intellectual Property</h4>
+        <p>All intellectual property rights in the Services, software, designs, and documentation shall remain the sole property of the Company. The Client is granted a limited, non-exclusive, non-transferable license to use the Services in accordance with this Agreement.</p>
+        
+        <h4 className="font-semibold mt-6">6. Client Data &amp; Confidentiality</h4>
+        <p>The Client retains ownership of its data. The Company will not disclose or use Client Data except as required to provide the Services or by law. Both parties agree to maintain the confidentiality of all non-public information exchanged during the course of this Agreement for a period of twelve (12) months after termination.</p>
+        
+        <h4 className="font-semibold mt-6">7. Data Protection</h4>
+        <p>The Company shall take reasonable steps to comply with Malaysia&apos;s Personal Data Protection Act 2010 (PDPA) in handling personal data collected during the provision of Services.</p>
+        
+        <h4 className="font-semibold mt-6">8. Warranties and Disclaimers</h4>
+        <p>The Company provides the Services &quot;as is&quot; and disclaims all warranties not expressly stated herein. The Company does not guarantee uninterrupted or error-free operation.</p>
+      </div>
+
+      <h2 className="text-sm font-semibold mt-4 mb-2 page-break-before">Commercial Agreement Confirmation</h2>
+      <div className="text-sm leading-relaxed space-y-4">
+        <p className="text-xs text-gray-500 mb-4">Last Updated: [Insert Date]</p>
+        <p className="font-semibold mb-4">
+          This confirms that <strong>{data.company_name || '[Client Company Name]'}</strong> (Company No: <strong>{data.reg_number || '[XXXXXXXX-X]'}</strong>), represented by <strong>{(() => {
+            const contacts = (data?.contacts || []) as Contact[];
+            const byRole = contacts.find(c => (c as any).system_role === 'secondary_approver') as any;
+            const byId = contacts.find(c => String((c as any).id) === String((data as any)?.secondary_approver_id)) as any;
+            const fallback = (data as any)?.secondary_approver as any;
+            const second = byRole || byId || fallback || {};
+            return `${second.first_name || ''} ${second.last_name || '[Full Name of Signatory]'}`.trim();
+          })()}</strong>, has successfully entered into a commercial agreement with:
         </p>
-          <div>
-            <h4 className="font-semibold">1. Definitions</h4>
-            <ul className="list-disc pl-6 mt-2 space-y-1">
-              <li>"Agreement" means the binding contract between the Company and the Client, consisting of these Terms and any applicable Order Form or Commercial Terms Schedule.</li>
-              <li>"Services" means the platform access, features, tools, APIs, or solutions provided by the Company.</li>
-              <li>"Client Data" means any information, material, or content uploaded, submitted, or shared by the Client through the Services.</li>
-              <li>"Effective Date" means the date on which the Client first accepts or is deemed to accept these Terms.</li>
-            </ul>
-          </div>
-          
-          <div>
-            <h4 className="font-semibold">2. Provision of Services</h4>
-            <p className="mt-2">The Company shall provide the Services described in the relevant Commercial Terms Schedule or online order form. The Company reserves the right to improve, modify, or discontinue any part of the Services with reasonable notice.</p>
-          </div>
-          
-          <div>
-            <h4 className="font-semibold">3. Client Obligations</h4>
-            <p className="mt-2">The Client agrees to use the Services in accordance with these Terms and any applicable laws and regulations. The Client is responsible for maintaining the confidentiality of their account credentials and for all activities that occur under their account.</p>
-          </div>
-          
-          <div>
-            <h4 className="font-semibold">4. Payment Terms</h4>
-            <p className="mt-2">Payment terms are as specified in the Commercial Terms Schedule. The Client agrees to pay all fees and charges in accordance with the agreed payment schedule.</p>
-          </div>
-          
-          <div>
-            <h4 className="font-semibold">5. Limitation of Liability</h4>
-            <p className="mt-2">The Company's liability is limited to the maximum extent permitted by law. The Company shall not be liable for any indirect, incidental, special, or consequential damages.</p>
-          </div>
-          
-          <div>
-            <h4 className="font-semibold">6. Termination</h4>
-            <p className="mt-2">Either party may terminate this Agreement with written notice as specified in the Commercial Terms Schedule. Upon termination, the Client's access to the Services will be discontinued.</p>
-          </div>
-          
-          <div>
-            <h4 className="font-semibold">7. Governing Law</h4>
-            <p className="mt-2">This Agreement shall be governed by and construed in accordance with the laws of Malaysia. Any disputes shall be subject to the exclusive jurisdiction of the Malaysian courts.</p>
-          </div>
-          
-          <div>
-            <h4 className="font-semibold">8. Intellectual Property</h4>
-            <p className="mt-2">All intellectual property rights in the Services remain with the Company. The Client may not copy, modify, or distribute any part of the Services without prior written consent.</p>
-          </div>
-          
-          <div>
-            <h4 className="font-semibold">9. Data Protection</h4>
-            <p className="mt-2">The Company will handle Client Data in accordance with applicable data protection laws and the Company's Privacy Policy. The Client consents to the collection, use, and processing of their data as described in the Privacy Policy.</p>
-          </div>
-          
-          <div>
-            <h4 className="font-semibold">10. Force Majeure</h4>
-            <p className="mt-2">The Company shall not be liable for any failure or delay in performance due to circumstances beyond its reasonable control, including but not limited to acts of God, natural disasters, war, terrorism, or government actions.</p>
-          </div>
+        <div className="ml-4 space-y-2">
+          <p><strong>HT Voucher Trading Sdn Bhd (Company No: [Insert])</strong></p>
+          <p><strong>Trading As: HappieToken</strong></p>
+        </div>
       </div>
 
       <h2 className="text-sm font-semibold mt-4 mb-2">Commercial Terms & Conditions</h2>
       <div className="text-sm leading-relaxed space-y-4">
-        <div className="space-y-4">
-          <div>
-            <h4 className="font-semibold">Commercial Agreement Terms</h4>
-            <p className="mt-2">By proceeding, the Client acknowledges and agrees to the commercial terms specified herein, including but not limited to the agreed-upon fees, credit limits, and payment schedules. These terms form a legally binding part of the service agreement between the Client and HT Voucher Trading Sdn Bhd.</p>
-          </div>
-          
-          <div>
-            <h4 className="font-semibold">Transaction Fees</h4>
-            <p className="mt-2">The specified percentage will be applied to the total value of each transaction processed through the platform. This fee structure is designed to cover operational costs and platform maintenance. Transaction fees are calculated on a per-transaction basis and are non-refundable.</p>
-          </div>
-          
-          <div>
-            <h4 className="font-semibold">Credit Terms</h4>
-            <p className="mt-2">Invoices are due within the number of days specified from the invoice date. Late payments will incur interest as per the agreed rate. The Company reserves the right to suspend services for overdue accounts. Credit terms may be subject to review and adjustment based on payment history.</p>
-          </div>
-          
-          <div>
-            <h4 className="font-semibold">Service Fees</h4>
-            <p className="mt-2">Additional fees for services like White Labeling or Custom Feature Requests are applicable only upon request and will be billed separately as incurred. These services require separate agreements and pricing structures. All custom development work is subject to additional terms and conditions.</p>
-          </div>
-          
-          <div>
-            <h4 className="font-semibold">Confidentiality</h4>
-            <p className="mt-2">All commercial terms, including pricing and fee structures, are confidential and shall not be disclosed to any third party without prior written consent from both parties. This confidentiality extends to all business discussions and negotiations. Breach of confidentiality may result in immediate termination of the agreement.</p>
-          </div>
-          
-          <div>
-            <h4 className="font-semibold">Payment Processing</h4>
-            <p className="mt-2">All payments must be processed through the designated payment channels. The Company reserves the right to implement additional security measures for payment processing as deemed necessary. Payment methods may be restricted based on risk assessment and compliance requirements.</p>
-          </div>
-          
-          <div>
-            <h4 className="font-semibold">Dispute Resolution</h4>
-            <p className="mt-2">Any disputes arising from commercial terms shall be resolved through good faith negotiations. If negotiations fail, disputes shall be subject to binding arbitration in accordance with Malaysian law. The arbitration process shall be conducted in English and the decision shall be final and binding.</p>
-          </div>
-          
-          <div>
-            <h4 className="font-semibold">Service Level Agreements</h4>
-            <p className="mt-2">The Company will provide services in accordance with the agreed service level agreements. Service availability targets and performance metrics are outlined in the technical specifications. The Client acknowledges that service interruptions may occur due to maintenance, upgrades, or unforeseen circumstances.</p>
-      </div>
-
-        <div>
-            <h4 className="font-semibold">Compliance and Regulatory</h4>
-            <p className="mt-2">Both parties agree to comply with all applicable laws and regulations. The Client is responsible for ensuring their use of the services complies with local and international regulations. The Company reserves the right to modify services to ensure regulatory compliance.</p>
-        </div>
-          
-        <div>
-            <h4 className="font-semibold">Termination and Suspension</h4>
-            <p className="mt-2">Either party may terminate this agreement with written notice as specified in the terms. The Company reserves the right to suspend or terminate services immediately in case of breach of terms, non-payment, or regulatory requirements. Upon termination, all outstanding fees become immediately due.</p>
-          </div>
-        </div>
+        <p className="text-xs text-gray-500 mb-4">Last Updated: [Insert Date]</p>
+        <p>These Standard Terms and Conditions (&quot;Terms&quot;) govern the relationship between HT Voucher Trading Sdn Bhd (Company No. [Insert], trading as HappieToken, hereinafter referred to as the &quot;Company&quot;) and any party (&quot;Client&quot;) who enters into a commercial arrangement with the Company for the use of its products or services, whether by signing an order form, accepting a quotation, or registering via an online form. These Terms are legally binding and apply to all Clients unless otherwise agreed in writing.</p>
+        
+        <h4 className="font-semibold mt-6">1. Definitions</h4>
+        <p>&quot;Agreement&quot; means the binding contract between the Company and the Client, consisting of these Terms and any applicable Order Form or Commercial Terms Schedule.</p>
+        <p>&quot;Services&quot; means the platform access, features, tools, APIs, or solutions provided by the Company.</p>
+        <p>&quot;Client Data&quot; means any information, material, or content uploaded, submitted, or shared by the Client through the Services.</p>
+        <p>&quot;Effective Date&quot; means the date on which the Client first accepts or is deemed to accept these Terms.</p>
+        
+        <h4 className="font-semibold mt-6">2. Provision of Services</h4>
+        <p>The Company shall provide the Services described in the relevant Commercial Terms Schedule or online order form. The Company reserves the right to improve, modify, or discontinue any part of the Services with reasonable notice.</p>
+        
+        <h4 className="font-semibold mt-6">3. Use of the Platform</h4>
+        <p>The Client shall use the Services solely for its internal business purposes and shall not:</p>
+        <ul className="list-disc pl-6">
+          <li>Copy, resell, or license the platform or its features;</li>
+          <li>Interfere with the performance or security of the system;</li>
+          <li>Use the Services to conduct unlawful or unethical activities.</li>
+        </ul>
+        
+        <h4 className="font-semibold mt-6">4. Fees and Payment</h4>
+        <p>Fees, charges, credit terms, and payout details are specified in the Commercial Terms Schedule or Order Form. All invoices must be settled within the agreed credit term. The Company reserves the right to:</p>
+        <ul className="list-disc pl-6">
+          <li>Charge interest on late payments;</li>
+          <li>Suspend or limit Services for overdue accounts;</li>
+          <li>Withhold settlement payouts in case of breach.</li>
+        </ul>
+        
+        <h4 className="font-semibold mt-6">5. Intellectual Property</h4>
+        <p>All intellectual property rights in the Services, software, designs, and documentation shall remain the sole property of the Company. The Client is granted a limited, non-exclusive, non-transferable license to use the Services in accordance with this Agreement.</p>
+        
+        <h4 className="font-semibold mt-6">6. Client Data &amp; Confidentiality</h4>
+        <p>The Client retains ownership of its data. The Company will not disclose or use Client Data except as required to provide the Services or by law. Both parties agree to maintain the confidentiality of all non-public information exchanged during the course of this Agreement for a period of twelve (12) months after termination.</p>
+        
+        <h4 className="font-semibold mt-6">7. Data Protection</h4>
+        <p>The Company shall take reasonable steps to comply with Malaysia&apos;s Personal Data Protection Act 2010 (PDPA) in handling personal data collected during the provision of Services.</p>
+        
+        <h4 className="font-semibold mt-6">8. Warranties and Disclaimers</h4>
+        <p>The Company provides the Services &quot;as is&quot; and disclaims all warranties not expressly stated herein. The Company does not guarantee uninterrupted or error-free operation.</p>
+        
+        <h4 className="font-semibold mt-6">9. Limitation of Liability</h4>
+        <p>The Company&apos;s total liability under this Agreement shall not exceed the amount paid by the Client for Services in the preceding six (6) months. The Company shall not be liable for indirect, incidental, or consequential losses.</p>
+        
+        <h4 className="font-semibold mt-6">10. Indemnity</h4>
+        <p>The Client agrees to indemnify and hold harmless the Company from any third-party claims, damages, or liabilities arising from the Client&apos;s breach of this Agreement or misuse of the Services.</p>
+        
+        <h4 className="font-semibold mt-6">11. Termination</h4>
+        <p>Either party may terminate this Agreement by giving thirty (30) days&apos; written notice. The Company may terminate immediately in the event of:</p>
+        <ul className="list-disc pl-6">
+          <li>Breach of terms by the Client;</li>
+          <li>Fraud, abuse, or illegal activity;</li>
+          <li>Insolvency or cessation of business by either party.</li>
+        </ul>
+        
+        <h4 className="font-semibold mt-6">12. Force Majeure</h4>
+        <p>Neither party shall be held liable for failure to perform obligations due to events beyond its reasonable control, including but not limited to natural disasters, war, government restrictions, or Internet disruptions.</p>
+        
+        <h4 className="font-semibold mt-6">13. Governing Law and Jurisdiction</h4>
+        <p>This Agreement shall be governed by the laws of Malaysia, and any disputes shall be subject to the exclusive jurisdiction of the courts of Kuala Lumpur.</p>
+        
+        <h4 className="font-semibold mt-6">14. Dispute Resolution</h4>
+        <p>Parties shall attempt to resolve disputes through good faith negotiations. If unresolved, the dispute shall proceed to mediation and, if necessary, to arbitration administered by the Asian International Arbitration Centre (AIAC) under its applicable rules.</p>
+        
+        <h4 className="font-semibold mt-6">15. Notices</h4>
+        <p>All notices shall be in writing and sent by email or registered post to the addresses provided by the Parties in the relevant Order Form or registration record.</p>
+        
+        <h4 className="font-semibold mt-6">16. Entire Agreement</h4>
+        <p>This Agreement, including any referenced schedules or forms, constitutes the entire agreement between the Parties and supersedes all prior agreements, representations, or communications.</p>
+        
+        <h4 className="font-semibold mt-6">17. Amendments</h4>
+        <p>These Terms may be updated by the Company from time to time. Continued use of the Services after such updates constitutes acceptance of the revised Terms.</p>
+        
+        <h4 className="font-semibold mt-6">18. Severability</h4>
+        <p>If any provision of this Agreement is held to be invalid or unenforceable, the remainder shall remain in full force and effect.</p>
+        
+        <h4 className="font-semibold mt-6">19. Waiver</h4>
+        <p>No failure or delay by either Party in exercising any right shall constitute a waiver of that right.</p>
+        
+        <p>By proceeding to use the Company&apos;s Services or confirming your agreement via an online form or signed order, you acknowledge and accept these Standard Terms and Conditions.</p>
       </div>
 
       <h2 className="text-sm font-semibold mt-4 mb-2 page-break-before">Approvers</h2>

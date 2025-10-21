@@ -1,4 +1,3 @@
-import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { DatabaseService } from '../../database/database.service';
 import {
   CorporateTable,
@@ -13,7 +12,6 @@ import { CreateSubsidiaryDto } from '../subsidiaries/dto/subsidiary.dto';
 import { ContactsService } from '../contacts/contacts.service';
 import { SubsidiariesService } from '../subsidiaries/subsidiaries.service';
 import { ResendService } from '../resend/resend.service';
-import { Cron, CronExpression } from '@nestjs/schedule';
 
 type UpdatableCorporateTable = Omit<CorporateTable, 'uuid'>;
 
@@ -34,18 +32,27 @@ type UpdatableCorporateTable = Omit<CorporateTable, 'uuid'>;
  * - SubsidiariesService: Manages corporate subsidiaries
  * - ResendService: Handles email notifications
  */
-@Injectable()
 export class CorporateService {
-  constructor(
-    private readonly dbService: DatabaseService,
-    private readonly contactsService: ContactsService,
-    private readonly subsidiariesService: SubsidiariesService,
-    @Inject(forwardRef(() => ResendService))
-    private readonly resendService: ResendService,
-  ) {}
+  private dbService: DatabaseService;
+  private contactsService: ContactsService;
+  private subsidiariesService: SubsidiariesService;
+  private resendService: ResendService;
+
+  constructor() {
+    this.dbService = new DatabaseService();
+    this.contactsService = new ContactsService();
+    this.subsidiariesService = new SubsidiariesService();
+    // ResendService will be injected later to avoid circular dependency
+    this.resendService = null as any;
+  }
 
   private get db() {
     return this.dbService.getDb();
+  }
+
+  private isValidUUID(uuid: string): boolean {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
   }
 
   // Helper method to convert Date objects to YYYY-MM-DD string in local timezone
@@ -511,7 +518,7 @@ export class CorporateService {
       }, 30000);
     }
 
-    return await this.update(String(id), { status: status as CorporateStatus });
+    return await this.update(String(id), { status: status as CorporateStatus } as any);
   }
 
   /**
@@ -557,7 +564,6 @@ export class CorporateService {
     return updatedCorporate;
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_1AM)
   async expireStaleCorporatesDaily() {
     const thirtyDaysAgoIso = sql`(now() - interval '30 days' AT TIME ZONE 'Asia/Kuala_Lumpur')::text` as unknown as string;
     const stale = await this.db
@@ -736,7 +742,7 @@ export class CorporateService {
         .where('to_status', '=', 'Amendment Requested')
         .orderBy('created_at', 'desc');
 
-      if (corporateId) {
+      if (corporateId && corporateId !== 'new' && this.isValidUUID(corporateId)) {
         query = query.where('corporate_uuid', '=', corporateId);
       }
 

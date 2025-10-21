@@ -711,7 +711,16 @@ const ECommercialTermsForm: React.FC<ECommercialTermsFormProps> = ({ onCloseForm
                     isApproveSecondMode={isApproveSecondMode}
                     shouldShowSecondaryAsDisplayOnly={Boolean(shouldShowSecondaryAsDisplayOnly)}
                     shouldShowDisplayOnly={shouldShowDisplayOnly}
-                    secondary_approver={secondary_approver}
+                    secondary_approver={secondary_approver ? {
+                        salutation: secondary_approver.salutation || 'Mr',
+                        first_name: secondary_approver.first_name || '',
+                        last_name: secondary_approver.last_name || '',
+                        contact_number: secondary_approver.contact_number || '',
+                        email: secondary_approver.email || '',
+                        company_role: secondary_approver.company_role || '',
+                        system_role: secondary_approver.system_role || 'secondary_approver',
+                        contact_prefix: secondary_approver.contact_prefix || '+60',
+                    } as Contact : null}
                     otherContacts={otherContacts}
                     isSecondaryFromList={Boolean(isSecondaryFromList)}
                     handleChange={handleChange}

@@ -1,6 +1,3 @@
-import { Injectable } from '@nestjs/common';
-
-@Injectable()
 export class PdfService {
   async renderAgreementPdfFromUrl(frontendBaseUrl: string, corporateId: string): Promise<Uint8Array> {
     const puppeteer = (await import('puppeteer')).default;

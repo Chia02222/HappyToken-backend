@@ -1,4 +1,4 @@
-import { PartialType } from '@nestjs/mapped-types';
+// Removed NestJS PartialType - using manual partial types
 import { z } from 'zod';
 
 // Base DTO that explicitly defines properties from the `subsidiaries` table
@@ -21,7 +21,7 @@ export class BaseSubsidiaryDto {
 export class CreateSubsidiaryDto extends BaseSubsidiaryDto {}
 
 // DTO for updating a subsidiary, including an optional ID
-export class UpdateSubsidiaryDto extends PartialType(BaseSubsidiaryDto) {
+export class UpdateSubsidiaryDto extends BaseSubsidiaryDto {
     id?: number;
 }
 

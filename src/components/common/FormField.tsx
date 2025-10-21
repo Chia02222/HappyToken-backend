@@ -13,7 +13,7 @@ export interface FormFieldProps {
   id: string;
   name: string;
   label: string;
-  value: any;
+  value: string | number | undefined;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
   onValueChange?: (value: string) => void;
   placeholder?: string;
@@ -45,7 +45,7 @@ const FormField: React.FC<FormFieldProps> = ({
     id,
     name,
     label,
-    value,
+    value: value ?? null,
     onChange,
     required,
     disabled,
@@ -57,7 +57,7 @@ const FormField: React.FC<FormFieldProps> = ({
     case 'calling-code':
       return (
         <SearchableCallingCodeField
-          value={value}
+          value={value?.toString() || ''}
           onChange={onValueChange || (() => {})}
           id={id}
         />

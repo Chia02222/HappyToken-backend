@@ -113,7 +113,7 @@ const CorporateFormPage: React.FC<CorporateFormPageProps> = () => {
         try {
           const fullFormData = await getCorporateById(corporateId);
           let prefilledSecondary: Partial<CorporateDetails> = {};
-          if (mode === 'approve-second' || mode === 'approve') {
+          if (mode === 'approve-second' || mode === 'approve' || (mode === 'edit' && fullFormData.status === 'Approved')) {
             const contacts = fullFormData.contacts || [];
             const secId = fullFormData.secondary_approver_id ?? undefined;
             const byId = contacts.find((c: Contact) => String(c.id) === String(secId));

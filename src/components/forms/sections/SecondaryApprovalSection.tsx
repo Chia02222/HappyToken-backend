@@ -16,7 +16,7 @@ interface SecondaryApprovalSectionProps {
   isApproveSecondMode: boolean;
   shouldShowSecondaryAsDisplayOnly: boolean;
   shouldShowDisplayOnly: boolean;
-  secondary_approver: any;
+  secondary_approver: Contact | null;
   otherContacts: Contact[];
   isSecondaryFromList: boolean;
   handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;

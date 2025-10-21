@@ -1,4 +1,4 @@
-import { PartialType } from '@nestjs/mapped-types';
+// Removed NestJS PartialType - using manual partial types
 import { z, type ZodObject, type ZodRawShape } from 'zod';
 
 // Base DTO that explicitly defines properties from the `contacts` table
@@ -18,7 +18,7 @@ export class BaseContactDto {
 export class CreateContactDto extends BaseContactDto {}
 
 // DTO for updating a contact, including an optional ID
-export class UpdateContactDto extends PartialType(BaseContactDto) {
+export class UpdateContactDto extends BaseContactDto {
     id?: number;
 }
 

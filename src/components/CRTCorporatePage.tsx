@@ -130,7 +130,7 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
         const pinnedList: typeof corporates = [];
         const rest: typeof corporates = [];
         for (const c of corporates) {
-            if ((c as any).pinned) pinnedList.push(c); else rest.push(c);
+            if ((c as { pinned?: boolean }).pinned) pinnedList.push(c); else rest.push(c);
         }
         return [...pinnedList, ...rest];
     }, [corporates]);
@@ -187,7 +187,7 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
                             ) : orderedCorporates.map((corporate) => (
                                 <tr
                                     key={corporate.id || corporate.reg_number}
-                                    className={`${(corporate as any).pinned ? 'bg-ht-blue-light hover:bg-ht-blue-light' : 'hover:bg-gray-50'} cursor-pointer`}
+                                    className={`${(corporate as { pinned?: boolean }).pinned ? 'bg-ht-blue-light hover:bg-ht-blue-light' : 'hover:bg-gray-50'} cursor-pointer`}
                                     onClick={() => onView(corporate)}
                                 >
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
@@ -246,8 +246,8 @@ const CRTCorporatePage: React.FC<CorporatePageProps> = ({
                                                     onClick: () => onSendEcommericialTermlink(corporate.id),
                                                 },
                                                 {
-                                                    label: (corporate as any).pinned ? 'Unpin' : 'Pin',
-                                                    onClick: () => handlePinToggle(corporate.id, (corporate as any).pinned),
+                                                    label: (corporate as { pinned?: boolean }).pinned ? 'Unpin' : 'Pin',
+                                                    onClick: () => handlePinToggle(corporate.id, (corporate as { pinned?: boolean }).pinned ?? false),
                                                 },
                                                 {
                                                     label: 'Delete',

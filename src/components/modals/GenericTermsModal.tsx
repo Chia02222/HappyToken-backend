@@ -41,29 +41,33 @@ const GenericTermsModal: React.FC<GenericTermsModalProps> = ({ isOpen, onClose }
             <h4 className="font-semibold mt-6">2. Provision of Services</h4>
             <p>The Company shall provide the Services described in the relevant Commercial Terms Schedule or online order form. The Company reserves the right to improve, modify, or discontinue any part of the Services with reasonable notice.</p>
             
-            <h4 className="font-semibold mt-6">3. Client Obligations</h4>
-            <p>The Client agrees to use the Services in accordance with these Terms and any applicable laws and regulations. The Client is responsible for maintaining the confidentiality of their account credentials and for all activities that occur under their account.</p>
+            <h4 className="font-semibold mt-6">3. Use of the Platform</h4>
+            <p>The Client shall use the Services solely for its internal business purposes and shall not:</p>
+            <ul className="list-disc pl-6">
+              <li>Copy, resell, or license the platform or its features;</li>
+              <li>Interfere with the performance or security of the system;</li>
+              <li>Use the Services to conduct unlawful or unethical activities.</li>
+            </ul>
             
-            <h4 className="font-semibold mt-6">4. Payment Terms</h4>
-            <p>Payment terms are as specified in the Commercial Terms Schedule. The Client agrees to pay all fees and charges in accordance with the agreed payment schedule.</p>
+            <h4 className="font-semibold mt-6">4. Fees and Payment</h4>
+            <p>Fees, charges, credit terms, and payout details are specified in the Commercial Terms Schedule or Order Form. All invoices must be settled within the agreed credit term. The Company reserves the right to:</p>
+            <ul className="list-disc pl-6">
+              <li>Charge interest on late payments;</li>
+              <li>Suspend or limit Services for overdue accounts;</li>
+              <li>Withhold settlement payouts in case of breach.</li>
+            </ul>
             
-            <h4 className="font-semibold mt-6">5. Limitation of Liability</h4>
-            <p>The Company&apos;s liability is limited to the maximum extent permitted by law. The Company shall not be liable for any indirect, incidental, special, or consequential damages.</p>
+            <h4 className="font-semibold mt-6">5. Intellectual Property</h4>
+            <p>All intellectual property rights in the Services, software, designs, and documentation shall remain the sole property of the Company. The Client is granted a limited, non-exclusive, non-transferable license to use the Services in accordance with this Agreement.</p>
             
-            <h4 className="font-semibold mt-6">6. Termination</h4>
-            <p>Either party may terminate this Agreement with written notice as specified in the Commercial Terms Schedule. Upon termination, the Client&apos;s access to the Services will be discontinued.</p>
+            <h4 className="font-semibold mt-6">6. Client Data &amp; Confidentiality</h4>
+            <p>The Client retains ownership of its data. The Company will not disclose or use Client Data except as required to provide the Services or by law. Both parties agree to maintain the confidentiality of all non-public information exchanged during the course of this Agreement for a period of twelve (12) months after termination.</p>
             
-            <h4 className="font-semibold mt-6">7. Governing Law</h4>
-            <p>This Agreement shall be governed by and construed in accordance with the laws of Malaysia. Any disputes shall be subject to the exclusive jurisdiction of the Malaysian courts.</p>
+            <h4 className="font-semibold mt-6">7. Data Protection</h4>
+            <p>The Company shall take reasonable steps to comply with Malaysia&apos;s Personal Data Protection Act 2010 (PDPA) in handling personal data collected during the provision of Services.</p>
             
-            <h4 className="font-semibold mt-6">8. Intellectual Property</h4>
-            <p>All intellectual property rights in the Services remain with the Company. The Client may not copy, modify, or distribute any part of the Services without prior written consent.</p>
-            
-            <h4 className="font-semibold mt-6">9. Data Protection</h4>
-            <p>The Company will handle Client Data in accordance with applicable data protection laws and the Company&apos;s Privacy Policy. The Client consents to the collection, use, and processing of their data as described in the Privacy Policy.</p>
-            
-            <h4 className="font-semibold mt-6">10. Force Majeure</h4>
-            <p>The Company shall not be liable for any failure or delay in performance due to circumstances beyond its reasonable control, including but not limited to acts of God, natural disasters, war, terrorism, or government actions.</p>
+            <h4 className="font-semibold mt-6">8. Warranties and Disclaimers</h4>
+            <p>The Company provides the Services &quot;as is&quot; and disclaims all warranties not expressly stated herein. The Company does not guarantee uninterrupted or error-free operation.</p>
             
           </div>
         </div>

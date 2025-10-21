@@ -1,25 +1,17 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
-import { App } from 'supertest/types';
-import { AppModule } from './../src/app.module';
+import request from 'supertest';
+import { Elysia } from 'elysia';
+import { appRoutes } from '../src/app.routes';
 
 describe('AppController (e2e)', () => {
-  let app: INestApplication<App>;
+  let app: Elysia;
 
   beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
+    app = new Elysia().use(appRoutes);
   });
 
-  it('/ (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/')
-      .expect(200)
-      .expect('Hello World!');
+  it('/ (GET)', async () => {
+    const response = await app.handle(new Request('http://localhost:3001/'));
+    const data = await response.json();
+    expect(data.message).toBe('HappyToken Backend API is running!');
   });
 });

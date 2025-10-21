@@ -1,11 +1,13 @@
-import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../database/database.service';
 import { sql } from 'kysely';
 import { CreateSubsidiaryDto, UpdateSubsidiaryDto} from './dto/subsidiary.dto';
 
-@Injectable()
 export class SubsidiariesService {
-  constructor(private readonly dbService: DatabaseService) {}
+  private dbService: DatabaseService;
+
+  constructor() {
+    this.dbService = new DatabaseService();
+  }
 
   private get db() {
     return this.dbService.getDb();
@@ -42,5 +44,13 @@ export class SubsidiariesService {
   async deleteSubsidiary(uuid: string) {
     await this.db.deleteFrom('subsidiaries').where('uuid', '=', uuid).execute();
     return { success: true };
+  }
+
+  async findAll() {
+    return await this.db.selectFrom('subsidiaries').selectAll().execute();
+  }
+
+  async findById(uuid: string) {
+    return await this.db.selectFrom('subsidiaries').selectAll().where('uuid', '=', uuid).executeTakeFirst();
   }
 }

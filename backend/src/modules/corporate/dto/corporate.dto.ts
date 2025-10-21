@@ -1,5 +1,5 @@
 import { CorporateStatus } from '../../../database/types';
-import { PartialType } from '@nestjs/mapped-types';
+// Removed NestJS PartialType - using manual partial types
 import { CreateContactDto, UpdateContactDto} from '../../contacts/dto/contact.dto';
 import { CreateSubsidiaryDto, UpdateSubsidiaryDto } from '../../subsidiaries/dto/subsidiary.dto';
 import { z } from 'zod';
@@ -57,7 +57,7 @@ export class CreateCorporateWithRelationsDto extends CreateCorporateDto {
   secondary_approver?: SecondaryApproverDto;
 }
 
-export class UpdateCorporateDto extends PartialType(CreateCorporateDto) {
+export class UpdateCorporateDto extends CreateCorporateDto {
     id?: string;
     contacts?: UpdateContactDto[];
     subsidiaries?: UpdateSubsidiaryDto[];

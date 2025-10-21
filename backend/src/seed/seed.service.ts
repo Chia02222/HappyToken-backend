@@ -1,4 +1,3 @@
-import { Injectable } from '@nestjs/common';
 import { CorporateService } from '../modules/corporate/corporate.service';
 import { CorporateStatus } from '../database/types';
 import { DatabaseService } from '../database/database.service';
@@ -6,14 +5,19 @@ import { ContactsService } from '../modules/contacts/contacts.service';
 import { SubsidiariesService } from '../modules/subsidiaries/subsidiaries.service';
 import { sql } from 'kysely';
 
-@Injectable()
 export class SeedService {
-  constructor(
-    private readonly corporateService: CorporateService,
-    private readonly dbService: DatabaseService,
-    private readonly contactsService: ContactsService,
-    private readonly subsidiariesService: SubsidiariesService,
-  ) {}
+  private corporateService: CorporateService;
+  private dbService: DatabaseService;
+  private contactsService: ContactsService;
+  private subsidiariesService: SubsidiariesService;
+
+  constructor() {
+    this.dbService = new DatabaseService();
+    this.contactsService = new ContactsService();
+    this.subsidiariesService = new SubsidiariesService();
+    // CorporateService will be injected later to avoid circular dependency
+    this.corporateService = null as any;
+  }
 
   async seedDatabase() {
     console.log('🌱 Starting database seeding...');
