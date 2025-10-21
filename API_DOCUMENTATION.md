@@ -1,7 +1,7 @@
 # API Documentation
 
 ## Overview
-This document describes the API endpoints used for corporate management, approval workflows, and email notifications.
+This document describes the complete API endpoints for the HappyToken Backend system, including corporate management, approval workflows, email notifications, and database operations.
 
 ## Base URL
 - **Development**: `http://localhost:3001`
@@ -10,10 +10,242 @@ This document describes the API endpoints used for corporate management, approva
 ## Authentication
 All endpoints require proper authentication. Include authentication headers as needed.
 
-## Corporate Management Endpoints
+## API Structure
+The API is built with Elysia framework and includes the following modules:
+- **Corporate Management**: CRUD operations for corporate accounts
+- **Contact Management**: Managing corporate contacts
+- **Subsidiary Management**: Managing corporate subsidiaries
+- **Email Services**: Resend integration for notifications
+- **Database Operations**: Seeding and maintenance
+- **PDF Generation**: Corporate agreement PDFs
 
-### 1. Send E-Commercial Terms Link
+## Core API Endpoints
 
+### Health & Status
+- `GET /` - API status check
+- `GET /health` - Health check with database connectivity
+
+### Corporate Management Endpoints
+
+#### 1. List All Corporates
+**Endpoint**: `GET /corporates`
+
+**Description**: Retrieves all corporate accounts.
+
+**Response**:
+```json
+[
+  {
+    "uuid": "123e4567-e89b-12d3-a456-426614174000",
+    "company_name": "Example Corp",
+    "reg_number": "123456-X",
+    "status": "Draft",
+    "created_at": "2024-01-01T00:00:00Z"
+  }
+]
+```
+
+#### 2. Get Corporate by ID
+**Endpoint**: `GET /corporates/:id`
+
+**Description**: Retrieves a specific corporate by UUID.
+
+**Parameters**:
+- `id` (string, required): Corporate UUID
+
+**Response**:
+```json
+{
+  "uuid": "123e4567-e89b-12d3-a456-426614174000",
+  "company_name": "Example Corp",
+  "reg_number": "123456-X",
+  "status": "Pending 1st Approval",
+  "contacts": [...],
+  "subsidiaries": [...],
+  "created_at": "2024-01-01T00:00:00Z",
+  "updated_at": "2024-01-01T00:00:00Z"
+}
+```
+
+#### 3. Create Corporate
+**Endpoint**: `POST /corporates`
+
+**Description**: Creates a new corporate account with contacts and subsidiaries.
+
+**Request Body**:
+```json
+{
+  "company_name": "Example Corp",
+  "reg_number": "123456-X",
+  "office_address1": "123 Main St",
+  "city": "Kuala Lumpur",
+  "state": "Selangor",
+  "country": "Malaysia",
+  "contacts": [
+    {
+      "first_name": "John",
+      "last_name": "Doe",
+      "email": "john@example.com",
+      "company_role": "CEO",
+      "system_role": "primary_contact"
+    }
+  ],
+  "subsidiaries": [
+    {
+      "company_name": "Sub Corp",
+      "reg_number": "789012-Y"
+    }
+  ]
+}
+```
+
+**Response**: Created corporate object with UUID.
+
+#### 4. Update Corporate
+**Endpoint**: `PUT /corporates/:id`
+
+**Description**: Updates an existing corporate account.
+
+**Parameters**:
+- `id` (string, required): Corporate UUID
+
+**Request Body**: Same structure as create, with fields to update.
+
+**Response**: Updated corporate object.
+
+#### 5. Delete Corporate
+**Endpoint**: `DELETE /corporates/:id`
+
+**Description**: Deletes a corporate account and all related data.
+
+**Parameters**:
+- `id` (string, required): Corporate UUID
+
+**Response**:
+```json
+{
+  "success": true,
+  "message": "Corporate deleted successfully"
+}
+```
+
+#### 6. Update Corporate Status
+**Endpoint**: `PUT /corporates/:id/status`
+
+**Description**: Updates the status of a corporate account.
+
+**Parameters**:
+- `id` (string, required): Corporate UUID
+
+**Request Body**:
+```json
+{
+  "status": "Pending 1st Approval",
+  "note": "Status updated with reason"
+}
+```
+
+**Response**: Updated corporate object.
+
+#### 7. Generate Corporate PDF
+**Endpoint**: `GET /corporates/:id/pdf`
+
+**Description**: Generates and downloads the corporate agreement PDF.
+
+**Parameters**:
+- `id` (string, required): Corporate UUID
+
+**Response**: PDF file download
+
+**Requirements**: `FRONTEND_BASE_URL` environment variable must be configured.
+
+#### 8. Add Investigation Log
+**Endpoint**: `POST /corporates/:id/investigation-logs`
+
+**Description**: Adds an investigation log entry for a corporate.
+
+**Parameters**:
+- `id` (string, required): Corporate UUID
+
+**Request Body**:
+```json
+{
+  "timestamp": "2024-01-01T00:00:00Z",
+  "note": "Investigation note",
+  "from_status": "Draft",
+  "to_status": "Pending 1st Approval",
+  "amendment_data": {}
+}
+```
+
+**Response**: Created investigation log object.
+
+### Amendment Request Endpoints
+
+#### 1. Create Amendment Request
+**Endpoint**: `POST /corporates/:id/amendment-requests`
+
+**Description**: Creates a new amendment request for a corporate.
+
+**Parameters**:
+- `id` (string, required): Corporate UUID
+
+**Request Body**: Amendment request data
+
+**Response**: Created amendment request object.
+
+#### 2. Update Amendment Status
+**Endpoint**: `PATCH /corporates/:id/amendment-requests/:amendmentId`
+
+**Description**: Updates the status of an amendment request.
+
+**Parameters**:
+- `id` (string, required): Corporate UUID
+- `amendmentId` (string, required): Amendment request UUID
+
+**Request Body**:
+```json
+{
+  "status": "approved",
+  "reviewNotes": "Amendment approved with notes"
+}
+```
+
+**Response**: Updated amendment request object.
+
+#### 3. Get Amendment Requests
+**Endpoint**: `GET /corporates/amendment-requests?corporateId=...`
+
+**Description**: Retrieves amendment requests, optionally filtered by corporate ID.
+
+**Query Parameters**:
+- `corporateId` (string, optional): Filter by corporate UUID
+
+**Response**: Array of amendment request objects.
+
+#### 4. Get Corporate Amendment Requests
+**Endpoint**: `GET /corporates/:id/amendment-requests`
+
+**Description**: Retrieves amendment requests for a specific corporate.
+
+**Parameters**:
+- `id` (string, required): Corporate UUID
+
+**Response**: Array of amendment request objects.
+
+#### 5. Get Amendment by ID
+**Endpoint**: `GET /corporates/amendment-requests/:amendmentId`
+
+**Description**: Retrieves a specific amendment request.
+
+**Parameters**:
+- `amendmentId` (string, required): Amendment request UUID
+
+**Response**: Amendment request object.
+
+### Email & Notification Endpoints
+
+#### 1. Send E-Commercial Terms Link
 **Endpoint**: `POST /corporates/:id/resend-link`
 
 **Description**: Sends an approval link email to the specified approver and updates the corporate status accordingly.
@@ -58,11 +290,10 @@ POST /corporates/123e4567-e89b-12d3-a456-426614174000/resend-link?approver=secon
   - `mode=approve` for first approver
   - `mode=approve-second` for second approver
 
-### 2. Submit for First Approval
+#### 2. Send Amendment Request Email
+**Endpoint**: `POST /corporates/:id/send-amendment-email`
 
-**Endpoint**: `POST /corporates/:id/submit-for-first-approval`
-
-**Description**: Submits a corporate for first approval (legacy endpoint).
+**Description**: Sends an amendment request email to the corporate.
 
 **Parameters**:
 - `id` (string, required): Corporate UUID
@@ -71,12 +302,34 @@ POST /corporates/123e4567-e89b-12d3-a456-426614174000/resend-link?approver=secon
 ```json
 {
   "success": true,
-  "message": "Submitted for first approval"
+  "message": "Amendment request email sent successfully"
 }
 ```
 
-### 3. Complete Cooling Period
+#### 3. Send Amendment Rejection Email
+**Endpoint**: `POST /corporates/:id/send-amend-reject-email`
 
+**Description**: Sends an amendment rejection email to the corporate.
+
+**Parameters**:
+- `id` (string, required): Corporate UUID
+
+**Request Body**:
+```json
+{
+  "note": "Optional rejection reason"
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "message": "Amendment rejection email sent successfully"
+}
+```
+
+#### 4. Complete Cooling Period
 **Endpoint**: `POST /corporates/:id/complete-cooling-period`
 
 **Description**: Manually completes the cooling period for a corporate account.
@@ -92,106 +345,55 @@ POST /corporates/123e4567-e89b-12d3-a456-426614174000/resend-link?approver=secon
 }
 ```
 
-## Corporate CRUD Endpoints
+#### 5. Update Pinned Status
+**Endpoint**: `PUT /corporates/:id/pinned`
 
-### 1. Get Corporate by ID
-
-**Endpoint**: `GET /corporates/:id`
-
-**Description**: Retrieves a corporate by its UUID.
+**Description**: Updates the pinned status of a corporate account.
 
 **Parameters**:
 - `id` (string, required): Corporate UUID
-
-**Response**:
-```json
-{
-  "id": "123e4567-e89b-12d3-a456-426614174000",
-  "company_name": "Example Corp",
-  "reg_number": "123456-X",
-  "status": "Pending 1st Approval",
-  "contacts": [...],
-  "created_at": "2024-01-01T00:00:00Z",
-  "updated_at": "2024-01-01T00:00:00Z"
-}
-```
-
-### 2. Create Corporate
-
-**Endpoint**: `POST /corporates`
-
-**Description**: Creates a new corporate account.
 
 **Request Body**:
 ```json
 {
-  "company_name": "Example Corp",
-  "reg_number": "123456-X",
-  "office_address1": "123 Main St",
-  "city": "Kuala Lumpur",
-  "state": "Selangor",
-  "country": "Malaysia",
-  "contacts": [
-    {
-      "first_name": "John",
-      "last_name": "Doe",
-      "email": "john@example.com",
-      "company_role": "CEO"
-    }
-  ]
+  "pinned": true
 }
 ```
-
-**Response**:
-```json
-{
-  "id": "123e4567-e89b-12d3-a456-426614174000",
-  "company_name": "Example Corp",
-  "status": "Draft",
-  "created_at": "2024-01-01T00:00:00Z"
-}
-```
-
-### 3. Update Corporate
-
-**Endpoint**: `PUT /corporates/:id`
-
-**Description**: Updates an existing corporate account.
-
-**Parameters**:
-- `id` (string, required): Corporate UUID
-
-**Request Body**: Same as create, with additional fields for updates.
-
-**Response**: Updated corporate object.
-
-### 4. Delete Corporate
-
-**Endpoint**: `DELETE /corporates/:id`
-
-**Description**: Deletes a corporate account.
-
-**Parameters**:
-- `id` (string, required): Corporate UUID
 
 **Response**:
 ```json
 {
   "success": true,
-  "message": "Corporate deleted successfully"
+  "message": "Pinned status updated"
 }
 ```
 
-## Contact Management Endpoints
+### Contact Management Endpoints
 
-### 1. Add Contact
+#### 1. List All Contacts
+**Endpoint**: `GET /contacts`
 
-**Endpoint**: `POST /contacts/:corporateId`
+**Description**: Retrieves all contacts across all corporates.
+
+**Response**: Array of contact objects.
+
+#### 2. Get Contact by ID
+**Endpoint**: `GET /contacts/:uuid`
+
+**Description**: Retrieves a specific contact by UUID.
+
+**Parameters**:
+- `uuid` (string, required): Contact UUID
+
+**Response**: Contact object.
+
+#### 3. Add Contact to Corporate
+**Endpoint**: `POST /contacts/:corporateUuid`
 
 **Description**: Adds a new contact to a corporate account.
 
 **Parameters**:
-- `corporateId` (string, required): Corporate UUID
+- `corporateUuid` (string, required): Corporate UUID
 
 **Request Body**:
 ```json
@@ -208,33 +410,263 @@ POST /corporates/123e4567-e89b-12d3-a456-426614174000/resend-link?approver=secon
 
 **Response**: Created contact object.
 
-### 2. Update Contact
-
-**Endpoint**: `PUT /contacts/:id`
+#### 4. Update Contact
+**Endpoint**: `PUT /contacts/:uuid`
 
 **Description**: Updates an existing contact.
 
 **Parameters**:
-- `id` (string, required): Contact UUID
+- `uuid` (string, required): Contact UUID
 
 **Request Body**: Same as add contact.
 
 **Response**: Updated contact object.
 
-### 3. Delete Contact
-
-**Endpoint**: `DELETE /contacts/:id`
+#### 5. Delete Contact
+**Endpoint**: `DELETE /contacts/:uuid`
 
 **Description**: Deletes a contact.
 
 **Parameters**:
-- `id` (string, required): Contact UUID
+- `uuid` (string, required): Contact UUID
 
 **Response**:
 ```json
 {
   "success": true,
   "message": "Contact deleted successfully"
+}
+```
+
+### Subsidiary Management Endpoints
+
+#### 1. List All Subsidiaries
+**Endpoint**: `GET /subsidiaries`
+
+**Description**: Retrieves all subsidiaries across all corporates.
+
+**Response**: Array of subsidiary objects.
+
+#### 2. Get Subsidiary by ID
+**Endpoint**: `GET /subsidiaries/:uuid`
+
+**Description**: Retrieves a specific subsidiary by UUID.
+
+**Parameters**:
+- `uuid` (string, required): Subsidiary UUID
+
+**Response**: Subsidiary object.
+
+#### 3. Add Subsidiary to Corporate
+**Endpoint**: `POST /subsidiaries/:corporateUuid`
+
+**Description**: Adds a new subsidiary to a corporate account.
+
+**Parameters**:
+- `corporateUuid` (string, required): Corporate UUID
+
+**Request Body**:
+```json
+{
+  "company_name": "Subsidiary Corp",
+  "reg_number": "789012-Y",
+  "office_address1": "456 Sub St",
+  "city": "Kuala Lumpur",
+  "state": "Selangor",
+  "country": "Malaysia",
+  "website": "https://sub.example.com",
+  "account_note": "Subsidiary notes"
+}
+```
+
+**Response**: Created subsidiary object.
+
+#### 4. Update Subsidiary
+**Endpoint**: `PUT /subsidiaries/:uuid`
+
+**Description**: Updates an existing subsidiary.
+
+**Parameters**:
+- `uuid` (string, required): Subsidiary UUID
+
+**Request Body**: Same as add subsidiary.
+
+**Response**: Updated subsidiary object.
+
+#### 5. Delete Subsidiary
+**Endpoint**: `DELETE /subsidiaries/:uuid`
+
+**Description**: Deletes a subsidiary.
+
+**Parameters**:
+- `uuid` (string, required): Subsidiary UUID
+
+**Response**:
+```json
+{
+  "success": true,
+  "message": "Subsidiary deleted successfully"
+}
+```
+
+### Email Service Endpoints
+
+#### 1. Send Custom Email
+**Endpoint**: `POST /resend/send-custom-email`
+
+**Description**: Sends a custom email using the Resend service.
+
+**Request Body**:
+```json
+{
+  "to": "recipient@example.com",
+  "subject": "Email Subject",
+  "html": "<p>Email content</p>"
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "message": "Email sent successfully"
+}
+```
+
+### Database Management Endpoints
+
+#### 1. Seed Database
+**Endpoint**: `POST /seed`
+
+**Description**: Seeds the database with initial data.
+
+**Response**:
+```json
+{
+  "message": "Database seeded successfully"
+}
+```
+
+#### 2. Get Seed Status
+**Endpoint**: `GET /seed`
+
+**Description**: Returns the status of the seed service.
+
+**Response**:
+```json
+{
+  "message": "Seed service is available. Use POST to seed the database."
+}
+```
+
+## Data Models
+
+### Corporate Status Enum
+```typescript
+type CorporateStatus = 
+  | 'Draft' 
+  | 'Pending 1st Approval' 
+  | 'Pending 2nd Approval' 
+  | 'Approved' 
+  | 'Rejected' 
+  | 'Cooling Period' 
+  | 'Expired'
+  | 'Amendment Requested';
+```
+
+### Corporate Object Structure
+```json
+{
+  "uuid": "string (UUID)",
+  "company_name": "string",
+  "reg_number": "string (unique)",
+  "status": "CorporateStatus",
+  "office_address1": "string",
+  "office_address2": "string | null",
+  "postcode": "string",
+  "city": "string",
+  "state": "string",
+  "country": "string",
+  "website": "string | null",
+  "account_note": "string | null",
+  "billing_same_as_official": "boolean",
+  "billing_address1": "string",
+  "billing_address2": "string",
+  "billing_postcode": "string",
+  "billing_city": "string",
+  "billing_state": "string",
+  "billing_country": "string",
+  "company_tin": "string",
+  "sst_number": "string",
+  "agreement_from": "string (DATE) | null",
+  "agreement_to": "string (DATE) | null",
+  "credit_limit": "string",
+  "credit_terms": "string",
+  "transaction_fee": "string",
+  "late_payment_interest": "string",
+  "white_labeling_fee": "string",
+  "custom_feature_fee": "string",
+  "agreed_to_generic_terms": "boolean",
+  "agreed_to_commercial_terms": "boolean",
+  "first_approval_confirmation": "boolean",
+  "second_approval_confirmation": "boolean | null",
+  "cooling_period_start": "string (TIMESTAMP) | null",
+  "cooling_period_end": "string (TIMESTAMP) | null",
+  "secondary_approver_uuid": "string (UUID) | null",
+  "pinned": "boolean",
+  "created_at": "string (TIMESTAMP)",
+  "updated_at": "string (TIMESTAMP)"
+}
+```
+
+### Contact Object Structure
+```json
+{
+  "uuid": "string (UUID)",
+  "corporate_uuid": "string (UUID)",
+  "salutation": "string",
+  "first_name": "string",
+  "last_name": "string",
+  "contact_number": "string",
+  "email": "string",
+  "company_role": "string",
+  "system_role": "string",
+  "created_at": "string (TIMESTAMP)",
+  "updated_at": "string (TIMESTAMP)"
+}
+```
+
+### Subsidiary Object Structure
+```json
+{
+  "uuid": "string (UUID)",
+  "corporate_uuid": "string (UUID)",
+  "company_name": "string",
+  "reg_number": "string",
+  "office_address1": "string",
+  "office_address2": "string | null",
+  "postcode": "string",
+  "city": "string",
+  "state": "string",
+  "country": "string",
+  "website": "string | null",
+  "account_note": "string | null",
+  "created_at": "string (TIMESTAMP)",
+  "updated_at": "string (TIMESTAMP)"
+}
+```
+
+### Investigation Log Object Structure
+```json
+{
+  "uuid": "string (UUID)",
+  "corporate_uuid": "string (UUID)",
+  "timestamp": "string (TIMESTAMP)",
+  "note": "string | null",
+  "from_status": "CorporateStatus | null",
+  "to_status": "CorporateStatus | null",
+  "amendment_data": "object | null",
+  "created_at": "string (TIMESTAMP)"
 }
 ```
 
@@ -416,3 +848,4 @@ Use the following test corporate ID for testing:
 ### Version 1.0.0
 - Initial API release
 - Basic corporate CRUD operations
+
